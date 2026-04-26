@@ -121,7 +121,7 @@ const Index = () => {
       </main>
 
       <footer className="border-t border-border py-6 text-center text-xs text-muted-foreground">
-        FEI Dressage · Interactive Scoring Sheets
+        Horsey · FEI Dressage Interactive Scoring Sheets
       </footer>
     </div>
   );
