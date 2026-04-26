@@ -139,6 +139,9 @@ const Index = () => {
     setCollectiveRemarks("");
     setCourseError(0);
     setOtherErrors(0);
+    try { localStorage.removeItem(STORAGE_KEY); } catch {}
+    setHasDraft(false);
+    setSavedAt(null);
   };
 
   const progressPct = (filledCount / MOVEMENTS.length) * 100;
