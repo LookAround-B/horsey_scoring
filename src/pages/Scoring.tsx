@@ -121,8 +121,8 @@ const TEST_CONFIGS: Record<string, TestConfig> = {
     label: "Children II",
     appendix: "Appendix E",
     abbr: "C2",
-    subtitle: "Children II dressage test",
-    movements: YOUNG_RIDER_MOVEMENTS, // placeholder until Children II test is provided
+    subtitle: "Time 4 min · Min age of horse: 6 years (children) / 5 years (adults). All trot work sitting unless indicated.",
+    movements: CHILDREN_II_MOVEMENTS,
   },
 };
 
