@@ -440,19 +440,19 @@ const Index = () => {
       <main className="mx-auto max-w-[1200px] px-4 sm:px-6 py-6 sm:py-8 print:px-4 print:py-2">
         {/* Hero / Meta card */}
         <section className="mb-6 sm:mb-8 print:mb-4">
-          <div className="flex items-end justify-between mb-4 gap-4">
+          <div className="flex items-start justify-between mb-4 gap-4">
             <div className="min-w-0">
               <div className="text-[10px] sm:text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">FEI · Dressage Test</div>
-              <h1 className="font-display text-3xl sm:text-4xl md:text-5xl tracking-tight">
+              <h1 className="font-display text-3xl sm:text-4xl md:text-5xl tracking-tight leading-[1.05]">
                 {info.label} <span className="italic text-highlight">scoring</span>
               </h1>
-              <p className="text-xs sm:text-sm text-muted-foreground mt-2">
+              <p className="text-xs sm:text-sm text-muted-foreground mt-2 max-w-prose">
                 {config.subtitle}
               </p>
             </div>
-            <div className="hidden lg:block text-right shrink-0">
-              <div className="text-xs uppercase tracking-wider text-muted-foreground">Movements</div>
-              <div className="font-display text-3xl tabular-nums">
+            <div className="hidden lg:block text-right shrink-0 pt-1">
+              <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Movements</div>
+              <div className="font-display text-3xl tabular-nums mt-1 leading-none">
                 {filledCount}<span className="text-muted-foreground">/{MOVEMENTS.length}</span>
               </div>
             </div>
@@ -473,7 +473,7 @@ const Index = () => {
 
         {/* Movements */}
         <section className="mb-6 sm:mb-8 print:mb-4">
-          <div className="flex flex-wrap items-end justify-between mb-3 px-1 gap-2">
+          <div className="flex flex-wrap items-center justify-between mb-3 gap-2">
             <SectionTitle index="01" title="Movements" subtitle="Score 0–10 · ↑↓ rows · → field · Enter next" />
             <button
               onClick={jumpToNextEmpty}
@@ -581,10 +581,10 @@ const Index = () => {
                     <td colSpan={3} className="px-3 py-3 font-display text-sm uppercase tracking-wider">
                       Subtotal
                     </td>
-                    <td className="px-3 py-3 text-center text-xs text-muted-foreground tabular-nums">/ {TOTAL_MAX}</td>
-                    <td colSpan={2}></td>
-                    <td className="px-3 py-3 text-center font-display text-lg tabular-nums text-highlight">
+                    <td colSpan={3}></td>
+                    <td className="px-3 py-3 text-center font-display text-lg tabular-nums text-highlight whitespace-nowrap">
                       {movementsTotal.toFixed(1)}
+                      <span className="text-xs text-muted-foreground ml-1">/ {TOTAL_MAX}</span>
                     </td>
                     <td colSpan={2}></td>
                   </tr>
@@ -686,7 +686,9 @@ const Index = () => {
 
         {/* Collective */}
         <section className="mb-8 print:mb-4">
-          <SectionTitle index="02" title="Collective Mark" subtitle="Rider position, seat & effect of aids" />
+          <div className="mb-3">
+            <SectionTitle index="02" title="Collective Mark" subtitle="Rider position, seat & effect of aids" />
+          </div>
 
           <div className="bg-card border border-border rounded-xl overflow-hidden shadow-soft">
             <div className="overflow-x-auto">
@@ -720,10 +722,10 @@ const Index = () => {
                   </tr>
                   <tr className="border-t-2 border-foreground/20 bg-muted/40">
                     <td colSpan={2} className="px-3 py-3 font-display text-sm uppercase tracking-wider">Total</td>
-                    <td colSpan={2} className="px-3 py-3 text-center text-xs text-muted-foreground tabular-nums">/ {GRAND_TOTAL_MAX}</td>
-                    <td></td>
-                    <td className="px-3 py-3 text-center font-display text-lg text-highlight tabular-nums">
+                    <td colSpan={3}></td>
+                    <td className="px-3 py-3 text-center font-display text-lg text-highlight tabular-nums whitespace-nowrap">
                       {grandTotal.toFixed(1)}
+                      <span className="text-xs text-muted-foreground ml-1">/ {GRAND_TOTAL_MAX}</span>
                     </td>
                     <td></td>
                   </tr>
@@ -735,7 +737,9 @@ const Index = () => {
 
         {/* Penalties + Score */}
         <section className="mb-8 print:mb-4">
-          <SectionTitle index="03" title="Penalties & Final Score" />
+          <div className="mb-3">
+            <SectionTitle index="03" title="Penalties & Final Score" />
+          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-6">
             <div className="lg:col-span-3 bg-card border border-border rounded-xl p-4 sm:p-6 shadow-soft">
@@ -803,7 +807,7 @@ const Index = () => {
                 <div className="absolute -top-12 -right-12 h-40 w-40 rounded-full bg-highlight/20 blur-2xl" />
                 <div className="relative">
                   <div className="text-[10px] uppercase tracking-[0.25em] opacity-70">Total Score</div>
-                  <div className="font-display text-5xl sm:text-6xl mt-3 tabular-nums leading-none break-all">
+                  <div className="font-display text-5xl sm:text-6xl mt-3 tabular-nums leading-none whitespace-nowrap">
                     {eliminated ? (
                       <span className="text-destructive-foreground">—</span>
                     ) : (
@@ -931,12 +935,12 @@ const SectionTitle = ({
   title: string;
   subtitle?: string;
 }) => (
-  <div className="flex items-end justify-between mb-3 px-1">
-    <div className="flex items-baseline gap-3">
-      <span className="font-mono text-xs text-muted-foreground tabular-nums">{index}</span>
-      <h2 className="font-display text-xl tracking-tight">{title}</h2>
-    </div>
-    {subtitle && <span className="text-xs text-muted-foreground hidden md:block">{subtitle}</span>}
+  <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 min-w-0">
+    <span className="font-mono text-xs text-muted-foreground tabular-nums">{index}</span>
+    <h2 className="font-display text-xl sm:text-2xl tracking-tight leading-none">{title}</h2>
+    {subtitle && (
+      <span className="text-xs text-muted-foreground hidden md:block">{subtitle}</span>
+    )}
   </div>
 );
 
