@@ -1,4 +1,6 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, useRef, useCallback, KeyboardEvent } from "react";
+
+const STORAGE_KEY = "yr-scoring-draft-v1";
 
 type Movement = {
   no: string;
