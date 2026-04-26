@@ -440,19 +440,19 @@ const Index = () => {
       <main className="mx-auto max-w-[1200px] px-4 sm:px-6 py-6 sm:py-8 print:px-4 print:py-2">
         {/* Hero / Meta card */}
         <section className="mb-6 sm:mb-8 print:mb-4">
-          <div className="flex items-end justify-between mb-4 gap-4">
+          <div className="flex items-start justify-between mb-4 gap-4">
             <div className="min-w-0">
               <div className="text-[10px] sm:text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">FEI · Dressage Test</div>
-              <h1 className="font-display text-3xl sm:text-4xl md:text-5xl tracking-tight">
+              <h1 className="font-display text-3xl sm:text-4xl md:text-5xl tracking-tight leading-[1.05]">
                 {info.label} <span className="italic text-highlight">scoring</span>
               </h1>
-              <p className="text-xs sm:text-sm text-muted-foreground mt-2">
+              <p className="text-xs sm:text-sm text-muted-foreground mt-2 max-w-prose">
                 {config.subtitle}
               </p>
             </div>
-            <div className="hidden lg:block text-right shrink-0">
-              <div className="text-xs uppercase tracking-wider text-muted-foreground">Movements</div>
-              <div className="font-display text-3xl tabular-nums">
+            <div className="hidden lg:block text-right shrink-0 pt-1">
+              <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">Movements</div>
+              <div className="font-display text-3xl tabular-nums mt-1 leading-none">
                 {filledCount}<span className="text-muted-foreground">/{MOVEMENTS.length}</span>
               </div>
             </div>
