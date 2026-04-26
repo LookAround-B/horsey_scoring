@@ -759,8 +759,40 @@ const Index = () => {
         </section>
       </main>
 
-      <footer className="border-t border-border py-6 text-center text-xs text-muted-foreground print:hidden">
-        FEI Young Rider · Appendix A · Interactive Scoring Sheet
+      {/* Mobile sticky action bar */}
+      <div className="md:hidden fixed bottom-0 inset-x-0 z-30 border-t border-border bg-background/95 backdrop-blur-md print:hidden">
+        <div className="flex items-center gap-2 px-3 py-2">
+          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground" title={savedLabel}>
+            <span className={`h-1.5 w-1.5 rounded-full ${savedAt ? "bg-highlight" : "bg-muted-foreground/40"}`} />
+            <span className="tabular-nums">{savedAt ? "Saved" : "—"}</span>
+          </div>
+          <div className="ml-auto flex items-center gap-2">
+            {hasDraft && (
+              <button
+                onClick={loadDraft}
+                className="text-xs px-2.5 py-1.5 rounded-md border border-border hover:bg-muted transition-colors"
+              >
+                Load
+              </button>
+            )}
+            <button
+              onClick={reset}
+              className="text-xs px-2.5 py-1.5 rounded-md border border-border hover:bg-muted transition-colors"
+            >
+              Reset
+            </button>
+            <button
+              onClick={exportPdf}
+              className="text-xs px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+            >
+              Export
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <footer className="border-t border-border py-6 pb-20 md:pb-6 text-center text-xs text-muted-foreground print:hidden">
+        {info.label} · {info.appendix} · Interactive Scoring Sheet
       </footer>
     </div>
   );
