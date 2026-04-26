@@ -336,20 +336,20 @@ const Index = () => {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1200px] px-6 py-8 print:px-4 print:py-2">
+      <main className="mx-auto max-w-[1200px] px-4 sm:px-6 py-6 sm:py-8 print:px-4 print:py-2">
         {/* Hero / Meta card */}
-        <section className="mb-8 print:mb-4">
-          <div className="flex items-end justify-between mb-4">
-            <div>
-              <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">FEI · Dressage Test</div>
-              <h1 className="font-display text-4xl md:text-5xl tracking-tight">
+        <section className="mb-6 sm:mb-8 print:mb-4">
+          <div className="flex items-end justify-between mb-4 gap-4">
+            <div className="min-w-0">
+              <div className="text-[10px] sm:text-xs uppercase tracking-[0.2em] text-muted-foreground mb-2">FEI · Dressage Test</div>
+              <h1 className="font-display text-3xl sm:text-4xl md:text-5xl tracking-tight">
                 {info.label} <span className="italic text-highlight">scoring</span>
               </h1>
-              <p className="text-sm text-muted-foreground mt-2">
+              <p className="text-xs sm:text-sm text-muted-foreground mt-2">
                 Time 6′30″ · Minimum age of horse: 6 years
               </p>
             </div>
-            <div className="hidden lg:block text-right">
+            <div className="hidden lg:block text-right shrink-0">
               <div className="text-xs uppercase tracking-wider text-muted-foreground">Movements</div>
               <div className="font-display text-3xl tabular-nums">
                 {filledCount}<span className="text-muted-foreground">/{MOVEMENTS.length}</span>
@@ -357,8 +357,8 @@ const Index = () => {
             </div>
           </div>
 
-          <div className="bg-card border border-border rounded-xl p-6 shadow-soft">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-4">
+          <div className="bg-card border border-border rounded-xl p-4 sm:p-6 shadow-soft">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4">
               <Field label="Event" value={meta.event} onChange={(v) => setMeta({ ...meta, event: v })} />
               <Field label="Date" value={meta.date} onChange={(v) => setMeta({ ...meta, date: v })} />
               <Field label="Judge" value={meta.judge} onChange={(v) => setMeta({ ...meta, judge: v })} />
@@ -371,9 +371,9 @@ const Index = () => {
         </section>
 
         {/* Movements */}
-        <section className="mb-8 print:mb-4">
-          <div className="flex items-end justify-between mb-3 px-1">
-            <SectionTitle index="01" title="Movements" subtitle="Score 0–10 · ↑↓ move rows · → jump field · Enter next" />
+        <section className="mb-6 sm:mb-8 print:mb-4">
+          <div className="flex flex-wrap items-end justify-between mb-3 px-1 gap-2">
+            <SectionTitle index="01" title="Movements" subtitle="Score 0–10 · ↑↓ rows · → field · Enter next" />
             <button
               onClick={jumpToNextEmpty}
               className="text-xs px-3 py-1.5 rounded-md border border-border hover:bg-muted transition-colors print:hidden"
@@ -382,7 +382,8 @@ const Index = () => {
             </button>
           </div>
 
-          <div className="bg-card border border-border rounded-xl overflow-hidden shadow-soft">
+          {/* Desktop / large-tablet table */}
+          <div className="hidden lg:block bg-card border border-border rounded-xl overflow-hidden shadow-soft">
             <div className="overflow-x-auto max-h-[70vh] print:max-h-none print:overflow-visible">
               <table className="w-full text-sm table-fixed">
                 <thead className="sticky top-0 z-10">
