@@ -588,8 +588,8 @@ const Index = () => {
           <SectionTitle index="02" title="Collective Mark" subtitle="Rider position, seat & effect of aids" />
 
           <div className="bg-card border border-border rounded-xl overflow-hidden shadow-soft">
-            <table className="w-full text-sm">
-              <tbody>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[640px]">
                 <tr>
                   <td className="px-3 py-4 w-12 text-center">
                     <span className="inline-grid place-items-center h-7 w-7 rounded-full border border-border font-display text-xs">1</span>
