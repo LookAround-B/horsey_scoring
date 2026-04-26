@@ -404,7 +404,7 @@ const Index = () => {
                 {info.label} <span className="italic text-highlight">scoring</span>
               </h1>
               <p className="text-xs sm:text-sm text-muted-foreground mt-2">
-                Time 6′30″ · Minimum age of horse: 6 years
+                {config.subtitle}
               </p>
             </div>
             <div className="hidden lg:block text-right shrink-0">
