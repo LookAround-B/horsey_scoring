@@ -636,8 +636,8 @@ const Index = () => {
         <section className="mb-8 print:mb-4">
           <SectionTitle index="03" title="Penalties & Final Score" />
 
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-            <div className="lg:col-span-3 bg-card border border-border rounded-xl p-6 shadow-soft">
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 sm:gap-6">
+            <div className="lg:col-span-3 bg-card border border-border rounded-xl p-4 sm:p-6 shadow-soft">
               <h3 className="font-display text-lg mb-4">Deductions</h3>
               <ul className="text-xs text-muted-foreground space-y-1 mb-5 leading-relaxed">
                 <li>• 1st course error = −0.5 percentage point</li>
