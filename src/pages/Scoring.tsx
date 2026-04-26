@@ -2,13 +2,6 @@ import * as React from "react";
 import { useMemo, useState, useEffect, useRef, useCallback, KeyboardEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 
-const TEST_INFO: Record<string, { label: string; appendix: string; abbr: string }> = {
-  "young-rider": { label: "Young Rider", appendix: "Appendix A", abbr: "YR" },
-  "junior": { label: "Junior", appendix: "Appendix C", abbr: "JR" },
-  "children-i": { label: "Children I", appendix: "Appendix D", abbr: "C1" },
-  "children-ii": { label: "Children II", appendix: "Appendix E", abbr: "C2" },
-};
-
 type Movement = {
   no: string;
   letters: string;
@@ -17,7 +10,15 @@ type Movement = {
   directive: string;
 };
 
-const MOVEMENTS: Movement[] = [
+type TestConfig = {
+  label: string;
+  appendix: string;
+  abbr: string;
+  subtitle: string;
+  movements: Movement[];
+};
+
+const YOUNG_RIDER_MOVEMENTS: Movement[] = [
   { no: "1", letters: "A\nX", test: "Enter in collected canter\nHalf-immobility – salute\nProceed in collected trot", coefficient: 1, directive: "The entry. The halt and the transitions from the canter to the halt and from the halt to the trot." },
   { no: "2", letters: "C\nR", test: "Track right\nVolte right 8 m", coefficient: 1, directive: "The collection. The bend. The regularity and the balance." },
   { no: "3", letters: "R P", test: "Shoulder-in right", coefficient: 1, directive: "The angle and bend of the horse. The collection. The regularity." },
@@ -45,17 +46,6 @@ const MOVEMENTS: Movement[] = [
   { no: "25", letters: "P M C", test: "Collected canter", coefficient: 1, directive: "The collection. The straightness." },
   { no: "26", letters: "C\nH X F\nF", test: "Collected trot\nExtended trot\nCollected trot", coefficient: 1, directive: "The lengthening of the frame and regularity of the steps. The balance. The transitions." },
   { no: "27", letters: "A\nX", test: "Down the centre line\nHalt – immobility – salute", coefficient: 1, directive: "The straightness, the transitions and the halt." },
-];
-
-const COLLECTIVE_COEF = 2;
-const TOTAL_MAX = 270;
-const GRAND_TOTAL_MAX = 290;
-
-const COURSE_ERRORS = [
-  { label: "No error", value: 0 },
-  { label: "1st error · −0.5%", value: 0.5 },
-  { label: "2nd error · −1%", value: 1 },
-  { label: "3rd error · Elimination", value: -1 },
 ];
 
 const Index = () => {
