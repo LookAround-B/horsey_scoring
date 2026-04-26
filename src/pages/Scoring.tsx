@@ -686,7 +686,9 @@ const Index = () => {
 
         {/* Collective */}
         <section className="mb-8 print:mb-4">
-          <SectionTitle index="02" title="Collective Mark" subtitle="Rider position, seat & effect of aids" />
+          <div className="mb-3">
+            <SectionTitle index="02" title="Collective Mark" subtitle="Rider position, seat & effect of aids" />
+          </div>
 
           <div className="bg-card border border-border rounded-xl overflow-hidden shadow-soft">
             <div className="overflow-x-auto">
