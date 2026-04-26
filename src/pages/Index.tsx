@@ -64,21 +64,21 @@ const Index = () => {
         </div>
       </header>
 
-      <main className="mx-auto max-w-[1200px] px-6 py-16">
-        <section className="mb-14 text-center md:text-left">
-          <div className="text-xs uppercase tracking-[0.25em] text-muted-foreground mb-3">
+      <main className="mx-auto max-w-[1200px] px-6 py-12 md:py-16">
+        <section className="mb-12 md:mb-14 text-center md:text-left">
+          <div className="text-[10px] md:text-xs uppercase tracking-[0.25em] text-muted-foreground mb-3">
             FEI · Dressage
           </div>
-          <h1 className="font-display text-5xl md:text-6xl tracking-tight">
+          <h1 className="font-display text-4xl sm:text-5xl md:text-6xl tracking-tight leading-[1.05]">
             The <span className="italic text-highlight">scoring</span> system
           </h1>
-          <p className="text-base text-muted-foreground mt-4 max-w-2xl">
+          <p className="text-sm md:text-base text-muted-foreground mt-4 max-w-2xl mx-auto md:mx-0 leading-relaxed">
             A quiet, focused workspace for judges and stewards. Pick a test below to open its
             interactive scoring sheet — your work autosaves as you go.
           </p>
         </section>
 
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-5">
+        <section className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           {TESTS.map((t) => (
             <Link
               key={t.slug}
