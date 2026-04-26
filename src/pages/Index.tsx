@@ -222,7 +222,7 @@ const Index = () => {
                 <td className="border border-foreground p-1 text-center font-semibold">
                   {finalMarks[m.no] ? finalMarks[m.no].toFixed(1) : ""}
                 </td>
-                <td className="border border-foreground p-1"></td>
+                <td className="border border-foreground p-1 text-[11px] leading-snug">{m.directive}</td>
                 <td className="border border-foreground p-0">
                   <input
                     className="w-full h-full bg-transparent outline-none p-1 focus:bg-accent"
