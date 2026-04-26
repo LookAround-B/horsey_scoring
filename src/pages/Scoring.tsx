@@ -255,12 +255,20 @@ const Index = () => {
       <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur-md print:hidden">
         <div className="mx-auto max-w-[1200px] px-6 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
+            <Link
+              to="/"
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors mr-1"
+              aria-label="Back to tests"
+              title="Back to tests"
+            >
+              ←
+            </Link>
             <div className="h-8 w-8 rounded-md bg-primary text-primary-foreground grid place-items-center font-display font-semibold">
-              YR
+              {info.abbr}
             </div>
             <div>
-              <div className="font-display text-lg leading-tight">Young Rider</div>
-              <div className="text-xs text-muted-foreground tracking-wide uppercase">Appendix A · Scoring</div>
+              <div className="font-display text-lg leading-tight">{info.label}</div>
+              <div className="text-xs text-muted-foreground tracking-wide uppercase">{info.appendix} · Scoring</div>
             </div>
           </div>
 
