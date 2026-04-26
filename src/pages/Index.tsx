@@ -54,6 +54,7 @@ const Index = () => {
 
   const [scores, setScores] = useState<Record<string, string>>({});
   const [corrections, setCorrections] = useState<Record<string, string>>({});
+  const [coefficients, setCoefficients] = useState<Record<string, string>>({});
   const [remarks, setRemarks] = useState<Record<string, string>>({});
   const [collective, setCollective] = useState<string>("");
   const [collectiveCorrection, setCollectiveCorrection] = useState<string>("");
@@ -69,13 +70,18 @@ const Index = () => {
     return isNaN(r) ? 0 : r;
   };
 
+  const getCoef = (m: Movement) => {
+    const c = parseFloat(coefficients[m.no] ?? "");
+    return isNaN(c) ? m.coefficient : c;
+  };
+
   const finalMarks = useMemo(() => {
     const map: Record<string, number> = {};
     MOVEMENTS.forEach((m) => {
-      map[m.no] = getEffective(m.no, scores[m.no] || "", corrections[m.no] || "") * m.coefficient;
+      map[m.no] = getEffective(m.no, scores[m.no] || "", corrections[m.no] || "") * getCoef(m);
     });
     return map;
-  }, [scores, corrections]);
+  }, [scores, corrections, coefficients]);
 
   const movementsTotal = useMemo(
     () => Object.values(finalMarks).reduce((a, b) => a + b, 0),
