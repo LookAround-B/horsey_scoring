@@ -254,8 +254,12 @@ const Index = () => {
             </div>
           </div>
 
-          <div className="hidden md:flex items-center gap-4">
-            <div className="text-right">
+          <div className="hidden md:flex items-center gap-3">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground" title={savedLabel}>
+              <span className={`h-1.5 w-1.5 rounded-full ${savedAt ? "bg-highlight" : "bg-muted-foreground/40"}`} />
+              <span className="tabular-nums">{savedLabel}</span>
+            </div>
+            <div className="text-right ml-2">
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Current</div>
               <div className="font-display text-2xl tabular-nums">
                 {eliminated ? (
@@ -268,6 +272,15 @@ const Index = () => {
                 )}
               </div>
             </div>
+            {hasDraft && (
+              <button
+                onClick={loadDraft}
+                className="text-sm px-3 py-1.5 rounded-md border border-border hover:bg-muted transition-colors"
+                title="Load last saved draft"
+              >
+                Load draft
+              </button>
+            )}
             <button
               onClick={reset}
               className="text-sm px-3 py-1.5 rounded-md border border-border hover:bg-muted transition-colors"
@@ -275,10 +288,10 @@ const Index = () => {
               Reset
             </button>
             <button
-              onClick={() => window.print()}
+              onClick={exportPdf}
               className="text-sm px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
             >
-              Print / PDF
+              Export PDF
             </button>
           </div>
         </div>
