@@ -722,10 +722,10 @@ const Index = () => {
                   </tr>
                   <tr className="border-t-2 border-foreground/20 bg-muted/40">
                     <td colSpan={2} className="px-3 py-3 font-display text-sm uppercase tracking-wider">Total</td>
-                    <td colSpan={2} className="px-3 py-3 text-center text-xs text-muted-foreground tabular-nums">/ {GRAND_TOTAL_MAX}</td>
-                    <td></td>
-                    <td className="px-3 py-3 text-center font-display text-lg text-highlight tabular-nums">
+                    <td colSpan={3}></td>
+                    <td className="px-3 py-3 text-center font-display text-lg text-highlight tabular-nums whitespace-nowrap">
                       {grandTotal.toFixed(1)}
+                      <span className="text-xs text-muted-foreground ml-1">/ {GRAND_TOTAL_MAX}</span>
                     </td>
                     <td></td>
                   </tr>
