@@ -491,6 +491,96 @@ const Index = () => {
               </table>
             </div>
           </div>
+
+          {/* Mobile / tablet card list */}
+          <div className="lg:hidden space-y-3">
+            {MOVEMENTS.map((m, i) => {
+              const final = finalMarks[m.no];
+              const hasValue = final > 0;
+              return (
+                <div
+                  key={m.no}
+                  className="bg-card border border-border rounded-xl shadow-soft p-4 focus-within:border-highlight/60 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-3 mb-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="inline-grid place-items-center h-8 w-8 shrink-0 rounded-full border border-border font-display text-xs tabular-nums">
+                        {m.no}
+                      </span>
+                      <div className="min-w-0">
+                        <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground whitespace-pre-line">
+                          {m.letters || "—"}
+                        </div>
+                        <div className="text-sm leading-snug whitespace-pre-line mt-0.5">{m.test}</div>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Final</div>
+                      <div className={`font-display tabular-nums text-lg ${hasValue ? "text-highlight" : "text-muted-foreground/40"}`}>
+                        {hasValue ? final.toFixed(1) : "—"}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 mb-2">
+                    <label className="block">
+                      <span className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Mark</span>
+                      <NumInput
+                        value={scores[m.no] || ""}
+                        onChange={(v) => handleScore(m.no, v)}
+                        placeholder="—"
+                        accent
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Corr.</span>
+                      <NumInput
+                        value={corrections[m.no] || ""}
+                        onChange={(v) => handleCorrection(m.no, v)}
+                        placeholder="—"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Coeff.</span>
+                      <NumInput
+                        value={coefficients[m.no] ?? ""}
+                        onChange={(v) => {
+                          if (v !== "" && (parseFloat(v) < 1 || parseFloat(v) > 10)) return;
+                          setCoefficients((c) => ({ ...c, [m.no]: v }));
+                        }}
+                        placeholder={String(m.coefficient)}
+                        min={1}
+                        step={1}
+                      />
+                    </label>
+                  </div>
+
+                  <details className="group">
+                    <summary className="cursor-pointer text-[11px] uppercase tracking-wider text-muted-foreground list-none flex items-center gap-1 select-none">
+                      <span className="group-open:rotate-90 transition-transform">›</span>
+                      Directive & remarks
+                    </summary>
+                    <div className="mt-2 space-y-2">
+                      <p className="text-xs text-muted-foreground leading-snug">{m.directive}</p>
+                      <input
+                        className="w-full bg-background border border-border rounded-md px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-ring transition-all"
+                        placeholder="Remarks"
+                        value={remarks[m.no] || ""}
+                        onChange={(e) => setRemarks((r) => ({ ...r, [m.no]: e.target.value }))}
+                      />
+                    </div>
+                  </details>
+                </div>
+              );
+            })}
+            <div className="bg-muted/40 border border-border rounded-xl px-4 py-3 flex items-center justify-between">
+              <span className="font-display text-sm uppercase tracking-wider">Subtotal</span>
+              <div className="text-right">
+                <span className="font-display text-lg tabular-nums text-highlight">{movementsTotal.toFixed(1)}</span>
+                <span className="text-xs text-muted-foreground tabular-nums ml-1">/ {TOTAL_MAX}</span>
+              </div>
+            </div>
+          </div>
         </section>
 
         {/* Collective */}
