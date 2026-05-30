@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MEDIUM / SENIOR I FREESTYLE</title>
+<style>
+:root {
+  --bg: #ffffff;
+  --text: #1a1a1a;
+  --border: #333333;
+  --header-bg: #f0f0f0;
+  --accent: #2c3e50;
+  --light-border: #999999;
+  --input-bg: #fafafa;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 11px;
+  color: var(--text);
+  background: var(--bg);
+  padding: 20px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.sheet-header {
+  text-align: center;
+  margin-bottom: 16px;
+}
+.sheet-header h1 {
+  font-size: 18px;
+  text-decoration: underline;
+  margin-bottom: 8px;
+}
+.sheet-header .appendix {
+  font-size: 12px;
+  font-weight: bold;
+  text-align: right;
+  margin-bottom: 4px;
+}
+.meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+  font-size: 11px;
+}
+.meta-row .field {
+  flex: 1;
+}
+.meta-row .field label { font-weight: normal; }
+.meta-row .field input, .meta-row .field select {
+  border: none;
+  border-bottom: 1px solid var(--border);
+  padding: 2px 4px;
+  font-size: 11px;
+  background: transparent;
+  min-width: 120px;
+}
+.position-box {
+  width: 20px; height: 20px;
+  border: 1px solid var(--border);
+  display: inline-block;
+  vertical-align: middle;
+}
+.info-line {
+  font-size: 10px;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: space-between;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 12px;
+  font-size: 11px;
+}
+th, td {
+  border: 1px solid var(--border);
+  padding: 4px 6px;
+  vertical-align: top;
+  text-align: left;
+}
+th {
+  background: var(--header-bg);
+  font-weight: bold;
+  text-align: center;
+  font-size: 10px;
+}
+td.num { text-align: center; width: 40px; }
+td.mark-input {
+  text-align: center;
+  width: 40px;
+  background: var(--input-bg);
+}
+td.movement-num { width: 25px; text-align: center; font-weight: bold; }
+td.letters { width: 60px; font-weight: bold; }
+td.test-desc { min-width: 180px; }
+td.directive { min-width: 140px; font-size: 10px; }
+td.remarks { min-width: 80px; }
+.total-row td { font-weight: bold; }
+.collective-section { margin-top: 16px; }
+.collective-section h3 {
+  font-size: 12px;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+.penalty-section {
+  margin-top: 12px;
+  font-size: 10px;
+}
+.penalty-section h4 {
+  font-weight: bold;
+  text-decoration: underline;
+  margin-bottom: 4px;
+  font-size: 11px;
+}
+.penalty-section p { margin-bottom: 2px; }
+.final-score-box {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 12px;
+  gap: 8px;
+}
+.final-score-box label { font-weight: bold; font-size: 13px; }
+.final-score-box .score-input {
+  width: 80px; height: 30px;
+  border: 2px solid var(--border);
+  text-align: center;
+  font-size: 14px;
+  font-weight: bold;
+}
+.signature-line {
+  margin-top: 24px;
+  text-align: center;
+  font-size: 11px;
+}
+.freestyle-calc {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+}
+.freestyle-calc td {
+  padding: 4px 8px;
+  font-size: 11px;
+}
+.freestyle-calc td.calc-label { text-align: left; border: 1px solid var(--border); }
+.freestyle-calc td.calc-unit { text-align: center; width: 60px; border: 1px solid var(--border); }
+.freestyle-calc td.calc-value { text-align: center; width: 80px; border: 1px solid var(--border); background: var(--input-bg); }
+.tiebreaker {
+  font-size: 10px;
+  font-style: italic;
+  margin-top: 8px;
+  border: 1px solid var(--border);
+  padding: 6px;
+}
+.quality-table td.assessment { width: 200px; }
+.quality-table td.commentary { width: 200px; background: var(--input-bg); }
+.quality-table td.mark-col { width: 60px; text-align: center; background: var(--input-bg); }
+.notes { font-size: 10px; margin-top: 8px; }
+.notes p { margin-bottom: 2px; }
+.general-remarks {
+  border: 1px solid var(--border);
+  min-height: 60px;
+  padding: 6px;
+  margin-bottom: 12px;
+  font-style: italic;
+  font-size: 10px;
+}
+</style>
+</head>
+<body>
+<div class="appendix">Appendix 'E'</div>
+
+<div class="sheet-header"><h1>MEDIUM / SENIOR I FREESTYLE</h1></div>
+
+<div class="meta-row">
+  <span class="field"><label>Event:</label> <input type="text"></span>
+  <span class="field"><label>Date:</label> <input type="date"></span>
+  <span class="field"><label>Judge:</label> <input type="text"></span>
+  <span><label>Position</label> <span class="position-box"></span></span>
+</div>
+<div class="meta-row">
+  <span class="field"><label>Competitor No:</label> <input type="text" style="width:50px"></span>
+  <span class="field"><label>Name:</label> <input type="text"></span>
+  <span class="field"><label>NF:</label> <input type="text" style="width:40px"></span>
+  <span class="field"><label>Horse:</label> <input type="text"></span>
+</div>
+<div class="info-line">
+  <span>Time Allowed: 4.30 – 5.00 mins</span>
+  <span>Minimum age of horse: 5 years</span>
+</div>
+
+<table>
+  <tr>
+  <th style="width:25px">No.</th>
+  <th>Technical Marks</th>
+  <th style="width:40px">Max<br>Marks</th>
+  <th style="width:50px">Judges<br>Mark (10)</th>
+  <th style="width:40px">Coeff.</th>
+  <th style="width:50px">Final<br>Mark</th>
+  <th style="min-width:100px">Remarks</th>
+</tr>
+  <tr>
+  <td class="movement-num">1</td>
+  <td class="test-desc">The entrance and halts at the beginning and the end of the test</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="num"></td>
+  <td class="mark-input"></td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="movement-num">2</td>
+  <td class="test-desc">Free walk on a long rein (minimum 20m consecutive)</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="num">2</td>
+  <td class="mark-input"></td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="movement-num">3</td>
+  <td class="test-desc">Medium walk (minimum 10m)</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="num"></td>
+  <td class="mark-input"></td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="movement-num">4</td>
+  <td class="test-desc">Turn on the haunches Left and proceed in medium walk</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="num"></td>
+  <td class="mark-input"></td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="movement-num">5</td>
+  <td class="test-desc">Turn on the haunches Right and proceed in medium walk</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="num"></td>
+  <td class="mark-input"></td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="movement-num">6</td>
+  <td class="test-desc">Medium trot</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="num">2</td>
+  <td class="mark-input"></td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="movement-num">7</td>
+  <td class="test-desc">Collected trot including shoulder-in right</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="num"></td>
+  <td class="mark-input"></td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="movement-num">8</td>
+  <td class="test-desc">Collected trot including shoulder-in left</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="num"></td>
+  <td class="mark-input"></td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="movement-num">9</td>
+  <td class="test-desc">Medium canter</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="num">2</td>
+  <td class="mark-input"></td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="movement-num">10</td>
+  <td class="test-desc">Counter canter - right</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="num">2</td>
+  <td class="mark-input"></td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="movement-num">11</td>
+  <td class="test-desc">Counter canter - left</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="num">2</td>
+  <td class="mark-input"></td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="movement-num">12</td>
+  <td class="test-desc">Simple change of lead from left to right from collected canter</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="num">2</td>
+  <td class="mark-input"></td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="movement-num">13</td>
+  <td class="test-desc">Simple change of lead from right to left from collected canter</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="num">2</td>
+  <td class="mark-input"></td>
+  <td class="remarks"></td>
+</tr>
+  <tr class="total-row">
+    <td></td>
+    <td style="text-align:right"><strong>Total for Technical Execution</strong></td>
+    <td class="num"><strong>200</strong></td>
+    <td></td><td></td><td class="mark-input"></td><td></td>
+  </tr>
+  <tr class="total-row">
+    <td></td>
+    <td style="text-align:right"><strong>Total points for technical execution</strong></td>
+    <td></td><td></td><td></td><td class="mark-input"></td><td></td>
+  </tr>
+</table>
+
+<div class="general-remarks"><em>Note: Scoring - Refer to Guidelines for Judges – FEI Freestyle tests</em><br>Remarks:</div>
+
+
+<table>
+  <tr>
+    <th>Artistic Marks<br><span style="font-weight:normal;font-size:9px">(0.1 decimals may be given)</span></th>
+    <th style="width:40px">Max<br>Marks</th>
+    <th style="width:50px">Judges<br>Mark (10)</th>
+    <th style="width:40px">Coeff.</th>
+    <th style="width:50px">Final<br>Mark</th>
+    <th style="min-width:100px">Remarks</th>
+  </tr>
+  <tr>
+  <td class="test-desc">Rhythm, energy and elasticity</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="num">4</td>
+  <td class="mark-input"></td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="test-desc">Harmony between rider and horse</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="num">4</td>
+  <td class="mark-input"></td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="test-desc">Choreography. Use of arena. Inventiveness</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="num">4</td>
+  <td class="mark-input"></td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="test-desc">Degree of difficulty. Calculated risks</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="num">4</td>
+  <td class="mark-input"></td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="test-desc">Music and interpretation of the music</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="num">4</td>
+  <td class="mark-input"></td>
+  <td class="remarks"></td>
+</tr>
+  <tr class="total-row">
+    <td style="text-align:right"><strong>Total marks for Artistic presentation</strong></td>
+    <td class="num"><strong>200</strong></td>
+    <td></td><td></td><td class="mark-input"></td><td></td>
+  </tr>
+</table>
+
+
+<table class="freestyle-calc">
+  <tr><td class="calc-label">Total marks for technical execution</td><td class="calc-unit">Points</td><td class="calc-value"></td></tr>
+  <tr><td class="calc-label"><strong>Total marks for Technical execution in %</strong><br>(Total points divided by 2)</td><td class="calc-unit">%</td><td class="calc-value"></td></tr>
+  <tr><td class="calc-label" style="font-size:10px">Other Penalties – Technical faults: 0.5% (percentage points) to be deducted per fault.</td><td></td><td></td></tr>
+  <tr><td class="calc-label">Total points for artistic presentation</td><td class="calc-unit">Points</td><td class="calc-value"></td></tr>
+  <tr><td class="calc-label"><strong>Total marks for artistic presentation in %</strong><br>(Total points divided by 2)<br>Time penalty: More than 5' or less than 4'30", deduct 0.5% from total artistic score</td><td class="calc-unit">%</td><td class="calc-value"></td></tr>
+  <tr><td class="calc-label"><strong>Final Score in %</strong><br>(Technical + Artistic marks in % divided by 2)</td><td class="calc-unit">%</td><td class="calc-value" style="border:2px solid var(--border)"></td></tr>
+</table>
+<div class="tiebreaker">In case two competitors have the same final score, the one with the higher marks for artistic impression will have the better placing.</div>
+
+<div class="signature-line">Signature of Judge: ________________________________</div>
+
+</body>
+</html>

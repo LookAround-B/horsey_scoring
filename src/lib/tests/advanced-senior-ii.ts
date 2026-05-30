@@ -1,0 +1,41 @@
+import { type Movement, type TestConfig } from "./types";
+
+export const movements: Movement[] = [
+  { no: "1",  letters: "A\nX\n\nXC",        test: "Enter in collected canter\nHalt - immobility - salute\nProceed in collected trot\nCollected trot",             coefficient: 1, directive: "Quality of paces, halt, and transitions. Straightness. Contact and poll." },
+  { no: "2",  letters: "C\nR",              test: "Track to the right\nVolte right (10 m Ø)",                                                                     coefficient: 1, directive: "Regularity and quality of trot, collection, and balance. Bend; size and shape of volte." },
+  { no: "3",  letters: "RP",                test: "Shoulder-in right",                                                                                            coefficient: 1, directive: "Regularity and quality of trot; bend and constant angle. Collection, balance, and fluency." },
+  { no: "4",  letters: "PL\nL\nR",          test: "Half volte right (10 m Ø)\nHalf pass to the right",                                                            coefficient: 2, directive: "Regularity and quality of trot, uniform bend, collection, balance, fluency, crossing of legs." },
+  { no: "5",  letters: "M\nG\n\n\nH",       test: "Turn left\nHalt - immobility\nRein back 4 steps and immediately proceed in collected trot\nTurn left",         coefficient: 1, directive: "Quality of halt and transitions. Throughness, fluency, straightness. Accuracy in number of diagonal steps." },
+  { no: "6",  letters: "S\nFF\nFA",         test: "Medium trot\nCollected trot\nCollected trot",                                                                   coefficient: 1, directive: "Regularity, elasticity, balance, engagement of hindquarters, lengthening of steps and frame. Both transitions. Collection." },
+  { no: "7",  letters: "A\nAKV",            test: "Medium walk\nMedium walk",                                                                                     coefficient: 1, directive: "Regularity, suppleness of back, activity, moderate lengthening of steps and frame, freedom of shoulder. Transition into walk." },
+  { no: "8",  letters: "VR",                test: "Extended walk",                                                                                                 coefficient: 2, directive: "Regularity, suppleness of back, activity, overtrack, freedom of shoulder, stretching to the bit." },
+  { no: "9",  letters: "RMG\nBetween G&H",  test: "[Collected walk]\nHalf pirouette to the left",                                                                 coefficient: 1, directive: "Regularity, activity, collection, size, flexion, and bend of half pirouette. Forward tendency, maintenance of fourbeat." },
+  { no: "10", letters: "Between G&M",       test: "Half pirouette to the right",                                                                                  coefficient: 1, directive: "Regularity, activity, collection, size, flexion, and bend of half pirouette. Forward tendency, maintenance of fourbeat." },
+  { no: "11", letters: "",                  test: "The collected walk R–M–G–(H)–G–(M)–G",                                                                        coefficient: 1, directive: "Regularity, suppleness of the back, shortening and heightening of steps, activity, self-carriage." },
+  { no: "12", letters: "G\nH\nS",           test: "Proceed in collected trot\nTurn left\nVolte left (10 m Ø)",                                                    coefficient: 1, directive: "Regularity and quality of trot, collection, and balance. Bend; size and shape of volte." },
+  { no: "13", letters: "SV",               test: "Shoulder-in left",                                                                                              coefficient: 1, directive: "Regularity and quality of trot; bend and constant angle. Collection, balance, and fluency." },
+  { no: "14", letters: "VL\nLS\nSHCM",     test: "Half volte left (10 m Ø)\nHalf pass to the left\nCollected trot",                                              coefficient: 2, directive: "Regularity and quality of trot, uniform bend, collection, balance, fluency, crossing of legs." },
+  { no: "15", letters: "MXK\nK",           test: "Extended trot\nCollected trot",                                                                                 coefficient: 1, directive: "Regularity, elasticity, balance, energy of hindquarters, overtrack. Lengthening of frame. Differentiation from medium trot." },
+  { no: "16", letters: "\nKA",             test: "Transitions at M and K\nThe collected trot",                                                                    coefficient: 1, directive: "Maintenance of rhythm, fluency, precise and smooth execution of transitions. Change of frame. Collection." },
+  { no: "17", letters: "A",               test: "Proceed in collected canter left",                                                                               coefficient: 1, directive: "Precise execution and fluency of transition. Quality of canter." },
+  { no: "18", letters: "AF\nP\nP\nL\nV",  test: "[Collected canter]\n[Turn left]\nFlying change of leg\n[Turn right]",                                           coefficient: 1, directive: "Correctness, balance, fluency, uphill tendency, straightness of flying change." },
+  { no: "19", letters: "",                test: "The collected canter A–F–P–V–E",                                                                                 coefficient: 1, directive: "Quality of canter, collection, straightness." },
+  { no: "20", letters: "E\nG\nC",         test: "Half pass to the right\nTrack to the right",                                                                    coefficient: 1, directive: "Quality of canter. Collection, balance, uniform bend, fluency." },
+  { no: "21", letters: "ME",              test: "Collected canter with flying change of leg at I",                                                                coefficient: 1, directive: "Correctness, balance, fluency, uphill tendency, straightness. Quality of canter before and after." },
+  { no: "22", letters: "EF",              test: "Collected canter with flying change of leg at L",                                                                coefficient: 1, directive: "Correctness, balance, fluency, uphill tendency, straightness. Quality of canter before and after." },
+  { no: "23", letters: "AKV\nV\nL\nP",   test: "[Collected canter]\n[Turn right]\nFlying change of leg\n[Turn left]",                                            coefficient: 1, directive: "Correctness, balance, fluency, uphill tendency, straightness of flying change." },
+  { no: "24", letters: "",               test: "The collected canter A–K–V–P–B",                                                                                  coefficient: 1, directive: "Quality of canter, collection, straightness." },
+  { no: "25", letters: "BG\nC",          test: "Half pass to the left\nTrack to the left",                                                                        coefficient: 1, directive: "Quality of canter. Collection, balance, uniform bend, fluency." },
+  { no: "26", letters: "HK\nK",          test: "Extended canter\nCollected canter",                                                                               coefficient: 1, directive: "Quality of canter, impulsion, uphill tendency, lengthening of strides and frame, straightness." },
+  { no: "27", letters: "\nKA",           test: "Transitions at H and K\nThe collected canter",                                                                    coefficient: 1, directive: "Precise, smooth execution of both transitions. Collection." },
+  { no: "28", letters: "A\nX",           test: "Down the centre line\nHalt - immobility - salute",                                                                coefficient: 1, directive: "Quality of pace, halt, and transition. Straightness. Contact and poll." },
+];
+
+export const config: TestConfig = {
+  label: "Advanced / Senior II",
+  appendix: "Appendix 'C'",
+  abbr: "AS2",
+  subtitle: "Time 5.40 min · Minimum age of horse: 6 years",
+  movements,
+  otherErrorPenalty: 0.5,
+};

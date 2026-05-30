@@ -1,0 +1,40 @@
+import { type Movement, type TestConfig } from "./types";
+
+export const movements: Movement[] = [
+  { no: "1",  letters: "A\nX",          test: "Enter in Collected canter\nHalf-immobility-salute\nProceed in collected trot",                                      coefficient: 1, directive: "The entry. The halt and the transitions from the canter to the halt and from the halt to the trot." },
+  { no: "2",  letters: "C\nR",          test: "Track to the right\nVolte to right 8m",                                                                             coefficient: 1, directive: "The collection. The bend. The regularity and the balance." },
+  { no: "3",  letters: "RP",            test: "Shoulder-in to the right",                                                                                          coefficient: 1, directive: "The angle and the bend of the horse. The collection. The regularity." },
+  { no: "4",  letters: "PL\nLR",        test: "Half volte to the right 10 m\nHalf-pass to the right",                                                             coefficient: 1, directive: "The correctness and the regularity. The carriage and the bend. The balance. The collection." },
+  { no: "5",  letters: "M\nG\nH",       test: "Turn left\nHalf-immobility 5 seconds\nProceed in collected trot\nTurn left",                                       coefficient: 1, directive: "The half, the immobility and transitions." },
+  { no: "6",  letters: "S",             test: "Volte to the left 8 m",                                                                                            coefficient: 1, directive: "The collection. The bend. The regularity and the balance." },
+  { no: "7",  letters: "SV",            test: "Shoulder-in to the left",                                                                                          coefficient: 1, directive: "The angle and the bend of the horse. The collection. The regularity." },
+  { no: "8",  letters: "VL\nLS\nSHCM",  test: "Half volte to the left 10 m\nHalf-pass to the left\nCollected trot",                                              coefficient: 1, directive: "The correctness and the regularity. The carriage and the bend. The balance. The collection." },
+  { no: "9",  letters: "MXK\nK",        test: "Medium trot\nCollected trot",                                                                                      coefficient: 1, directive: "The lengthening and regularity of the steps. The balance. The transitions." },
+  { no: "10", letters: "A",             test: "Halt-rein back 5 steps.\nImmediately proceed in collected trot",                                                   coefficient: 1, directive: "The halt. The rein back. The Transitions." },
+  { no: "11", letters: "FXH\nH",        test: "Extended trot\nCollected trot",                                                                                    coefficient: 1, directive: "The lengthening of the frame. The extension and regularity of the steps. The transitions." },
+  { no: "12", letters: "C\nBefore M\nM\nMCH", test: "Medium walk\nShorten the steps\nHalf pirouette to the right\nMedium walk",                                  coefficient: 1, directive: "The Shortening of the steps. The regularity of the half pirouette." },
+  { no: "13", letters: "Before H\nH",   test: "Shorten the steps\nHalf pirouette to the left",                                                                   coefficient: 1, directive: "The regularity of the half pirouette." },
+  { no: "14", letters: "",              test: "Medium walk (CMCH)",                                                                                               coefficient: 1, directive: "The lengthening and regularity of the steps." },
+  { no: "15", letters: "HCM\nMV",       test: "Change rein in extended walk",                                                                                     coefficient: 1, directive: "The lengthening of the frame and of the step. The regularity." },
+  { no: "16", letters: "V\nK\nKAF",    test: "Medium walk\nProceed in collected canter left\nCollected canter",                                                   coefficient: 1, directive: "The transition. The collection. The balance." },
+  { no: "17", letters: "FM\nM",         test: "Medium canter\nCollected canter",                                                                                  coefficient: 1, directive: "The lengthening. The Transitions" },
+  { no: "18", letters: "SI\nI\nIR",    test: "Half volte to the left 10 m\nSimple change of leg\nHalf volte to the right 10 m",                                  coefficient: 1, directive: "The transitions from canter to walk and from walk to canter." },
+  { no: "19", letters: "RXV\nVA",      test: "Change rein in collected canter\nCounter canter",                                                                   coefficient: 1, directive: "The balance. The counter canter." },
+  { no: "20", letters: "A",            test: "Flying change of leg",                                                                                              coefficient: 1, directive: "The flying change of leg" },
+  { no: "21", letters: "PXS\nSC",      test: "Change rein in collected canter",                                                                                   coefficient: 1, directive: "The balance. The collected canter." },
+  { no: "22", letters: "C",            test: "Flying change of leg",                                                                                              coefficient: 1, directive: "The flying change of leg." },
+  { no: "23", letters: "MF\nFAKV",    test: "Medium canter\nCollected canter",                                                                                    coefficient: 1, directive: "The lengthening. The transition." },
+  { no: "24", letters: "VL\nL\nLP",   test: "Half volte to the right 10 m\nSimple change of leg\nHalf volte to the left 10 m",                                   coefficient: 1, directive: "The transition from canter to walk and from walk to canter." },
+  { no: "25", letters: "PMC",          test: "Collected Canter",                                                                                                  coefficient: 1, directive: "The collection. The straightness." },
+  { no: "26", letters: "C\nHXF\nF",   test: "Collected trot\nExtended trot\nCollected trot",                                                                     coefficient: 1, directive: "The lengthening of the frame and regularity of the steps. The balance. The transitions." },
+  { no: "27", letters: "A\nX",         test: "Down the centre line\nHalt-immobility-salute",                                                                     coefficient: 1, directive: "The straightness, the transitions. The halt." },
+];
+
+export const config: TestConfig = {
+  label: "Advanced Medium",
+  appendix: "Appendix 'D'",
+  abbr: "AM",
+  subtitle: "Time 6.30 min · Minimum age of horse: 6 years",
+  movements,
+  otherErrorPenalty: 0.5,
+};

@@ -1,0 +1,50 @@
+import { type Movement, type TestConfig } from "./types";
+
+export const movements: Movement[] = [
+  { no: "1",  letters: "A\nX",           test: "Enter in collected canter\nHalt - immobility - salute\nProceed in collected trot",              coefficient: 1, directive: "The quality and straightness of canter, halt, transitions and trot." },
+  { no: "2",  letters: "C\nHE",          test: "Track to the left\nShoulder-in left",                                                           coefficient: 1, directive: "The balance, angle, bend and regularity." },
+  { no: "3",  letters: "EX\nXH\nHCM",   test: "Half circle left 10 m\nHalf-pass to the left\nCollected trot",                                  coefficient: 2, directive: "The regularity, bend and balance. The correct positioning and fluency of the half-pass." },
+  { no: "4",  letters: "MB",             test: "Shoulder-in right",                                                                             coefficient: 1, directive: "The balance, angle, bend and regularity." },
+  { no: "5",  letters: "BX\nXM",        test: "Half circle right 10 m\nHalf-pass to the right",                                                 coefficient: 2, directive: "The regularity, bend and balance. The correct positioning and fluency of half-pass." },
+  { no: "6",  letters: "MCH\nHXF\nFA",  test: "Collected trot\nExtended trot\nCollected trot",                                                  coefficient: 1, directive: "The extension and regularity of the steps. The lengthening of frame." },
+  { no: "7",  letters: "",              test: "Transitions at H and F",                                                                          coefficient: 1, directive: "The clear definition and fluency." },
+  { no: "8",  letters: "AKR",           test: "Extended walk",                                                                                   coefficient: 2, directive: "The regularity, groundcover and lengthening of frame. The straightness." },
+  { no: "9",  letters: "RM\nM\nBetween G&H", test: "Medium walk\nTurn left\nCollect the walk and half pirouette to the left then medium walk",  coefficient: 1, directive: "The regularity, activity, bend and dimension of half pirouette." },
+  { no: "10", letters: "Between G&M",   test: "Collect the walk, then half pirouette to the right",                                             coefficient: 1, directive: "The regularity, activity, bend and dimension of half pirouette." },
+  { no: "11", letters: "",             test: "The medium walk",                                                                                  coefficient: 1, directive: "The regularity, activity and groundcover of steps." },
+  { no: "12", letters: "G\nGHS",       test: "Collected canter left\nCollected canter",                                                          coefficient: 1, directive: "The straightness and fluency of the transition. The quality of the canter." },
+  { no: "13", letters: "SEK\nK",       test: "Medium canter\nCollected canter",                                                                  coefficient: 1, directive: "The straightness, extension and regularity of steps. The lengthening of frame." },
+  { no: "14", letters: "",            test: "Transitions at S and K",                                                                            coefficient: 1, directive: "The clear definition and fluency." },
+  { no: "15", letters: "KAF\nFS",     test: "Collected canter\nHalf-pass to the left",                                                           coefficient: 1, directive: "The correct positioning, regularity and fluency." },
+  { no: "16", letters: "H",           test: "Flying change of leg",                                                                              coefficient: 1, directive: "The correctness, straightness and fluency of the flying change." },
+  { no: "17", letters: "HCM\nMV",    test: "Collected canter\nHalf-pass to the right",                                                           coefficient: 1, directive: "The correct positioning, regularity and fluency." },
+  { no: "18", letters: "K",          test: "Flying change of leg",                                                                               coefficient: 1, directive: "The correctness, straightness and fluency of the flying change." },
+  { no: "19", letters: "KAF\nFM\nM", test: "Collected canter\nExtended canter\nCollected canter",                                               coefficient: 1, directive: "The regularity, groundcover, straightness and lengthening of frame." },
+  { no: "20", letters: "",          test: "Transitions at F and M",                                                                              coefficient: 1, directive: "The clear definition and fluency" },
+  { no: "21", letters: "MCHS\nE",   test: "Collected canter\nHalf working pirouette 3–5 m",                                                     coefficient: 2, directive: "Collection, self-carriage and balance, flexion and bend, number of strides (3–5), quality and straightness of the canter before and after" },
+  { no: "22", letters: "H",         test: "Flying change of leg",                                                                               coefficient: 1, directive: "The correctness, straightness and fluency of the flying change." },
+  { no: "23", letters: "HCMR\nB",  test: "Collected canter\nHalf working pirouette 3–5 m",                                                      coefficient: 2, directive: "Collection, self-carriage and balance, flexion and bend, number of strides (3–5), quality and straightness of the canter before and after" },
+  { no: "24", letters: "M",        test: "Flying change of leg",                                                                                coefficient: 1, directive: "The correctness, straightness and fluency of the flying change." },
+  { no: "25", letters: "H",        test: "Collected trot",                                                                                      coefficient: 1, directive: "The transition." },
+  { no: "26", letters: "SI\nIG\nG", test: "Half-circle 10m left\nCollected trot\nHalt - immobility - salute",                                  coefficient: 1, directive: "The bend, the straightness, and immobility." },
+];
+
+export const config: TestConfig = {
+  label: "FEI World Dressage Challenge – Advanced",
+  appendix: "WCHA-D-ADVANCED-2011",
+  abbr: "WDC Adv",
+  subtitle: "Time: 5.10 min · Minimum age of horse: 6 years",
+  movements,
+  collectives: [
+    { no: "1", label: "Paces (freedom and regularity)",                                                                                                                 coefficient: 1 },
+    { no: "2", label: "Impulsion (desire to move forward, elasticity of the steps, suppleness of the back and engagement of the hind quarters)",                       coefficient: 1 },
+    { no: "3", label: "Submission (attention and confidence; harmony, lightness and ease of the movements; acceptance of the bridle and lightness of the forehand)",   coefficient: 2 },
+    { no: "4", label: "Rider's position and seat; correctness and effect of the aids",                                                                                 coefficient: 2 },
+  ],
+  courseErrors: [
+    { label: "No error",           value: 0 },
+    { label: "1st error · −2 pts", value: 2 },
+    { label: "2nd error · −4 pts", value: 4 },
+    { label: "3rd error · Elim.",  value: -1 },
+  ],
+};

@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FEI World Dressage Challenge – Advanced Test</title>
+<style>
+:root {
+  --bg: #ffffff;
+  --text: #1a1a1a;
+  --border: #333333;
+  --header-bg: #f0f0f0;
+  --input-bg: #fafafa;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: 11px;
+  color: var(--text);
+  background: var(--bg);
+  padding: 20px;
+  max-width: 920px;
+  margin: 0 auto;
+}
+.sheet-header { text-align: center; margin-bottom: 14px; }
+.sheet-header h1 { font-size: 18px; text-decoration: underline; margin-bottom: 4px; }
+.sheet-header .subtitle { font-size: 11px; font-weight: bold; margin-bottom: 8px; }
+.appendix { font-size: 12px; font-weight: bold; text-align: right; margin-bottom: 4px; }
+.doc-id { font-size: 9px; color: #666; text-align: right; margin-bottom: 4px; }
+.meta-row {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 4px; font-size: 11px;
+}
+.meta-row .field { flex: 1; }
+.meta-row .field input {
+  border: none; border-bottom: 1px solid var(--border);
+  padding: 2px 4px; font-size: 11px; background: transparent; min-width: 100px;
+}
+.position-box { width: 20px; height: 20px; border: 1px solid var(--border); display: inline-block; vertical-align: middle; }
+.info-line { font-size: 10px; margin-bottom: 12px; display: flex; justify-content: space-between; }
+table { width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 11px; }
+th, td { border: 1px solid var(--border); padding: 4px 6px; vertical-align: top; text-align: left; }
+th { background: var(--header-bg); font-weight: bold; text-align: center; font-size: 10px; }
+td.num { text-align: center; width: 40px; }
+td.mark-input { text-align: center; width: 40px; background: var(--input-bg); }
+td.movement-num { width: 25px; text-align: center; font-weight: bold; }
+td.letters { width: 70px; font-weight: bold; }
+td.test-desc { min-width: 180px; }
+td.directive { min-width: 140px; font-size: 10px; }
+td.remarks { min-width: 80px; }
+.total-row td { font-weight: bold; }
+.collective-section { margin-top: 16px; }
+.collective-section h3 { font-size: 12px; font-weight: bold; margin-bottom: 8px; }
+.penalty-section { margin-top: 12px; font-size: 10px; }
+.penalty-section h4 { font-weight: bold; text-decoration: underline; margin-bottom: 4px; font-size: 11px; }
+.penalty-section p { margin-bottom: 2px; }
+.final-score-box {
+  display: flex; align-items: center; justify-content: flex-end;
+  margin-top: 12px; gap: 8px;
+}
+.final-score-box label { font-weight: bold; font-size: 13px; }
+.final-score-box .score-input {
+  width: 80px; height: 30px; border: 2px solid var(--border);
+  text-align: center; font-size: 14px; font-weight: bold;
+}
+.signature-line { margin-top: 24px; text-align: center; font-size: 11px; }
+.copyright { font-size: 9px; color: #666; margin-top: 16px; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="sheet-header">
+  <h1>FEI WORLD DRESSAGE CHALLENGE – ADVANCED TEST</h1>
+</div>
+<div class="doc-id">WCHA-D-ADVANCED-2011</div>
+<div class="meta-row">
+  <span class="field"><label>Event:</label> <input type="text"></span>
+  <span class="field"><label>Date:</label> <input type="date"></span>
+  <span class="field"><label>Judge:</label> <input type="text"></span>
+  <span><label>Position</label> <span class="position-box"></span></span>
+</div>
+<div class="meta-row">
+  <span class="field"><label>Competitor No:</label> <input type="text" style="width:50px"></span>
+  <span class="field"><label>Name:</label> <input type="text"></span>
+  <span class="field"><label>NF:</label> <input type="text" style="width:40px"></span>
+  <span class="field"><label>Horse:</label> <input type="text"></span>
+</div>
+<div class="info-line">
+  <span>Time: 5.10 min (for information only)</span>
+  <span>Minimum age of horse: 6 years</span>
+</div>
+
+<table>
+  <tr>
+    <th>No.</th><th>Letters</th><th>Test</th>
+    <th>Marks</th><th>Mark</th><th>Correction</th><th>Coeff.</th><th>Final<br>Mark</th>
+    <th>Directive ideas</th><th>Remarks</th>
+  </tr>
+  <tr>
+  <td class="movement-num">1.</td>
+  <td class="letters">A<br>X</td>
+  <td class="test-desc">Enter in collected canter<br>Halt - immobility - salute<br>Proceed in collected trot</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="mark-input"></td>
+  <td class="num"></td>
+  <td class="mark-input"></td>
+  <td class="directive">The quality and straightness of canter, halt, transitions and trot.</td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="movement-num">2.</td>
+  <td class="letters">C<br>HE</td>
+  <td class="test-desc">Track to the left<br>Shoulder-in left</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="mark-input"></td>
+  <td class="num"></td>
+  <td class="mark-input"></td>
+  <td class="directive">The balance, angle, bend and regularity.</td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="movement-num">3.</td>
+  <td class="letters">EX<br>XH<br>HCM</td>
+  <td class="test-desc">Half circle left 10 m<br>Half-pass to the left<br>Collected trot</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="mark-input"></td>
+  <td class="num">2</td>
+  <td class="mark-input"></td>
+  <td class="directive">The regularity, bend and balance. The correct positioning and fluency of the half-pass.</td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="movement-num">4.</td>
+  <td class="letters">MB</td>
+  <td class="test-desc">Shoulder-in right</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="mark-input"></td>
+  <td class="num"></td>
+  <td class="mark-input"></td>
+  <td class="directive">The balance, angle, bend and regularity.</td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="movement-num">5.</td>
+  <td class="letters">BX<br>XM</td>
+  <td class="test-desc">Half circle right 10 m<br>Half-pass to the right</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="mark-input"></td>
+  <td class="num">2</td>
+  <td class="mark-input"></td>
+  <td class="directive">The regularity, bend and balance. The correct positioning and fluency of half-pass.</td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="movement-num">6.</td>
+  <td class="letters">MCH<br>HXF<br>FA</td>
+  <td class="test-desc">Collected trot<br>Extended trot<br>Collected trot</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="mark-input"></td>
+  <td class="num"></td>
+  <td class="mark-input"></td>
+  <td class="directive">The extension and regularity of the steps. The lengthening of frame.</td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="movement-num">7.</td>
+  <td class="letters"></td>
+  <td class="test-desc">Transitions at H and F</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="mark-input"></td>
+  <td class="num"></td>
+  <td class="mark-input"></td>
+  <td class="directive">The clear definition and fluency.</td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="movement-num">8.</td>
+  <td class="letters">AKR</td>
+  <td class="test-desc">Extended walk</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="mark-input"></td>
+  <td class="num">2</td>
+  <td class="mark-input"></td>
+  <td class="directive">The regularity, groundcover and lengthening of frame. The straightness.</td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="movement-num">9.</td>
+  <td class="letters">RM<br>M<br>Between G&amp;H</td>
+  <td class="test-desc">Medium walk<br>Turn left<br>Collect the walk and half pirouette to the left then medium walk</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="mark-input"></td>
+  <td class="num"></td>
+  <td class="mark-input"></td>
+  <td class="directive">The regularity, activity, bend and dimension of half pirouette.</td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="movement-num">10.</td>
+  <td class="letters">Between G&amp;M</td>
+  <td class="test-desc">Collect the walk, then half pirouette to the right</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="mark-input"></td>
+  <td class="num"></td>
+  <td class="mark-input"></td>
+  <td class="directive">The regularity, activity, bend and dimension of half pirouette.</td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="movement-num">11.</td>
+  <td class="letters"></td>
+  <td class="test-desc">The medium walk</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="mark-input"></td>
+  <td class="num"></td>
+  <td class="mark-input"></td>
+  <td class="directive">The regularity, activity and groundcover of steps.</td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="movement-num">12.</td>
+  <td class="letters">G<br>GHS</td>
+  <td class="test-desc">Collected canter left<br>Collected canter</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="mark-input"></td>
+  <td class="num"></td>
+  <td class="mark-input"></td>
+  <td class="directive">The straightness and fluency of the transition. The quality of the canter.</td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="movement-num">13.</td>
+  <td class="letters">SEK<br>K</td>
+  <td class="test-desc">Medium canter<br>Collected canter</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="mark-input"></td>
+  <td class="num"></td>
+  <td class="mark-input"></td>
+  <td class="directive">The straightness, extension and regularity of steps. The lengthening of frame.</td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="movement-num">14.</td>
+  <td class="letters"></td>
+  <td class="test-desc">Transitions at S and K</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="mark-input"></td>
+  <td class="num"></td>
+  <td class="mark-input"></td>
+  <td class="directive">The clear definition and fluency.</td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="movement-num">15.</td>
+  <td class="letters">KAF<br>FS</td>
+  <td class="test-desc">Collected canter<br>Half-pass to the left</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="mark-input"></td>
+  <td class="num"></td>
+  <td class="mark-input"></td>
+  <td class="directive">The correct positioning, regularity and fluency.</td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="movement-num">16.</td>
+  <td class="letters">H</td>
+  <td class="test-desc">Flying change of leg</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="mark-input"></td>
+  <td class="num"></td>
+  <td class="mark-input"></td>
+  <td class="directive">The correctness, straightness and fluency of the flying change.</td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="movement-num">17.</td>
+  <td class="letters">HCM<br>MV</td>
+  <td class="test-desc">Collected canter<br>Half-pass to the right</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="mark-input"></td>
+  <td class="num"></td>
+  <td class="mark-input"></td>
+  <td class="directive">The correct positioning, regularity and fluency.</td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="movement-num">18.</td>
+  <td class="letters">K</td>
+  <td class="test-desc">Flying change of leg</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="mark-input"></td>
+  <td class="num"></td>
+  <td class="mark-input"></td>
+  <td class="directive">The correctness, straightness and fluency of the flying change.</td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="movement-num">19.</td>
+  <td class="letters">KAF<br>FM<br>M</td>
+  <td class="test-desc">Collected canter<br>Extended canter<br>Collected canter</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="mark-input"></td>
+  <td class="num"></td>
+  <td class="mark-input"></td>
+  <td class="directive">The regularity, groundcover, straightness and lengthening of frame.</td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="movement-num">20.</td>
+  <td class="letters"></td>
+  <td class="test-desc">Transitions at F and M</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="mark-input"></td>
+  <td class="num"></td>
+  <td class="mark-input"></td>
+  <td class="directive">The clear definition and fluency</td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="movement-num">21.</td>
+  <td class="letters">MCHS<br>E</td>
+  <td class="test-desc">Collected canter<br>Half working pirouette 3-5 m</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="mark-input"></td>
+  <td class="num">2</td>
+  <td class="mark-input"></td>
+  <td class="directive">Collection, self-carriage and balance, flexion and bend, number of strides (3-5), quality and straightness of the canter before and after</td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="movement-num">22.</td>
+  <td class="letters">H</td>
+  <td class="test-desc">Flying change of leg</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="mark-input"></td>
+  <td class="num"></td>
+  <td class="mark-input"></td>
+  <td class="directive">The correctness, straightness and fluency of the flying change.</td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="movement-num">23.</td>
+  <td class="letters">HCMR<br>B</td>
+  <td class="test-desc">Collected canter<br>Half working pirouette 3-5 m</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="mark-input"></td>
+  <td class="num">2</td>
+  <td class="mark-input"></td>
+  <td class="directive">Collection, self-carriage and balance, flexion and bend, number of strides (3-5), quality and straightness of the canter before and after</td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="movement-num">24.</td>
+  <td class="letters">M</td>
+  <td class="test-desc">Flying change of leg</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="mark-input"></td>
+  <td class="num"></td>
+  <td class="mark-input"></td>
+  <td class="directive">The correctness, straightness and fluency of the flying change.</td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="movement-num">25.</td>
+  <td class="letters">H</td>
+  <td class="test-desc">Collected trot</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="mark-input"></td>
+  <td class="num"></td>
+  <td class="mark-input"></td>
+  <td class="directive">The transition.</td>
+  <td class="remarks"></td>
+</tr><tr>
+  <td class="movement-num">26.</td>
+  <td class="letters">SI<br>IG<br>G</td>
+  <td class="test-desc">Half-circle 10m left<br>Collected trot<br>Halt - immobility - salute</td>
+  <td class="num">10</td>
+  <td class="mark-input"></td>
+  <td class="mark-input"></td>
+  <td class="num"></td>
+  <td class="mark-input"></td>
+  <td class="directive">The bend, the straightness, and immobility.</td>
+  <td class="remarks"></td>
+</tr>
+  <tr><td></td><td></td><td>Leave arena at A in walk on a long rein</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr class="total-row"><td></td><td colspan="2" style="text-align:right"><strong>Total</strong></td><td class="num"><strong>310</strong></td><td class="mark-input"></td><td></td><td></td><td></td><td></td><td></td></tr>
+</table>
+
+<div class="collective-section">
+  <h3>Collective mark:</h3>
+  <table>
+    <tr><th>No.</th><th>Collective Mark</th><th>Marks</th><th>Mark</th><th>Correction</th><th>Coeff.</th><th>Final Mark</th><th>General Remarks</th></tr>
+    <tr>
+      <td class="movement-num">1.</td>
+      <td><strong>Paces</strong> (freedom and regularity)</td>
+      <td class="num">10</td><td class="mark-input"></td><td class="mark-input"></td><td class="num">1</td><td class="mark-input"></td>
+      <td class="remarks" rowspan="4"></td>
+    </tr>
+    <tr>
+      <td class="movement-num">2.</td>
+      <td><strong>Impulsion</strong> (desire to move forward, elasticity of the steps, suppleness of the back and engagement of the hind quarters)</td>
+      <td class="num">10</td><td class="mark-input"></td><td class="mark-input"></td><td class="num">1</td><td class="mark-input"></td>
+    </tr>
+    <tr>
+      <td class="movement-num">3.</td>
+      <td><strong>Submission</strong> (attention and confidence; harmony, lightness and ease of the movements; acceptance of the bridle and lightness of the forehand)</td>
+      <td class="num">10</td><td class="mark-input"></td><td class="mark-input"></td><td class="num">2</td><td class="mark-input"></td>
+    </tr>
+    <tr>
+      <td class="movement-num">4.</td>
+      <td><strong>Rider's position and seat;</strong> correctness and effect of the aids</td>
+      <td class="num">10</td><td class="mark-input"></td><td class="mark-input"></td><td class="num">2</td><td class="mark-input"></td>
+    </tr>
+    <tr class="total-row">
+      <td></td><td style="text-align:right"><strong>Total</strong></td>
+      <td class="num"><strong>370</strong></td><td class="mark-input"></td><td></td><td></td><td></td><td></td>
+    </tr>
+  </table>
+</div>
+
+<div class="penalty-section">
+  <h4>To be deducted / penalty points</h4>
+  <p>1st Error = 2 points</p>
+  <p>2nd Error = 4 points</p>
+  <p>3rd Error = Elimination</p>
+  <p>List of errors and omissions, see Annex "Errors"</p>
+</div>
+
+<div class="final-score-box">
+  <label>TOTAL</label><input class="score-input" type="text">
+  <label>TOTAL SCORE in %:</label><input class="score-input" type="text">
+</div>
+
+<div class="signature-line">Signature of Judge: ________________________________</div>
+<div class="copyright">Edition 2011 © Fédération Equestre Internationale – Reproduction strictly reserved</div>
+
+</body>
+</html>
