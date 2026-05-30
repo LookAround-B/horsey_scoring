@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -33,6 +33,51 @@ function SessionStatusIcon({ status }: { status: ScoringSession["status"] }) {
 
 const EMPTY_RIDER_FORM = { name: "", nf: "", competitorNo: "", horse: "", horseNo: "" };
 
+/** A score sheet saved from the scoring page into localStorage["saved-sessions"]. */
+type SavedSession = {
+  id: string;
+  riderId: string | null;
+  testId: string;
+  testName?: string;
+  judgeName?: string | null;
+  riderName?: string;
+  competitorNo?: string;
+  horse?: string;
+  nf?: string;
+  event?: string;
+  eventDate?: string;
+  percentage: number;
+  eliminated?: boolean;
+  grandTotal?: number;
+  grandTotalMax?: number;
+  status: ScoringSession["status"];
+  savedAt?: string;
+};
+
+/** Unified shape consumed by the Saved Scores cards, built from either a dummy or a saved session. */
+type SessionCard = {
+  id: string;
+  testId: string;
+  testName: string;
+  riderName: string;
+  competitorNo: string;
+  horse: string;
+  nf: string;
+  eventName: string;
+  percentage: number;
+  eliminated: boolean;
+  status: ScoringSession["status"];
+  when: string;
+  source: "saved" | "demo";
+};
+
+function formatWhen(iso: string): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+}
+
 export default function HubPage() {
   const { user } = useAuth();
 
@@ -45,6 +90,69 @@ export default function HubPage() {
   const [riderForm, setRiderForm] = useState(EMPTY_RIDER_FORM);
   const [riderFormError, setRiderFormError] = useState("");
   const [riderFormSaving, setRiderFormSaving] = useState(false);
+  const [savedSessions, setSavedSessions] = useState<SavedSession[]>([]);
+
+  useEffect(() => {
+    const load = () => {
+      try {
+        const raw = localStorage.getItem("saved-sessions");
+        setSavedSessions(raw ? (JSON.parse(raw) as SavedSession[]) : []);
+      } catch { /* ignore */ }
+    };
+    load();
+    // Pick up scores saved from the scoring sheet (which opens in a separate tab).
+    window.addEventListener("storage", load);
+    window.addEventListener("focus", load);
+    return () => {
+      window.removeEventListener("storage", load);
+      window.removeEventListener("focus", load);
+    };
+  }, []);
+
+  // Unified, newest-first list combining sheets saved from the scoring page with the demo sessions.
+  const sessionCards = useMemo<SessionCard[]>(() => {
+    const fromSaved: SessionCard[] = [...savedSessions].reverse().map((s) => {
+      const rider = s.riderId ? allRiders.find((r) => r.id === s.riderId) : null;
+      return {
+        id: s.id,
+        testId: s.testId,
+        testName: s.testName || TEST_NAMES[s.testId] || s.testId,
+        riderName: s.riderName || rider?.name || "Unnamed rider",
+        competitorNo: s.competitorNo || rider?.competitorNo || "",
+        horse: s.horse || rider?.horse || "—",
+        nf: s.nf || rider?.nf || "",
+        eventName: s.event || "",
+        percentage: s.percentage,
+        eliminated: !!s.eliminated,
+        status: s.status,
+        when: formatWhen(s.savedAt ?? ""),
+        source: "saved",
+      };
+    });
+    const fromDemo: SessionCard[] = DUMMY_SESSIONS.map((s) => {
+      const rider = allRiders.find((r) => r.id === s.riderId);
+      const event = DUMMY_EVENTS.find((e) => e.id === s.eventId);
+      return {
+        id: s.id,
+        testId: s.testId,
+        testName: TEST_NAMES[s.testId] || s.testId,
+        riderName: rider?.name || "—",
+        competitorNo: rider?.competitorNo || "",
+        horse: rider?.horse || "—",
+        nf: rider?.nf || "",
+        eventName: event?.name || "",
+        percentage: s.percentage,
+        eliminated: false,
+        status: s.status,
+        when: formatWhen(s.createdAt),
+        source: "demo",
+      };
+    });
+    return [...fromSaved, ...fromDemo];
+  }, [savedSessions, allRiders]);
+
+  const filteredCards =
+    sessionFilter === "all" ? sessionCards : sessionCards.filter((c) => c.status === sessionFilter);
 
   if (!user) return null;
 
@@ -58,9 +166,6 @@ export default function HubPage() {
       r.horse.toLowerCase().includes(riderSearch.toLowerCase()) ||
       r.competitorNo.includes(riderSearch)
   );
-
-  const filteredSessions =
-    sessionFilter === "all" ? allSessions : allSessions.filter((s) => s.status === sessionFilter);
 
   const roleDash = ROLE_DASHBOARD[user.role];
 
@@ -343,56 +448,70 @@ export default function HubPage() {
                 className={`text-xs px-3 py-1.5 rounded-md border transition-colors ${sessionFilter === f ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-muted"}`}
               >
                 {f.charAt(0).toUpperCase() + f.slice(1)}
-                {f !== "all" && <span className="ml-1.5 opacity-60">{allSessions.filter((s) => s.status === f).length}</span>}
+                {f !== "all" && <span className="ml-1.5 opacity-60">{sessionCards.filter((c) => c.status === f).length}</span>}
               </button>
             ))}
-            <span className="text-xs text-muted-foreground ml-auto">{filteredSessions.length} session{filteredSessions.length !== 1 ? "s" : ""}</span>
+            <span className="text-xs text-muted-foreground ml-auto">{filteredCards.length} score{filteredCards.length !== 1 ? "s" : ""}</span>
           </div>
 
-          <div className="bg-card border border-border rounded-xl shadow-soft overflow-hidden">
-            {filteredSessions.length === 0 ? (
-              <div className="py-12 text-center text-sm text-muted-foreground">No sessions found.</div>
-            ) : (
-              <table className="w-full text-sm">
-                <thead className="bg-muted text-[11px] uppercase tracking-wider text-muted-foreground">
-                  <tr>
-                    <th className="text-left px-5 py-3">Rider</th>
-                    <th className="text-left px-5 py-3">Horse</th>
-                    <th className="text-left px-5 py-3">Test</th>
-                    <th className="text-left px-5 py-3">Event</th>
-                    <th className="text-center px-5 py-3">Score</th>
-                    <th className="text-center px-5 py-3">Status</th>
-                    <th className="text-left px-5 py-3">Sheet</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {filteredSessions.map((s) => {
-                    const rider = allRiders.find((r) => r.id === s.riderId);
-                    const event = DUMMY_EVENTS.find((e) => e.id === s.eventId);
-                    return (
-                      <tr key={s.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="px-5 py-3 font-medium">{rider?.name ?? "—"}</td>
-                        <td className="px-5 py-3 text-muted-foreground">{rider?.horse ?? "—"}</td>
-                        <td className="px-5 py-3 text-muted-foreground">{TEST_NAMES[s.testId] ?? s.testId}</td>
-                        <td className="px-5 py-3 text-muted-foreground text-xs max-w-[140px] truncate">{event?.name ?? "—"}</td>
-                        <td className="px-5 py-3 text-center font-display tabular-nums text-highlight">{s.percentage > 0 ? `${s.percentage.toFixed(2)}%` : "—"}</td>
-                        <td className="px-5 py-3 text-center">
-                          <span className="flex items-center justify-center gap-1.5 text-[10px] uppercase tracking-wider font-medium">
-                            <SessionStatusIcon status={s.status} /> {s.status}
-                          </span>
-                        </td>
-                        <td className="px-5 py-3">
-                          <Link href={`/scoring/${s.testId}`} target="_blank" className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
-                            Open <ExternalLink className="h-3 w-3" />
-                          </Link>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            )}
-          </div>
+          {filteredCards.length === 0 ? (
+            <div className="bg-card border border-border rounded-xl shadow-soft py-16 text-center">
+              <FileText className="h-7 w-7 mx-auto mb-3 text-muted-foreground/40" />
+              <p className="text-sm text-muted-foreground">No saved scores yet.</p>
+              <p className="text-xs text-muted-foreground/70 mt-1">Open a scoring sheet, fill it in, and hit <span className="font-medium text-foreground">Save Score</span> — it’ll show up here.</p>
+              <button onClick={() => setTab("sheets")} className="mt-4 inline-flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity">
+                <Layers className="h-3.5 w-3.5" /> Browse scoring sheets
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredCards.map((c) => (
+                <div key={c.id} className="bg-card border border-border rounded-xl p-5 shadow-soft flex flex-col gap-4 hover:border-foreground/20 transition-colors">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-1 flex items-center gap-1.5">
+                        {c.testName}
+                        {c.source === "saved" && <span className="text-highlight normal-case tracking-normal font-medium">· New</span>}
+                      </div>
+                      <div className="font-display text-xl tracking-tight truncate">{c.riderName}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5 truncate">
+                        {c.competitorNo && <span className="font-mono">#{c.competitorNo}</span>}
+                        {c.competitorNo && (c.horse !== "—" || c.nf) ? " · " : ""}
+                        {c.horse !== "—" ? c.horse : ""}{c.nf ? ` (${c.nf})` : ""}
+                      </div>
+                    </div>
+                    <span className={`shrink-0 flex items-center gap-1 text-[10px] uppercase tracking-wider font-medium px-2 py-0.5 rounded-full ${STATUS_CHIP[c.status]}`}>
+                      <SessionStatusIcon status={c.status} /> {c.status}
+                    </span>
+                  </div>
+
+                  <div className="flex items-end justify-between gap-3">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Final score</div>
+                      <div className="font-display text-3xl tabular-nums text-highlight leading-none mt-1">
+                        {c.eliminated ? <span className="text-destructive text-xl">Eliminated</span> : c.percentage > 0 ? `${c.percentage.toFixed(2)}%` : "—"}
+                      </div>
+                    </div>
+                    {c.eventName && (
+                      <div className="text-right min-w-0">
+                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Event</div>
+                        <div className="text-xs mt-1 truncate max-w-[140px]">{c.eventName}</div>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-between mt-auto pt-3 border-t border-border">
+                    <span className="text-xs text-muted-foreground">{c.when || "—"}</span>
+                    <Link href={c.source === "saved" ? `/scoring/${c.testId}?session=${c.id}` : `/scoring/${c.testId}`} target="_blank"
+                      className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+                    >
+                      Open <ExternalLink className="h-3 w-3" />
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

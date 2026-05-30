@@ -7,6 +7,19 @@ import { useParams } from "next/navigation";
 import { type Rider, DUMMY_RIDERS } from "@/lib/dummy-data";
 import { useAuth } from "@/contexts/AuthContext";
 import { TEST_CONFIGS, COURSE_ERRORS, type Movement, type CollectiveCriteria } from "@/lib/tests";
+import { ChevronDown, Check, Calendar as CalendarIcon } from "lucide-react";
+import { format, parse } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+
+/* ---------- dummy option lists for the sheet header dropdowns ---------- */
+const JUDGE_OPTIONS = [
+  "Dr. Sarah Chen", "Mark Johnson", "Elena Petrova",
+  "Hiroshi Tanaka", "Maria Gonzalez", "David Thompson", "Anneke Visser",
+];
+const RIDER_OPTIONS = DUMMY_RIDERS.map((r) => r.name);
+const HORSE_OPTIONS = DUMMY_RIDERS.map((r) => r.horse);
+const POSITION_OPTIONS = Array.from({ length: 10 }, (_, i) => String(i + 1));
 
 export default function ScoringPage() {
   const params = useParams();
@@ -178,6 +191,10 @@ export default function ScoringPage() {
   /* ---------- autosave ---------- */
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [hasDraft, setHasDraft] = useState<boolean>(false);
+  // Gate the interactive sheet to client-only render: the server HTML is a neutral
+  // placeholder, so React never hydration-diffs the form controls (which browser
+  // extensions tag with attributes like fdprocessedid before React loads).
+  const [mounted, setMounted] = useState(false);
   const hydrated = useRef(false);
 
   useEffect(() => {
@@ -187,6 +204,7 @@ export default function ScoringPage() {
     } catch {}
     hydrated.current = true;
     setAllRidersList(DUMMY_RIDERS);
+    setMounted(true);
   }, []);
 
   useEffect(() => {
@@ -209,33 +227,55 @@ export default function ScoringPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [meta, scores, corrections, coefficients, remarks, collectiveScores, collectiveCorrections, collectiveRemarksMap, artisticScores, artisticCorrections, courseError, otherErrors, organisers, technicalScore]);
 
+  // Populate every field of the sheet from a saved payload (used by both draft restore and "Open" from a saved score).
+  const applySheet = (d: Record<string, unknown> | null | undefined) => {
+    if (!d) return;
+    setMeta((d.meta as typeof meta) ?? meta);
+    setScores((d.scores as Record<string, string>) ?? {});
+    setCorrections((d.corrections as Record<string, string>) ?? {});
+    setCoefficients((d.coefficients as Record<string, string>) ?? {});
+    setRemarks((d.remarks as Record<string, string>) ?? {});
+    if (d.collectiveScores !== undefined) {
+      setCollectiveScores((d.collectiveScores as Record<string, string>) ?? {});
+      setCollectiveCorrections((d.collectiveCorrections as Record<string, string>) ?? {});
+      setCollectiveRemarksMap((d.collectiveRemarksMap as Record<string, string>) ?? {});
+    } else if (d.collective !== undefined) {
+      setCollectiveScores({ "1": d.collective as string });
+      setCollectiveCorrections({ "1": (d.collectiveCorrection as string) ?? "" });
+      setCollectiveRemarksMap({ "1": (d.collectiveRemarks as string) ?? "" });
+    }
+    setCourseError((d.courseError as number) ?? 0);
+    setOtherErrors((d.otherErrors as number) ?? 0);
+    setOrganisers((d.organisers as string) ?? "");
+    setTechnicalScore((d.technicalScore as string) ?? "");
+    setArtisticScores((d.artisticScores as Record<string, string>) ?? {});
+    setArtisticCorrections((d.artisticCorrections as Record<string, string>) ?? {});
+  };
+
   const loadDraft = () => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      const d = JSON.parse(raw);
-      setMeta(d.meta ?? meta);
-      setScores(d.scores ?? {});
-      setCorrections(d.corrections ?? {});
-      setCoefficients(d.coefficients ?? {});
-      setRemarks(d.remarks ?? {});
-      if (d.collectiveScores !== undefined) {
-        setCollectiveScores(d.collectiveScores ?? {});
-        setCollectiveCorrections(d.collectiveCorrections ?? {});
-        setCollectiveRemarksMap(d.collectiveRemarksMap ?? {});
-      } else if (d.collective !== undefined) {
-        setCollectiveScores({ "1": d.collective });
-        setCollectiveCorrections({ "1": d.collectiveCorrection ?? "" });
-        setCollectiveRemarksMap({ "1": d.collectiveRemarks ?? "" });
-      }
-      setCourseError(d.courseError ?? 0);
-      setOtherErrors(d.otherErrors ?? 0);
-      setOrganisers(d.organisers ?? "");
-      setTechnicalScore(d.technicalScore ?? "");
-      setArtisticScores(d.artisticScores ?? {});
-      setArtisticCorrections(d.artisticCorrections ?? {});
+      if (raw) applySheet(JSON.parse(raw));
     } catch {}
   };
+
+  // When opened from a saved score card (?session=<id>), restore that whole sheet.
+  useEffect(() => {
+    try {
+      const sid = new URLSearchParams(window.location.search).get("session");
+      if (!sid) return;
+      const arr = JSON.parse(localStorage.getItem("saved-sessions") ?? "[]") as Array<{ id: string; sheet?: Record<string, unknown> }>;
+      const found = arr.find((s) => s.id === sid);
+      if (found?.sheet) {
+        applySheet(found.sheet);
+      } else {
+        // Legacy save without a full snapshot: fall back to this test's autosaved draft.
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) applySheet(JSON.parse(raw));
+      }
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   /* ---------- keyboard nav for score inputs ---------- */
   const handleGridKey = useCallback((e: KeyboardEvent<HTMLInputElement>) => {
@@ -286,17 +326,36 @@ export default function ScoringPage() {
 
   const handleSaveScore = () => {
     const riderId = saveRiderId !== "_meta" ? saveRiderId : null;
+    const rider = riderId ? allRidersList.find((x) => x.id === riderId) : null;
     const session = {
       id: `session-${Date.now()}`,
       riderId,
       testId,
+      testName: info.label,
       judgeId: user?.id ?? null,
+      judgeName: user?.name ?? meta.judge ?? null,
+      riderName: rider ? rider.name : (meta.name || ""),
+      competitorNo: rider ? rider.competitorNo : (meta.competitorNo || ""),
+      horse: rider ? rider.horse : (meta.horse || ""),
+      nf: rider ? rider.nf : (meta.nf || ""),
+      event: meta.event || "",
+      eventDate: meta.date || "",
       scores,
       corrections,
       collectiveScores,
       percentage: eliminated ? 0 : parseFloat(percentage.toFixed(3)),
+      eliminated,
+      grandTotal: parseFloat(grandTotal.toFixed(1)),
+      grandTotalMax: GRAND_TOTAL_MAX,
       status: saveStatus,
       savedAt: new Date().toISOString(),
+      // Full sheet snapshot so "Open" from the saved score card can restore everything.
+      sheet: {
+        meta, scores, corrections, coefficients, remarks,
+        collectiveScores, collectiveCorrections, collectiveRemarksMap,
+        artisticScores, artisticCorrections,
+        courseError, otherErrors, organisers, technicalScore,
+      },
     };
     try {
       const existing = JSON.parse(localStorage.getItem("saved-sessions") ?? "[]");
@@ -306,6 +365,14 @@ export default function ScoringPage() {
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 3000);
   };
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-background grid place-items-center">
+        <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -428,16 +495,16 @@ export default function ScoringPage() {
           <div className="bg-card border border-border rounded-xl p-4 sm:p-6 shadow-soft">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-6 gap-y-4">
               <Field label="Event" value={meta.event} onChange={(v) => setMeta({ ...meta, event: v })} />
-              <Field label="Date" value={meta.date} onChange={(v) => setMeta({ ...meta, date: v })} />
-              <Field label="Judge" value={meta.judge} onChange={(v) => setMeta({ ...meta, judge: v })} />
+              <DateField label="Date" value={meta.date} onChange={(v) => setMeta({ ...meta, date: v })} />
+              <SelectField label="Judge" value={meta.judge} onChange={(v) => setMeta({ ...meta, judge: v })} options={JUDGE_OPTIONS} placeholder="Select judge" />
               <Field label="Competitor No." value={meta.competitorNo} onChange={(v) => setMeta({ ...meta, competitorNo: v })} />
-              <Field label="Rider" value={meta.name} onChange={(v) => setMeta({ ...meta, name: v })} />
+              <SelectField label="Rider" value={meta.name} onChange={(v) => setMeta({ ...meta, name: v })} options={RIDER_OPTIONS} placeholder="Select rider" />
               <Field label={config.nfLabel ?? "NF"} value={meta.nf} onChange={(v) => setMeta({ ...meta, nf: v })} />
               {config.showHno && (
                 <Field label="H.No" value={meta.hno} onChange={(v) => setMeta({ ...meta, hno: v })} />
               )}
-              <Field label="Horse" value={meta.horse} onChange={(v) => setMeta({ ...meta, horse: v })} />
-              <Field label="Position" value={meta.position} onChange={(v) => setMeta({ ...meta, position: v })} />
+              <SelectField label="Horse" value={meta.horse} onChange={(v) => setMeta({ ...meta, horse: v })} options={HORSE_OPTIONS} placeholder="Select horse" />
+              <SelectField label="Position" value={meta.position} onChange={(v) => setMeta({ ...meta, position: v })} options={POSITION_OPTIONS} placeholder="Select position" />
             </div>
           </div>
         </section>
@@ -1223,10 +1290,148 @@ const Field = ({
     <input
       value={value}
       onChange={(e) => onChange(e.target.value)}
+      suppressHydrationWarning
       className="w-full bg-transparent border-b border-border focus:border-highlight outline-none py-1.5 text-sm transition-colors"
     />
   </label>
 );
+
+const DateField = ({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) => {
+  const [open, setOpen] = useState(false);
+  const parsed = value ? parse(value, "yyyy-MM-dd", new Date()) : undefined;
+  const selected = parsed && !isNaN(parsed.getTime()) ? parsed : undefined;
+
+  return (
+    <div className="block">
+      <span className="block text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-1.5">
+        {label}
+      </span>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            suppressHydrationWarning
+            className={`w-full flex items-center justify-between gap-2 bg-transparent border-b py-1.5 pr-0.5 text-sm text-left outline-none transition-colors ${
+              open ? "border-highlight" : "border-border hover:border-foreground/40"
+            } ${selected ? "text-foreground" : "text-muted-foreground"}`}
+          >
+            <span className="truncate">{selected ? format(selected, "d MMM yyyy") : "Select date"}</span>
+            <CalendarIcon className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="w-auto p-0">
+          <Calendar
+            mode="single"
+            selected={selected}
+            defaultMonth={selected}
+            onSelect={(d) => {
+              if (d) {
+                onChange(format(d, "yyyy-MM-dd"));
+                setOpen(false);
+              }
+            }}
+            initialFocus
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+};
+
+const SelectField = ({
+  label,
+  value,
+  onChange,
+  options,
+  placeholder = "Select…",
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+  placeholder?: string;
+}) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointer = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const select = (v: string) => {
+    onChange(v);
+    setOpen(false);
+  };
+
+  return (
+    <div className="block" ref={ref}>
+      <span className="block text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-1.5">
+        {label}
+      </span>
+      <div className="relative">
+        <button
+          type="button"
+          suppressHydrationWarning
+          onClick={() => setOpen((o) => !o)}
+          className={`w-full flex items-center justify-between gap-2 bg-transparent border-b py-1.5 pr-0.5 text-sm text-left outline-none transition-colors ${
+            open ? "border-highlight" : "border-border hover:border-foreground/40"
+          } ${value ? "text-foreground" : "text-muted-foreground"}`}
+        >
+          <span className="truncate">{value || placeholder}</span>
+          <ChevronDown
+            className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`}
+          />
+        </button>
+
+        {open && (
+          <div className="absolute left-0 right-0 z-40 mt-1.5 max-h-56 overflow-auto rounded-xl border border-border bg-card py-1 shadow-lg ring-1 ring-black/5">
+            <button
+              type="button"
+              onClick={() => select("")}
+              className="flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-sm text-muted-foreground transition-colors hover:bg-muted"
+            >
+              <span className="truncate">{placeholder}</span>
+              {!value && <Check className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+            </button>
+            {options.map((o) => (
+              <button
+                key={o}
+                type="button"
+                onClick={() => select(o)}
+                className={`flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-sm transition-colors hover:bg-muted ${
+                  o === value ? "bg-highlight/5 font-medium text-highlight" : "text-foreground"
+                }`}
+              >
+                <span className="truncate">{o}</span>
+                {o === value && <Check className="h-3.5 w-3.5 shrink-0" />}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const SectionTitle = ({
   index,
@@ -1274,6 +1479,7 @@ const NumInput = ({
   <input
     type="number"
     inputMode="decimal"
+    suppressHydrationWarning
     min={min}
     max={10}
     step={step}
