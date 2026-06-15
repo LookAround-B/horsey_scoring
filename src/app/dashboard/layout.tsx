@@ -8,7 +8,7 @@ import { ROLE_LABELS, UserRole } from "@/lib/dummy-data";
 import {
   LayoutDashboard, Calendar, Users, FileText, ClipboardCheck,
   BookOpen, Trophy, Settings, LogOut, Menu, ChevronRight,
-  UserCircle, Pen, Eye, Shield,
+  UserCircle, Pen, Eye, Shield, UserCheck, Layers, FilePlus2,
 } from "lucide-react";
 
 type NavItem = { label: string; href: string; icon: React.ElementType };
@@ -19,7 +19,10 @@ const NAV: Record<UserRole, NavItem[]> = {
   super_admin: [
     HOME_ITEM,
     { label: "Admin Panel",    href: "/dashboard/admin",     icon: Shield },
-    { label: "Events",         href: "/dashboard/admin",     icon: Calendar },
+    { label: "Approvals",      href: "/dashboard/admin/approvals", icon: UserCheck },
+    { label: "Add Sheet",      href: "/dashboard/admin/add-sheet", icon: FilePlus2 },
+    { label: "Sheet Placement", href: "/dashboard/admin/sheets", icon: Layers },
+    { label: "Events",         href: "/dashboard/admin/events", icon: Calendar },
     { label: "Users",          href: "/dashboard/admin",     icon: Users },
     { label: "All Sessions",   href: "/dashboard/admin",     icon: FileText },
     { label: "Settings",       href: "/dashboard/admin",     icon: Settings },

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { type Rider, DUMMY_RIDERS } from "@/lib/dummy-data";
 import { useAuth } from "@/contexts/AuthContext";
-import { TEST_CONFIGS, COURSE_ERRORS, type Movement, type CollectiveCriteria } from "@/lib/tests";
+import { TEST_CONFIGS, COURSE_ERRORS, type Movement, type CollectiveCriteria, type TestConfig } from "@/lib/tests";
 import { ChevronDown, Check, Calendar as CalendarIcon } from "lucide-react";
 import { format, parse } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
@@ -23,9 +23,58 @@ const POSITION_OPTIONS = Array.from({ length: 10 }, (_, i) => String(i + 1));
 
 export default function ScoringPage() {
   const params = useParams();
-  const { user } = useAuth();
   const testId = (params?.testId as string) ?? "young-rider";
-  const config = TEST_CONFIGS[testId] ?? TEST_CONFIGS["young-rider"];
+  const staticConfig = TEST_CONFIGS[testId] as TestConfig | undefined;
+  // `override`: undefined = still checking the DB, null = no override, object = DB override.
+  const [override, setOverride] = useState<TestConfig | null | undefined>(undefined);
+
+  useEffect(() => {
+    let live = true;
+    setOverride(undefined);
+    fetch(`/api/custom-sheets/${encodeURIComponent(testId)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (live) setOverride((d?.config as TestConfig) ?? null);
+      })
+      .catch(() => {
+        if (live) setOverride(null);
+      });
+    return () => {
+      live = false;
+    };
+  }, [testId]);
+
+  // A DB override (an admin edit, or a fully custom sheet) always wins over the built-in.
+  const resolved: TestConfig | null = override ?? staticConfig ?? null;
+
+  if (!resolved) {
+    // Built-in renders instantly; a custom-only slug waits for the DB check.
+    if (override === undefined) {
+      return (
+        <div className="min-h-screen bg-background grid place-items-center">
+          <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
+      );
+    }
+    return (
+      <div className="min-h-screen bg-background grid place-items-center px-6 text-center">
+        <div>
+          <h1 className="font-display text-2xl mb-2">Sheet not found</h1>
+          <p className="text-sm text-muted-foreground mb-4">
+            This scoring sheet doesn’t exist or was removed.
+          </p>
+          <Link href="/dashboard" className="text-sm text-primary hover:underline">
+            Back to dashboard
+          </Link>
+        </div>
+      </div>
+    );
+  }
+  return <ScoringSheet config={resolved} testId={testId} />;
+}
+
+function ScoringSheet({ config, testId }: { config: TestConfig; testId: string }) {
+  const { user } = useAuth();
   const info = config;
   const MOVEMENTS = config.movements;
   const TOTAL_MAX = MOVEMENTS.reduce((sum, m) => sum + 10 * m.coefficient, 0);

@@ -1,12 +1,7 @@
-export type UserRole =
-  | "super_admin"
-  | "dressage_judge"
-  | "showjumping_judge"
-  | "dressage_writer"
-  | "showjumping_writer"
-  | "examiner"
-  | "rider"
-  | "show_secretary";
+import { type UserRole, ROLE_LABELS, ROLE_DASHBOARD } from "@/lib/roles";
+
+export { ROLE_LABELS, ROLE_DASHBOARD };
+export type { UserRole };
 
 export type User = {
   id: string;
@@ -60,28 +55,6 @@ export type ScoringSession = {
   status: "draft" | "submitted" | "verified";
   createdAt: string;
   verifiedBy?: string;
-};
-
-export const ROLE_LABELS: Record<UserRole, string> = {
-  super_admin: "Super Admin",
-  dressage_judge: "Dressage Judge",
-  showjumping_judge: "Showjumping Judge",
-  dressage_writer: "Dressage Writer",
-  showjumping_writer: "Showjumping Writer",
-  examiner: "Examiner",
-  rider: "Rider",
-  show_secretary: "Show Secretary",
-};
-
-export const ROLE_DASHBOARD: Record<UserRole, string> = {
-  super_admin: "/dashboard/admin",
-  dressage_judge: "/dashboard/judge/dressage",
-  showjumping_judge: "/dashboard/judge/showjumping",
-  dressage_writer: "/dashboard/writer/dressage",
-  showjumping_writer: "/dashboard/writer/showjumping",
-  examiner: "/dashboard/examiner",
-  rider: "/dashboard/rider",
-  show_secretary: "/dashboard/secretary",
 };
 
 export const TEST_NAMES: Record<string, string> = {
@@ -215,6 +188,8 @@ export type TestCard = {
   appendix: string;
   description: string;
   maxScore: number;
+  /** Discipline this sheet belongs to. Defaults to "dressage" when omitted. */
+  discipline?: "dressage" | "showjumping";
 };
 
 export const TEST_CARDS: TestCard[] = [

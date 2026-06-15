@@ -5,14 +5,20 @@ import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   DUMMY_RIDERS, DUMMY_EVENTS, DUMMY_SESSIONS, DUMMY_ENTRIES,
-  type Rider, type ScoringSession,
+  type Rider, type ScoringSession, type TestCard,
   TEST_CARDS, TEST_NAMES, ROLE_LABELS, ROLE_DASHBOARD,
 } from "@/lib/dummy-data";
 import {
   ExternalLink, Search, Calendar, Users, FileText,
   CheckCircle, Clock, FileEdit, ChevronRight, Trophy,
-  LayoutDashboard, Layers, Plus, X, Loader2,
+  LayoutDashboard, Layers, Plus, X, Loader2, Pencil,
 } from "lucide-react";
+
+type Discipline = "dressage" | "showjumping";
+const DISCIPLINES: { id: Discipline; label: string }[] = [
+  { id: "dressage", label: "Dressage" },
+  { id: "showjumping", label: "Show Jumping" },
+];
 
 type Tab = "overview" | "sheets" | "riders" | "sessions";
 
@@ -82,6 +88,7 @@ export default function HubPage() {
   const { user } = useAuth();
 
   const [tab, setTab] = useState<Tab>("overview");
+  const [sheetDiscipline, setSheetDiscipline] = useState<Discipline>("dressage");
   const [riderSearch, setRiderSearch] = useState("");
   const [sessionFilter, setSessionFilter] = useState<"all" | ScoringSession["status"]>("all");
   const [allRiders, setAllRiders] = useState<Rider[]>(DUMMY_RIDERS);
@@ -91,6 +98,29 @@ export default function HubPage() {
   const [riderFormError, setRiderFormError] = useState("");
   const [riderFormSaving, setRiderFormSaving] = useState(false);
   const [savedSessions, setSavedSessions] = useState<SavedSession[]>([]);
+  const [placements, setPlacements] = useState<Record<string, Discipline>>({});
+  const [events, setEvents] = useState<{ id: string; name: string; slug: string }[]>([]);
+  const [membership, setMembership] = useState<Record<string, string[]>>({});
+  const [selectedEvent, setSelectedEvent] = useState<string>("all");
+  const [customCards, setCustomCards] = useState<TestCard[]>([]);
+
+  useEffect(() => {
+    fetch("/api/sheet-placements")
+      .then((r) => (r.ok ? r.json() : {}))
+      .then((data) => setPlacements(data as Record<string, Discipline>))
+      .catch(() => {});
+    fetch("/api/events")
+      .then((r) => (r.ok ? r.json() : { events: [], membership: {} }))
+      .then((data) => {
+        setEvents(data.events ?? []);
+        setMembership(data.membership ?? {});
+      })
+      .catch(() => {});
+    fetch("/api/custom-sheets")
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data) => setCustomCards(data as TestCard[]))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const load = () => {
@@ -153,6 +183,19 @@ export default function HubPage() {
 
   const filteredCards =
     sessionFilter === "all" ? sessionCards : sessionCards.filter((c) => c.status === sessionFilter);
+
+  // DB sheets (edits/overrides + fully custom) win over the built-in by slug.
+  const cardBySlug = new Map<string, TestCard>();
+  TEST_CARDS.forEach((c) => cardBySlug.set(c.slug, c));
+  customCards.forEach((c) => cardBySlug.set(c.slug, c));
+  const allCards = [...cardBySlug.values()];
+  const disciplineOf = (t: { slug: string; discipline?: Discipline }): Discipline =>
+    placements[t.slug] ?? t.discipline ?? "dressage";
+  const inEvent = (slug: string) =>
+    selectedEvent === "all" || (membership[slug]?.includes(selectedEvent) ?? false);
+  const sheetCards = allCards.filter(
+    (t) => disciplineOf(t) === sheetDiscipline && inEvent(t.slug)
+  );
 
   if (!user) return null;
 
@@ -354,34 +397,98 @@ export default function HubPage() {
       {/* SCORING SHEETS */}
       {tab === "sheets" && (
         <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">Open any scoring sheet to start scoring. Scores auto-save as you go.</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {TEST_CARDS.map((t) => {
-              const riderCount = activeEvent
-                ? activeEvent.classes.filter((c) => c.testId === t.slug).reduce((n, c) => n + (DUMMY_ENTRIES[c.id]?.length ?? 0), 0)
-                : 0;
+          {/* Event tabs */}
+          <div className="flex items-center gap-1 border-b border-border overflow-x-auto">
+            {[{ slug: "all", name: "All" }, ...events].map((ev) => {
+              const count =
+                ev.slug === "all"
+                  ? allCards.length
+                  : allCards.filter((t) => membership[t.slug]?.includes(ev.slug)).length;
+              const active = selectedEvent === ev.slug;
               return (
-                <div key={t.slug} className="bg-card border border-border rounded-xl p-5 shadow-soft flex flex-col gap-3 hover:border-foreground/20 transition-colors">
-                  <div>
-                    <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-1">{t.appendix}</div>
-                    <div className="font-display text-xl tracking-tight">{t.category}</div>
-                    <div className="text-xs text-muted-foreground mt-1 leading-snug">{t.description}</div>
-                  </div>
-                  <div className="flex items-center justify-between mt-auto pt-3 border-t border-border">
-                    <div className="text-xs text-muted-foreground">
-                      Max <span className="font-mono">{t.maxScore}</span> pts
-                      {riderCount > 0 && <> · <span className="text-foreground">{riderCount} riders today</span></>}
-                    </div>
-                    <Link href={`/scoring/${t.slug}`} target="_blank"
-                      className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
-                    >
-                      Open <ExternalLink className="h-3 w-3" />
-                    </Link>
-                  </div>
-                </div>
+                <button key={ev.slug} onClick={() => setSelectedEvent(ev.slug)}
+                  className={`flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap border-b-2 -mb-px transition-colors ${
+                    active ? "border-primary text-foreground font-medium" : "border-transparent text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {ev.name}
+                  <span className="text-[11px] tabular-nums opacity-60">{count}</span>
+                </button>
               );
             })}
           </div>
+
+          {/* Discipline toggle */}
+          <div className="inline-flex items-center gap-1 p-1 rounded-lg bg-muted">
+            {DISCIPLINES.map((d) => {
+              const count = allCards.filter((t) => disciplineOf(t) === d.id).length;
+              const active = sheetDiscipline === d.id;
+              return (
+                <button key={d.id} onClick={() => setSheetDiscipline(d.id)}
+                  className={`flex items-center gap-2 text-sm px-4 py-1.5 rounded-md transition-colors ${
+                    active ? "bg-card text-foreground shadow-soft font-medium" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {d.label}
+                  <span className={`text-[11px] tabular-nums px-1.5 rounded-full ${active ? "bg-primary/10 text-primary" : "bg-foreground/5 text-muted-foreground"}`}>{count}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <p className="text-sm text-muted-foreground">Open any scoring sheet to start scoring. Scores auto-save as you go.</p>
+
+          {sheetCards.length === 0 ? (
+            <div className="bg-card border border-border rounded-xl shadow-soft py-16 text-center">
+              <Layers className="h-7 w-7 mx-auto mb-3 text-muted-foreground/40" />
+              <p className="text-sm text-muted-foreground">
+                No {sheetDiscipline === "showjumping" ? "show jumping" : "dressage"} sheets
+                {selectedEvent !== "all" && " in this event"}.
+              </p>
+              <p className="text-xs text-muted-foreground/70 mt-1">
+                {selectedEvent !== "all"
+                  ? "Assign sheets to this event under Admin → Events."
+                  : "Sheets for this discipline will appear here once they’re added."}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {sheetCards.map((t) => {
+                const riderCount = activeEvent
+                  ? activeEvent.classes.filter((c) => c.testId === t.slug).reduce((n, c) => n + (DUMMY_ENTRIES[c.id]?.length ?? 0), 0)
+                  : 0;
+                return (
+                  <div key={t.slug} className="bg-card border border-border rounded-xl p-5 shadow-soft flex flex-col gap-3 hover:border-foreground/20 transition-colors">
+                    <div>
+                      <div className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-1">{t.appendix}</div>
+                      <div className="font-display text-xl tracking-tight">{t.category}</div>
+                      <div className="text-xs text-muted-foreground mt-1 leading-snug">{t.description}</div>
+                    </div>
+                    <div className="flex items-center justify-between mt-auto pt-3 border-t border-border">
+                      <div className="text-xs text-muted-foreground">
+                        Max <span className="font-mono">{t.maxScore}</span> pts
+                        {riderCount > 0 && <> · <span className="text-foreground">{riderCount} riders today</span></>}
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        {user.role === "super_admin" && (
+                          <Link href={`/dashboard/admin/edit-sheet/${t.slug}`}
+                            className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-md border border-border hover:bg-muted transition-colors"
+                          >
+                            <Pencil className="h-3 w-3" /> Edit
+                          </Link>
+                        )}
+                        <Link href={`/scoring/${t.slug}`} target="_blank"
+                          className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+                        >
+                          Open <ExternalLink className="h-3 w-3" />
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 

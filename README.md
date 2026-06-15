@@ -39,16 +39,45 @@ Then open **http://localhost:3000**.
 | `npm run start` | Serve the production build (run `build` first)   |
 | `npm run lint`  | Run ESLint                                        |
 
-## Logging in
+## Authentication & roles
 
-The app uses a built-in demo auth layer — **no backend or environment variables
-are required to run it.** On the login page, click any **demo account** card to
-pre-fill its email, then sign in.
+Auth runs on **Auth.js (NextAuth v5)** backed by a **PostgreSQL** database.
 
-- **Password for every demo account:** `Horsey@2025`
+- **Super admin** signs in with **email + password** (seeded once via a script).
+- **Everyone else** signs in with **Google**. A new Google account is created as
+  `pending` and lands on a "waiting for approval" screen until the super admin
+  assigns them a role and approves them (Dashboard → **Approvals**).
+- Approved users go straight to their role-specific dashboard on every later
+  sign-in.
 
-Each account lands on its role-specific dashboard (Super Admin, Dressage Judge,
-Examiner, Rider, Show Secretary, etc.).
+Access is enforced both in **middleware** (route guards) and in **server
+actions** (every admin mutation re-checks the caller's role).
+
+### One-time setup
+
+1. **Configure env** — copy `.env.local.example` to `.env.local` and fill it in:
+   ```bash
+   cp .env.local.example .env.local
+   npx auth secret            # generates AUTH_SECRET
+   ```
+   Set `DATABASE_URL`, `AUTH_GOOGLE_ID`, and `AUTH_GOOGLE_SECRET`.
+
+2. **Create the database tables** — run the schema against your Postgres:
+   ```bash
+   psql "$DATABASE_URL" -f db/schema.sql
+   ```
+
+3. **Seed the super admin** (uses `ADMIN_*` from `.env.local`):
+   ```bash
+   node scripts/create-admin.mjs
+   ```
+
+4. **Google OAuth** — in Google Cloud Console → Credentials → OAuth client:
+   - **Authorized JavaScript origins:** `http://localhost:3000` (+ your prod domain)
+   - **Authorized redirect URIs:**
+     `http://localhost:3000/api/auth/callback/google` (+ the prod equivalent)
+
+Then `npm run dev` and sign in.
 
 ## How it works
 
@@ -77,20 +106,21 @@ src/
     scoring/[testId]/      # Interactive scoring sheet (live calculations)
     layout.tsx, providers.tsx
   components/ui/           # Reusable UI primitives (calendar, popover, …)
-  contexts/AuthContext.tsx # Demo auth (localStorage-backed)
+    auth/pending/          # "Awaiting approval" screen
+    api/auth/[...nextauth] # NextAuth route handler
+  contexts/AuthContext.tsx # useAuth() — thin wrapper over next-auth/react
+  auth.ts                  # NextAuth config (Google + Credentials, JWT, roles)
   lib/
-    dummy-data.ts          # Demo users, riders, events, sessions
+    db.ts                  # Postgres connection pool
+    users.ts               # User/approval queries
+    roles.ts               # Role enum, labels, dashboard routes
+    dummy-data.ts          # Demo riders, events, sessions (scoring content)
     tests/                 # FEI test configs (movements, collectives, coefficients)
-  middleware.ts            # Route protection / redirects
+  middleware.ts            # Route protection / redirects (edge-safe)
+db/schema.sql              # Database schema (Auth.js tables + roles)
+scripts/create-admin.mjs   # Seeds the super admin
 ```
 
-## Optional: Supabase
-
-A Supabase browser-client helper exists at `src/lib/supabase.ts` but is **not
-wired into the app** — the demo runs entirely on local data. If you later
-connect Supabase, add a `.env.local`:
-
-```bash
-NEXT_PUBLIC_SUPABASE_URL=your-project-url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-```
+> **Note on scoring data:** riders, events, and saved scores still come from
+> demo data / `localStorage`. Only authentication and roles are backed by the
+> database so far.

@@ -1,55 +1,77 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { type User, type UserRole, DUMMY_USERS, ROLE_DASHBOARD } from "@/lib/dummy-data";
+import { createContext, useContext, ReactNode } from "react";
+import { useSession, signIn, signOut } from "next-auth/react";
+import { type User, type UserRole, ROLE_DASHBOARD } from "@/lib/dummy-data";
+
+export type AuthStatus = "loading" | "unauthenticated" | "pending" | "approved";
+
+type LoginResult = { error?: string; status?: AuthStatus };
 
 type AuthContextType = {
-  user: User | null;
-  login: (email: string, password: string) => Promise<{ error?: string }>;
-  logout: () => void;
+  user: User | null; // populated only when approved + role assigned
+  status: AuthStatus;
   isLoading: boolean;
+  login: (email: string, password: string) => Promise<LoginResult>;
+  loginWithGoogle: () => Promise<{ error?: string }>;
+  logout: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
-  login: async () => ({}),
-  logout: () => {},
+  status: "loading",
   isLoading: true,
+  login: async () => ({}),
+  loginWithGoogle: async () => ({}),
+  logout: async () => {},
 });
 
-const STORAGE_KEY = "horsey-user";
-const DEMO_PASSWORD = "Horsey@2025";
-
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: session, status: sessionStatus } = useSession();
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) setUser(JSON.parse(stored));
-    } catch { /* ignore */ }
-    setIsLoading(false);
-  }, []);
+  let status: AuthStatus = "loading";
+  let user: User | null = null;
 
-  const login = async (email: string, password: string): Promise<{ error?: string }> => {
-    if (password !== DEMO_PASSWORD) return { error: "Invalid password" };
-    const found = DUMMY_USERS.find((u) => u.email === email);
-    if (!found) return { error: "No account found with that email" };
-    setUser(found);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(found));
-    document.cookie = "horsey-auth=1; path=/; max-age=86400";
+  if (sessionStatus === "loading") {
+    status = "loading";
+  } else if (sessionStatus === "unauthenticated" || !session?.user) {
+    status = "unauthenticated";
+  } else {
+    const su = session.user;
+    if (su.status === "approved" && su.role) {
+      status = "approved";
+      user = {
+        id: su.id,
+        name: su.name ?? su.email ?? "",
+        email: su.email ?? "",
+        role: su.role,
+      };
+    } else {
+      status = "pending";
+    }
+  }
+
+  const login = async (email: string, password: string): Promise<LoginResult> => {
+    const res = await signIn("credentials", { email, password, redirect: false });
+    if (!res || res.error) return { error: "Invalid email or password" };
+    // Session refreshes via SessionProvider; caller relies on `status` afterwards.
     return {};
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem(STORAGE_KEY);
-    document.cookie = "horsey-auth=; path=/; max-age=0";
+  const loginWithGoogle = async (): Promise<{ error?: string }> => {
+    // Full-page redirect through Google → /api/auth/callback/google.
+    await signIn("google", { callbackUrl: "/" });
+    return {};
+  };
+
+  const logout = async () => {
+    await signOut({ callbackUrl: "/login" });
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+    <AuthContext.Provider
+      value={{ user, status, isLoading: status === "loading", login, loginWithGoogle, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );
