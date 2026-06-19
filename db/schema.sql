@@ -150,6 +150,28 @@ create table if not exists event_riders (
 alter table users add column if not exists image_url text;
 alter table users add column if not exists phone     text;
 
+-- Shared, DB-backed scores (so judges, writers, secretary, admin see the same data).
+-- Dressage/quality: one row per (event, sheet, rider). Show jumping: one row per
+-- (event, sheet) with all rider rows inside `data` (rider_id null).
+create table if not exists scores (
+  id         uuid primary key default gen_random_uuid(),
+  event_id   uuid not null references events(id) on delete cascade,
+  test_slug  text not null,
+  rider_id   uuid references event_riders(id) on delete cascade,
+  data       jsonb not null default '{}'::jsonb,
+  status     text not null default 'draft' check (status in ('draft','submitted','verified')),
+  result     numeric,
+  signature  text,
+  scored_by  uuid references users(id) on delete set null,
+  updated_by uuid references users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create unique index if not exists scores_event_sheet_rider
+  on scores (event_id, test_slug, rider_id) where rider_id is not null;
+create unique index if not exists scores_event_sheet_norider
+  on scores (event_id, test_slug) where rider_id is null;
+
 -- ============================================================================
 -- 3. SEED THE SUPER ADMIN
 --    Easiest: run  `node scripts/create-admin.mjs`  (hashes the password for you).

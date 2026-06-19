@@ -3,13 +3,14 @@
 import * as React from "react";
 import { useMemo, useState, useEffect, useRef, useCallback, KeyboardEvent } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { type Rider, DUMMY_RIDERS } from "@/lib/dummy-data";
 import { useAuth } from "@/contexts/AuthContext";
 import { TEST_CONFIGS, COURSE_ERRORS, type Movement, type CollectiveCriteria, type TestConfig } from "@/lib/tests";
 import { isShowJumping, isQuality } from "@/lib/sheetTypes";
 import { ShowJumpingSheet } from "./ShowJumpingSheet";
 import { QualityScoringSheet } from "./QualityScoringSheet";
+import { useScoreStore } from "@/lib/useScoreStore";
 import { ChevronDown, Check, Calendar as CalendarIcon } from "lucide-react";
 import { format, parse } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
@@ -26,6 +27,9 @@ const POSITION_OPTIONS = Array.from({ length: 10 }, (_, i) => String(i + 1));
 
 export default function ScoringPage() {
   const params = useParams();
+  const search = useSearchParams();
+  const eventId = search.get("event");
+  const riderId = search.get("rider");
   const testId = (params?.testId as string) ?? "young-rider";
   const staticConfig = TEST_CONFIGS[testId] as TestConfig | undefined;
   // `override`: undefined = still checking the DB, null = no override, object = DB override.
@@ -74,15 +78,25 @@ export default function ScoringPage() {
     );
   }
   if (isShowJumping(resolved)) {
-    return <ShowJumpingSheet config={resolved} slug={testId} />;
+    return <ShowJumpingSheet config={resolved} slug={testId} eventId={eventId} />;
   }
   if (isQuality(resolved)) {
-    return <QualityScoringSheet config={resolved} slug={testId} />;
+    return <QualityScoringSheet config={resolved} slug={testId} eventId={eventId} riderId={riderId} />;
   }
-  return <ScoringSheet config={resolved} testId={testId} />;
+  return <ScoringSheet config={resolved} testId={testId} eventId={eventId} riderId={riderId} />;
 }
 
-function ScoringSheet({ config, testId }: { config: TestConfig; testId: string }) {
+function ScoringSheet({
+  config,
+  testId,
+  eventId,
+  riderId,
+}: {
+  config: TestConfig;
+  testId: string;
+  eventId?: string | null;
+  riderId?: string | null;
+}) {
   const { user } = useAuth();
   const info = config;
   const MOVEMENTS = config.movements;
@@ -94,6 +108,7 @@ function ScoringSheet({ config, testId }: { config: TestConfig; testId: string }
   const GRAND_TOTAL_MAX = config.hasCollective !== false ? TOTAL_MAX + collectivesMax : TOTAL_MAX;
   const OTHER_ERROR_PENALTY = config.otherErrorPenalty ?? 2;
   const STORAGE_KEY = `scoring-draft-v1:${testId}`;
+  const store = useScoreStore({ slug: testId, eventId, riderId, localKey: STORAGE_KEY });
   const EFFECTIVE_COURSE_ERRORS = config.courseErrors ?? COURSE_ERRORS;
 
   const ARTISTIC_MOVEMENTS = config.artisticMovements ?? [];
@@ -275,11 +290,9 @@ function ScoringSheet({ config, testId }: { config: TestConfig; testId: string }
       ts: Date.now(),
     };
     const t = setTimeout(() => {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-        setSavedAt(Date.now());
-        setHasDraft(true);
-      } catch {}
+      store.save(payload, { result: eliminated ? -1 : percentage });
+      setSavedAt(Date.now());
+      setHasDraft(true);
     }, 400);
     return () => clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -316,6 +329,19 @@ function ScoringSheet({ config, testId }: { config: TestConfig; testId: string }
       if (raw) applySheet(JSON.parse(raw));
     } catch {}
   };
+
+  // In event context, hydrate the shared DB record (judge + writer see the same sheet).
+  useEffect(() => {
+    if (!store.db) return;
+    let live = true;
+    store.load().then((d) => {
+      if (live && d) applySheet(d);
+    });
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [testId, eventId, riderId]);
 
   // When opened from a saved score card (?session=<id>), restore that whole sheet.
   useEffect(() => {

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, RotateCcw, Save, Printer } from "lucide-react";
 import type { QualityConfig } from "@/lib/sheetTypes";
+import { useScoreStore } from "@/lib/useScoreStore";
 
 type Header = { efiRegNo: string; name: string; horse: string; organisers: string; signature: string };
 
@@ -21,10 +22,21 @@ const num = (s: string) => {
   return isNaN(v) ? 0 : v;
 };
 
-export function QualityScoringSheet({ config, slug }: { config: QualityConfig; slug: string }) {
+export function QualityScoringSheet({
+  config,
+  slug,
+  eventId,
+  riderId,
+}: {
+  config: QualityConfig;
+  slug: string;
+  eventId?: string | null;
+  riderId?: string | null;
+}) {
   const criteria = config.criteria;
   const n = criteria.length || 1;
   const STORAGE_KEY = `quality-scoring-v1:${slug}`;
+  const store = useScoreStore({ slug, eventId, riderId, localKey: STORAGE_KEY });
 
   const [header, setHeader] = useState<Header>(emptyHeader());
   const [marks, setMarks] = useState<Record<number, string>>({});
@@ -35,37 +47,38 @@ export function QualityScoringSheet({ config, slug }: { config: QualityConfig; s
   const [savedAt, setSavedAt] = useState("");
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const d = JSON.parse(raw);
-        if (d.header) setHeader({ ...emptyHeader(), ...d.header });
-        if (d.marks) setMarks(d.marks);
-        if (d.comments) setComments(d.comments);
+    let live = true;
+    store.load().then((d) => {
+      if (live && d) {
+        if (d.header) setHeader({ ...emptyHeader(), ...(d.header as object) });
+        if (d.marks) setMarks(d.marks as Record<number, string>);
+        if (d.comments) setComments(d.comments as Record<number, string>);
         if (typeof d.technical === "string") setTechnical(d.technical);
         if (typeof d.penalty === "number") setPenalty(d.penalty);
-        if (d.savedAt) setSavedAt(d.savedAt);
+        if (typeof d.savedAt === "string") setSavedAt(d.savedAt);
       }
-    } catch {
-      /* ignore */
-    }
-    setLoaded(true);
-  }, [STORAGE_KEY]);
+      if (live) setLoaded(true);
+    });
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slug, eventId, riderId]);
 
   useEffect(() => {
     if (!loaded) return;
     const t = setTimeout(() => {
-      try {
-        const stamp = new Date().toISOString();
-        localStorage.setItem(
-          STORAGE_KEY,
-          JSON.stringify({ header, marks, comments, technical, penalty, savedAt: stamp })
-        );
-        setSavedAt(stamp);
-      } catch {
-        /* ignore */
-      }
-    }, 600);
+      const stamp = new Date().toISOString();
+      const total = criteria.reduce((s, _, i) => s + num(marks[i] || ""), 0);
+      const qPct = (total / (n * 10)) * 100;
+      const tPct = num(technical);
+      const result = penalty < 0 ? -1 : Math.max(0, (tPct + qPct) / 2 - penalty);
+      store.save(
+        { header, marks, comments, technical, penalty, savedAt: stamp },
+        { result, signature: header.signature }
+      );
+      setSavedAt(stamp);
+    }, 700);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [header, marks, comments, technical, penalty, loaded]);
@@ -137,9 +150,9 @@ export function QualityScoringSheet({ config, slug }: { config: QualityConfig; s
           <button
             onClick={() => {
               const stamp = new Date().toISOString();
-              localStorage.setItem(
-                STORAGE_KEY,
-                JSON.stringify({ header, marks, comments, technical, penalty, savedAt: stamp })
+              store.save(
+                { header, marks, comments, technical, penalty, savedAt: stamp },
+                { result: eliminated ? -1 : finalPct, signature: header.signature, status: "submitted" }
               );
               setSavedAt(stamp);
             }}

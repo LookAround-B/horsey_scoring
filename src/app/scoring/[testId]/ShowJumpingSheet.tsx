@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Plus, Trash2, RotateCcw, Save, Printer } from "lucide-react";
 import type { ShowJumpingConfig } from "@/lib/sheetTypes";
+import { useScoreStore } from "@/lib/useScoreStore";
 
 type Row = {
   riderNo: string;
@@ -50,9 +51,18 @@ const num = (s: string) => {
   return isNaN(v) ? 0 : v;
 };
 
-export function ShowJumpingSheet({ config, slug }: { config: ShowJumpingConfig; slug: string }) {
+export function ShowJumpingSheet({
+  config,
+  slug,
+  eventId,
+}: {
+  config: ShowJumpingConfig;
+  slug: string;
+  eventId?: string | null;
+}) {
   const obstacleCount = config.obstacleCount;
   const STORAGE_KEY = `sj-scoring-v1:${slug}`;
+  const store = useScoreStore({ slug, eventId, riderId: null, localKey: STORAGE_KEY });
 
   const [header, setHeader] = useState<Header>(emptyHeader());
   const [rows, setRows] = useState<Row[]>(() =>
@@ -64,14 +74,13 @@ export function ShowJumpingSheet({ config, slug }: { config: ShowJumpingConfig; 
 
   // Restore draft
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const d = JSON.parse(raw);
-        if (d.header) setHeader({ ...emptyHeader(), ...d.header });
+    let live = true;
+    store.load().then((d) => {
+      if (live && d) {
+        if (d.header) setHeader({ ...emptyHeader(), ...(d.header as object) });
         if (Array.isArray(d.rows)) {
           setRows(
-            d.rows.map((r: Partial<Row>) => ({
+            (d.rows as Partial<Row>[]).map((r) => ({
               ...emptyRow(obstacleCount),
               ...r,
               obstacles: Array.from({ length: obstacleCount }, (_, i) => r.obstacles?.[i] ?? ""),
@@ -79,27 +88,24 @@ export function ShowJumpingSheet({ config, slug }: { config: ShowJumpingConfig; 
           );
         }
         if (typeof d.signature === "string") setSignature(d.signature);
-        if (d.savedAt) setSavedAt(d.savedAt);
+        if (typeof d.savedAt === "string") setSavedAt(d.savedAt);
       }
-    } catch {
-      /* ignore */
-    }
-    setLoaded(true);
+      if (live) setLoaded(true);
+    });
+    return () => {
+      live = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [STORAGE_KEY]);
+  }, [slug, eventId]);
 
   // Autosave
   useEffect(() => {
     if (!loaded) return;
     const t = setTimeout(() => {
-      try {
-        const stamp = new Date().toISOString();
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ header, rows, signature, savedAt: stamp }));
-        setSavedAt(stamp);
-      } catch {
-        /* ignore */
-      }
-    }, 600);
+      const stamp = new Date().toISOString();
+      store.save({ header, rows, signature, savedAt: stamp });
+      setSavedAt(stamp);
+    }, 700);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [header, rows, signature, loaded]);
@@ -193,10 +199,7 @@ export function ShowJumpingSheet({ config, slug }: { config: ShowJumpingConfig; 
           <button
             onClick={() => {
               const stamp = new Date().toISOString();
-              localStorage.setItem(
-                STORAGE_KEY,
-                JSON.stringify({ header, rows, signature, savedAt: stamp })
-              );
+              store.save({ header, rows, signature, savedAt: stamp }, { status: "submitted" });
               setSavedAt(stamp);
             }}
             className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
