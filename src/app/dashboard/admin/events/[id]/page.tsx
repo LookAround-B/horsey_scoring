@@ -80,6 +80,10 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
           {ev.location || "No location"} · {ev.status}
           {isAdmin && ev.secretary_name ? ` · Secretary: ${ev.secretary_name}` : ""}
         </p>
+        <p className="text-xs text-muted-foreground mt-2">
+          Set up the event below — add riders, invite judges/examiners/writers, choose scoring sheets,
+          and share the access code. Add as many as you need.
+        </p>
       </div>
 
       {/* Access code */}

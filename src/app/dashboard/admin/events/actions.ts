@@ -58,6 +58,10 @@ export async function createFullEventAction(formData: FormData) {
     },
     u.id
   );
+  // Sheets chosen at creation time.
+  const slugs = formData.getAll("slug").map(String);
+  if (slugs.length) await setEventSheets(id, slugs);
+
   revalidatePath("/dashboard/admin/events");
   redirect(`/dashboard/admin/events/${id}`);
 }

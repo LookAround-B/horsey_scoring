@@ -3,8 +3,10 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { listAllEvents, listEventsForSecretary, type EventSummary } from "@/lib/events";
 import { listUsers } from "@/lib/users";
+import { listCustomSheetCards } from "@/lib/customSheets";
+import { TEST_CARDS } from "@/lib/dummy-data";
 import { createFullEventAction } from "./actions";
-import { CalendarRange, Plus, MapPin, Users as UsersIcon, ChevronRight } from "lucide-react";
+import { CalendarRange, Plus, MapPin, Users as UsersIcon, ChevronRight, ChevronDown } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +34,12 @@ export default async function EventsAdminPage() {
   const secretaries = isAdmin
     ? (await listUsers()).filter((u) => u.status === "approved" && u.role === "show_secretary")
     : [];
+
+  // All sheets selectable at creation (built-in + custom, deduped).
+  const customCards = await listCustomSheetCards();
+  const bySlug = new Map(TEST_CARDS.map((c) => [c.slug, c]));
+  customCards.forEach((c) => bySlug.set(c.slug, c));
+  const allSheets = [...bySlug.values()];
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
@@ -80,10 +88,27 @@ export default async function EventsAdminPage() {
           <input type="date" name="endDate"
             className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
         </div>
+        <details className="sm:col-span-2 group border border-border rounded-lg">
+          <summary className="flex items-center gap-2 px-3 py-2 cursor-pointer select-none list-none text-sm">
+            <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
+            Scoring sheets <span className="text-muted-foreground">(optional — you can also add them later)</span>
+          </summary>
+          <div className="border-t border-border p-3 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 max-h-64 overflow-y-auto">
+            {allSheets.map((t) => (
+              <label key={t.slug} className="flex items-center gap-2 text-sm py-0.5 cursor-pointer">
+                <input type="checkbox" name="slug" value={t.slug} className="h-4 w-4 rounded border-border accent-primary" />
+                <span className="truncate">{t.category}</span>
+              </label>
+            ))}
+          </div>
+        </details>
         <div className="sm:col-span-2">
           <button className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground rounded-lg px-4 py-2 text-sm font-medium hover:opacity-90 transition-opacity">
             <Plus className="h-4 w-4" /> Create event
           </button>
+          <p className="text-[11px] text-muted-foreground mt-2">
+            After creating, you&apos;ll set up riders, judges, examiners, the access code and visibility.
+          </p>
         </div>
       </form>
 
