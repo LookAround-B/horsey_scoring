@@ -9,12 +9,16 @@ import {
   setEventVisibility,
   regenerateAccessCode,
   addRider,
+  addRidersBulk,
   deleteRider,
+  type RiderInput,
   addParticipant,
   removeParticipant,
   setEventSheets,
   deleteEvent,
   getEventById,
+  createGuidelineTemplate,
+  deleteGuidelineTemplate,
   type EventStatus,
 } from "@/lib/events";
 
@@ -54,6 +58,9 @@ export async function createFullEventAction(formData: FormData) {
       location: String(formData.get("location") ?? ""),
       startDate: String(formData.get("startDate") ?? "") || null,
       endDate: String(formData.get("endDate") ?? "") || null,
+      startTime: String(formData.get("startTime") ?? "") || null,
+      endTime: String(formData.get("endTime") ?? "") || null,
+      guidelines: String(formData.get("guidelines") ?? "") || null,
       secretaryId,
     },
     u.id
@@ -74,9 +81,30 @@ export async function updateEventMetaAction(formData: FormData) {
     location: String(formData.get("location") ?? ""),
     startDate: String(formData.get("startDate") ?? "") || null,
     endDate: String(formData.get("endDate") ?? "") || null,
+    startTime: String(formData.get("startTime") ?? "") || null,
+    endTime: String(formData.get("endTime") ?? "") || null,
+    guidelines: String(formData.get("guidelines") ?? "") || null,
     status: (String(formData.get("status") ?? "") as EventStatus) || undefined,
   });
   revalidatePath(`/dashboard/admin/events/${id}`);
+}
+
+export async function saveGuidelineTemplateAction(
+  title: string,
+  body: string
+): Promise<{ ok?: boolean; error?: string }> {
+  const u = await requireCreator();
+  if (!title.trim()) return { error: "Give the template a title." };
+  if (!body.trim()) return { error: "Guidelines are empty." };
+  await createGuidelineTemplate(title, body, u.id);
+  revalidatePath("/dashboard/admin/events");
+  return { ok: true };
+}
+
+export async function deleteGuidelineTemplateAction(formData: FormData) {
+  await requireCreator();
+  await deleteGuidelineTemplate(String(formData.get("templateId") ?? ""));
+  revalidatePath("/dashboard/admin/events");
 }
 
 export async function setVisibilityAction(formData: FormData) {
@@ -112,6 +140,17 @@ export async function addRiderAction(formData: FormData) {
     imageUrl: String(formData.get("imageUrl") ?? ""),
   });
   revalidatePath(`/dashboard/admin/events/${id}`);
+}
+
+export async function importRidersAction(
+  eventId: string,
+  riders: RiderInput[]
+): Promise<{ count?: number; error?: string }> {
+  await requireEventManager(eventId);
+  if (!riders?.length) return { error: "Nothing to import." };
+  const count = await addRidersBulk(eventId, riders);
+  revalidatePath(`/dashboard/admin/events/${eventId}`);
+  return { count };
 }
 
 export async function deleteRiderAction(formData: FormData) {

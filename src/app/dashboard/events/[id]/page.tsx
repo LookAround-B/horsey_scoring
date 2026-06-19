@@ -63,7 +63,12 @@ export default async function EventDashboardPage({ params }: { params: Promise<{
           <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-highlight/15 text-highlight">{ev.status}</span>
         </div>
         <div className="text-sm text-muted-foreground mt-1 flex flex-wrap items-center gap-x-4 gap-y-1">
-          {fmt(ev.start_date) && <span className="flex items-center gap-1"><CalendarRange className="h-3.5 w-3.5" /> {fmt(ev.start_date)}{fmt(ev.end_date) ? ` – ${fmt(ev.end_date)}` : ""}</span>}
+          {fmt(ev.start_date) && (
+            <span className="flex items-center gap-1">
+              <CalendarRange className="h-3.5 w-3.5" /> {fmt(ev.start_date)}{fmt(ev.end_date) ? ` – ${fmt(ev.end_date)}` : ""}
+              {ev.start_time ? ` · ${ev.start_time}${ev.end_time ? `–${ev.end_time}` : ""}` : ""}
+            </span>
+          )}
           {ev.location && <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" /> {ev.location}</span>}
         </div>
         {isManager && (
@@ -72,6 +77,14 @@ export default async function EventDashboardPage({ params }: { params: Promise<{
           </Link>
         )}
       </div>
+
+      {/* Guidelines */}
+      {ev.guidelines && (
+        <section className="bg-card border border-border rounded-xl p-5">
+          <h2 className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Guidelines</h2>
+          <div className="text-sm whitespace-pre-line leading-relaxed">{ev.guidelines}</div>
+        </section>
+      )}
 
       {/* Secretary */}
       {canSee("secretary") && ev.secretary_name && (

@@ -59,6 +59,8 @@ export type EventSummary = {
   location: string | null;
   start_date: string | null;
   end_date: string | null;
+  start_time: string | null;
+  end_time: string | null;
   status: EventStatus;
   access_code: string | null;
   secretary_id: string | null;
@@ -67,6 +69,8 @@ export type EventSummary = {
   participant_count: number;
   created_at: string;
 };
+
+export type GuidelineTemplate = { id: string; title: string; body: string };
 
 export type EventRider = {
   id: string;
@@ -93,6 +97,7 @@ export type EventParticipant = {
 
 export type EventFull = EventSummary & {
   visibility: EventVisibility;
+  guidelines: string | null;
   riders: EventRider[];
   participants: EventParticipant[];
 };
@@ -129,6 +134,9 @@ export type CreateEventInput = {
   location?: string;
   startDate?: string | null;
   endDate?: string | null;
+  startTime?: string | null;
+  endTime?: string | null;
+  guidelines?: string | null;
   secretaryId?: string | null;
 };
 
@@ -136,9 +144,10 @@ export async function createFullEvent(input: CreateEventInput, createdBy: string
   const slug = await uniqueEventSlug(input.name);
   const code = await uniqueCode();
   const rows = await query<{ id: string }>(
-    `insert into events (name, slug, location, start_date, end_date, secretary_id, access_code, status, visibility, created_by, updated_at)
-          values ($1, $2, $3, $4, $5, $6, $7, 'upcoming',
-                  '{"riders":true,"scores":true,"judges":true,"secretary":true}'::jsonb, $8, now())
+    `insert into events (name, slug, location, start_date, end_date, start_time, end_time, guidelines,
+                         secretary_id, access_code, status, visibility, created_by, updated_at)
+          values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'upcoming',
+                  '{"riders":true,"scores":true,"judges":true,"secretary":true}'::jsonb, $11, now())
        returning id`,
     [
       input.name.trim(),
@@ -146,6 +155,9 @@ export async function createFullEvent(input: CreateEventInput, createdBy: string
       input.location?.trim() || null,
       input.startDate || null,
       input.endDate || null,
+      input.startTime || null,
+      input.endTime || null,
+      input.guidelines?.trim() || null,
       input.secretaryId || null,
       code,
       createdBy,
@@ -156,15 +168,55 @@ export async function createFullEvent(input: CreateEventInput, createdBy: string
 
 export async function updateEventMeta(
   id: string,
-  input: { name: string; location?: string; startDate?: string | null; endDate?: string | null; status?: EventStatus; secretaryId?: string | null }
+  input: {
+    name: string;
+    location?: string;
+    startDate?: string | null;
+    endDate?: string | null;
+    startTime?: string | null;
+    endTime?: string | null;
+    guidelines?: string | null;
+    status?: EventStatus;
+    secretaryId?: string | null;
+  }
 ) {
   await query(
     `update events
         set name = $2, location = $3, start_date = $4, end_date = $5,
-            status = coalesce($6, status), secretary_id = $7, updated_at = now()
+            start_time = $6, end_time = $7, guidelines = $8,
+            status = coalesce($9, status), secretary_id = $10, updated_at = now()
       where id = $1`,
-    [id, input.name.trim(), input.location?.trim() || null, input.startDate || null, input.endDate || null, input.status || null, input.secretaryId || null]
+    [
+      id,
+      input.name.trim(),
+      input.location?.trim() || null,
+      input.startDate || null,
+      input.endDate || null,
+      input.startTime || null,
+      input.endTime || null,
+      input.guidelines?.trim() || null,
+      input.status || null,
+      input.secretaryId || null,
+    ]
   );
+}
+
+export async function listGuidelineTemplates(): Promise<GuidelineTemplate[]> {
+  return query<GuidelineTemplate>(
+    `select id, title, body from guideline_templates order by created_at desc`
+  );
+}
+
+export async function createGuidelineTemplate(title: string, body: string, userId: string) {
+  await query(`insert into guideline_templates (title, body, created_by) values ($1,$2,$3)`, [
+    title.trim(),
+    body.trim(),
+    userId,
+  ]);
+}
+
+export async function deleteGuidelineTemplate(id: string) {
+  await query(`delete from guideline_templates where id = $1`, [id]);
 }
 
 export async function setEventVisibility(id: string, visibility: EventVisibility) {
@@ -182,6 +234,7 @@ export async function regenerateAccessCode(id: string): Promise<string> {
 
 const SUMMARY_SELECT = `
   select e.id, e.name, e.slug, e.location, e.start_date, e.end_date,
+         e.start_time, e.end_time,
          e.status, e.access_code, e.secretary_id, s.name as secretary_name,
          e.created_at,
          (select count(*) from event_riders r where r.event_id = e.id)::int as rider_count,
@@ -215,8 +268,8 @@ export async function getEventById(id: string): Promise<EventFull | null> {
   );
   // visibility isn't in SUMMARY_SELECT; fetch separately to keep that select reusable
   if (rows.length === 0) return null;
-  const visRows = await query<{ visibility: EventVisibility }>(
-    `select visibility from events where id = $1`,
+  const visRows = await query<{ visibility: EventVisibility; guidelines: string | null }>(
+    `select visibility, guidelines from events where id = $1`,
     [id]
   );
   const riders = await query<EventRider>(
@@ -229,7 +282,13 @@ export async function getEventById(id: string): Promise<EventFull | null> {
       where p.event_id = $1 order by p.invited_at`,
     [id]
   );
-  return { ...rows[0], visibility: visRows[0]?.visibility ?? {}, riders, participants };
+  return {
+    ...rows[0],
+    visibility: visRows[0]?.visibility ?? {},
+    guidelines: visRows[0]?.guidelines ?? null,
+    riders,
+    participants,
+  };
 }
 
 // ---- Riders ----
@@ -248,6 +307,30 @@ export async function addRider(eventId: string, r: RiderInput) {
           values ($1,$2,$3,$4,$5,$6,$7)`,
     [eventId, r.name.trim(), r.nf || null, r.competitorNo || null, r.horse || null, r.horseNo || null, r.imageUrl || null]
   );
+}
+
+export async function addRidersBulk(eventId: string, riders: RiderInput[]): Promise<number> {
+  const client = await pool.connect();
+  let count = 0;
+  try {
+    await client.query("begin");
+    for (const r of riders) {
+      if (!r.name?.trim()) continue;
+      await client.query(
+        `insert into event_riders (event_id, name, nf, competitor_no, horse, horse_no, image_url)
+              values ($1,$2,$3,$4,$5,$6,$7)`,
+        [eventId, r.name.trim(), r.nf || null, r.competitorNo || null, r.horse || null, r.horseNo || null, r.imageUrl || null]
+      );
+      count++;
+    }
+    await client.query("commit");
+  } catch (e) {
+    await client.query("rollback");
+    throw e;
+  } finally {
+    client.release();
+  }
+  return count;
 }
 
 export async function deleteRider(riderId: string) {

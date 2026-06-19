@@ -119,7 +119,19 @@ alter table events add column if not exists status       text not null default '
 alter table events add column if not exists visibility   jsonb not null default '{}'::jsonb;
 alter table events add column if not exists created_by   uuid references users(id) on delete set null;
 alter table events add column if not exists updated_at   timestamptz not null default now();
+alter table events add column if not exists guidelines text;
+alter table events add column if not exists start_time text;
+alter table events add column if not exists end_time   text;
 create unique index if not exists events_access_code_key on events (access_code) where access_code is not null;
+
+-- Reusable guideline templates (save guidelines for future events).
+create table if not exists guideline_templates (
+  id         uuid primary key default gen_random_uuid(),
+  title      text not null,
+  body       text not null,
+  created_by uuid references users(id) on delete set null,
+  created_at timestamptz not null default now()
+);
 
 -- Judges / writers / examiners attached to an event.
 create table if not exists event_participants (

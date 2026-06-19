@@ -1,8 +1,10 @@
 import { redirect, notFound } from "next/navigation";
 import { auth } from "@/auth";
-import { getEventById, listSheetsByEvent } from "@/lib/events";
+import { getEventById, listSheetsByEvent, listGuidelineTemplates } from "@/lib/events";
 import { listUsers } from "@/lib/users";
 import { listCustomSheetCards } from "@/lib/customSheets";
+import { GuidelinesField } from "../GuidelinesField";
+import { BulkRiderImport } from "../BulkRiderImport";
 import { TEST_CARDS } from "@/lib/dummy-data";
 import { ROLE_LABELS, type UserRole } from "@/lib/roles";
 import {
@@ -44,10 +46,11 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
   const isOwner = ev.secretary_id === user.id;
   if (!isAdmin && !isOwner) redirect("/dashboard");
 
-  const [allUsers, customCards, sheetsByEvent] = await Promise.all([
+  const [allUsers, customCards, sheetsByEvent, templates] = await Promise.all([
     listUsers(),
     listCustomSheetCards(),
     listSheetsByEvent(),
+    listGuidelineTemplates(),
   ]);
   const assignedSlugs = new Set(sheetsByEvent[id] ?? []);
   const bySlug = new Map(TEST_CARDS.map((c) => [c.slug, c]));
@@ -114,7 +117,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
             <input name="name" defaultValue={ev.name} required className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
           </div>
           <div>
-            <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Location</label>
+            <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Venue</label>
             <input name="location" defaultValue={ev.location ?? ""} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
           </div>
           <div>
@@ -132,6 +135,17 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
           <div>
             <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">End date</label>
             <input type="date" name="endDate" defaultValue={ev.end_date ?? ""} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
+          </div>
+          <div>
+            <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Start time</label>
+            <input type="time" name="startTime" defaultValue={ev.start_time ?? ""} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
+          </div>
+          <div>
+            <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">End time</label>
+            <input type="time" name="endTime" defaultValue={ev.end_time ?? ""} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
+          </div>
+          <div className="sm:col-span-2">
+            <GuidelinesField initial={ev.guidelines} templates={templates} />
           </div>
           <div className="sm:col-span-2">
             <button className="bg-primary text-primary-foreground rounded-lg px-4 py-2 text-sm font-medium hover:opacity-90 transition-opacity">Save details</button>
@@ -159,6 +173,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
 
       {/* Riders */}
       <Section title={`Riders (${ev.riders.length})`}>
+        <BulkRiderImport eventId={id} />
         <form action={addRiderAction} className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
           <input type="hidden" name="eventId" value={id} />
           <input name="name" required placeholder="Rider name" className="col-span-2 sm:col-span-1 bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />

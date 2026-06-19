@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { listAllEvents, listEventsForSecretary, type EventSummary } from "@/lib/events";
+import { listAllEvents, listEventsForSecretary, listGuidelineTemplates, type EventSummary } from "@/lib/events";
 import { listUsers } from "@/lib/users";
 import { listCustomSheetCards } from "@/lib/customSheets";
 import { TEST_CARDS } from "@/lib/dummy-data";
 import { createFullEventAction } from "./actions";
+import { GuidelinesField } from "./GuidelinesField";
 import { CalendarRange, Plus, MapPin, Users as UsersIcon, ChevronRight, ChevronDown } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -40,6 +41,7 @@ export default async function EventsAdminPage() {
   const bySlug = new Map(TEST_CARDS.map((c) => [c.slug, c]));
   customCards.forEach((c) => bySlug.set(c.slug, c));
   const allSheets = [...bySlug.values()];
+  const templates = await listGuidelineTemplates();
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
@@ -62,7 +64,7 @@ export default async function EventsAdminPage() {
             className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
         </div>
         <div>
-          <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Location</label>
+          <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Venue</label>
           <input name="location" placeholder="Arena / city"
             className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
         </div>
@@ -87,6 +89,19 @@ export default async function EventsAdminPage() {
           <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">End date</label>
           <input type="date" name="endDate"
             className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
+        </div>
+        <div>
+          <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Start time</label>
+          <input type="time" name="startTime"
+            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
+        </div>
+        <div>
+          <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">End time</label>
+          <input type="time" name="endTime"
+            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
+        </div>
+        <div className="sm:col-span-2">
+          <GuidelinesField templates={templates} />
         </div>
         <details className="sm:col-span-2 group border border-border rounded-lg">
           <summary className="flex items-center gap-2 px-3 py-2 cursor-pointer select-none list-none text-sm">
