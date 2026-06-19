@@ -7,6 +7,9 @@ import { useParams } from "next/navigation";
 import { type Rider, DUMMY_RIDERS } from "@/lib/dummy-data";
 import { useAuth } from "@/contexts/AuthContext";
 import { TEST_CONFIGS, COURSE_ERRORS, type Movement, type CollectiveCriteria, type TestConfig } from "@/lib/tests";
+import { isShowJumping, isQuality } from "@/lib/sheetTypes";
+import { ShowJumpingSheet } from "./ShowJumpingSheet";
+import { QualityScoringSheet } from "./QualityScoringSheet";
 import { ChevronDown, Check, Calendar as CalendarIcon } from "lucide-react";
 import { format, parse } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
@@ -69,6 +72,12 @@ export default function ScoringPage() {
         </div>
       </div>
     );
+  }
+  if (isShowJumping(resolved)) {
+    return <ShowJumpingSheet config={resolved} slug={testId} />;
+  }
+  if (isQuality(resolved)) {
+    return <QualityScoringSheet config={resolved} slug={testId} />;
   }
   return <ScoringSheet config={resolved} testId={testId} />;
 }

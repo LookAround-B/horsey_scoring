@@ -1,6 +1,7 @@
 import { query } from "@/lib/db";
 import { TEST_CARDS, type TestCard } from "@/lib/dummy-data";
 import { TEST_CONFIGS, type TestConfig } from "@/lib/tests";
+import type { ShowJumpingConfig, QualityConfig } from "@/lib/sheetTypes";
 
 export type Discipline = "dressage" | "showjumping";
 
@@ -78,16 +79,119 @@ export async function getCustomSheetConfig(slug: string): Promise<StoredConfig |
   return rows[0]?.config ?? null;
 }
 
-export async function createCustomSheet(input: CreateSheetInput, createdBy: string): Promise<string> {
-  // Build a unique slug, avoiding both built-in and existing custom slugs.
+async function uniqueSlug(label: string): Promise<string> {
   const taken = new Set<string>(TEST_CARDS.map((t) => t.slug));
   const existing = await query<{ slug: string }>(`select slug from custom_sheets`);
   existing.forEach((r) => taken.add(r.slug));
-
-  const base = slugify(input.label);
+  const base = slugify(label);
   let slug = base;
   let n = 2;
   while (taken.has(slug)) slug = `${base}-${n++}`;
+  return slug;
+}
+
+const clampInt = (v: number, lo: number, hi: number) =>
+  Math.max(lo, Math.min(hi, Math.round(Number.isFinite(v) ? v : lo)));
+
+export type ShowJumpingInput = {
+  label: string;
+  subtitle: string;
+  obstacleCount: number;
+  defaultRows: number;
+};
+
+function buildShowJumpingConfig(input: ShowJumpingInput): ShowJumpingConfig {
+  return {
+    kind: "showjumping",
+    label: input.label.trim(),
+    subtitle: input.subtitle.trim(),
+    obstacleCount: clampInt(input.obstacleCount, 1, 40),
+    defaultRows: clampInt(input.defaultRows, 1, 60),
+  };
+}
+
+export async function createShowJumpingSheet(
+  input: ShowJumpingInput,
+  createdBy: string
+): Promise<string> {
+  const slug = await uniqueSlug(input.label);
+  const config = buildShowJumpingConfig(input);
+  await query(
+    `insert into custom_sheets (slug, label, appendix, subtitle, abbr, discipline, config, max_score, created_by)
+          values ($1, $2, '', $3, $4, 'showjumping', $5, 0, $6)`,
+    [slug, config.label, config.subtitle, abbrFrom(config.label), JSON.stringify(config), createdBy]
+  );
+  return slug;
+}
+
+export async function updateShowJumpingSheet(
+  slug: string,
+  input: ShowJumpingInput,
+  updatedBy: string
+) {
+  const config = buildShowJumpingConfig(input);
+  await query(
+    `insert into custom_sheets (slug, label, appendix, subtitle, abbr, discipline, config, max_score, created_by)
+          values ($1, $2, '', $3, $4, 'showjumping', $5, 0, $6)
+     on conflict (slug) do update
+          set label = excluded.label,
+              subtitle = excluded.subtitle,
+              abbr = excluded.abbr,
+              discipline = 'showjumping',
+              config = excluded.config,
+              max_score = 0`,
+    [slug, config.label, config.subtitle, abbrFrom(config.label), JSON.stringify(config), updatedBy]
+  );
+}
+
+export type QualityInput = {
+  label: string;
+  subtitle: string;
+  criteria: { title: string; description: string }[];
+};
+
+function buildQualityConfig(input: QualityInput): QualityConfig {
+  return {
+    kind: "quality",
+    label: input.label.trim(),
+    subtitle: input.subtitle.trim(),
+    criteria: input.criteria
+      .filter((c) => c.title.trim())
+      .map((c) => ({ title: c.title.trim(), description: c.description.trim() })),
+  };
+}
+
+export async function createQualitySheet(input: QualityInput, createdBy: string): Promise<string> {
+  const slug = await uniqueSlug(input.label);
+  const config = buildQualityConfig(input);
+  const maxScore = config.criteria.length * 10;
+  await query(
+    `insert into custom_sheets (slug, label, appendix, subtitle, abbr, discipline, config, max_score, created_by)
+          values ($1, $2, '', $3, $4, 'dressage', $5, $6, $7)`,
+    [slug, config.label, config.subtitle, abbrFrom(config.label), JSON.stringify(config), maxScore, createdBy]
+  );
+  return slug;
+}
+
+export async function updateQualitySheet(slug: string, input: QualityInput, updatedBy: string) {
+  const config = buildQualityConfig(input);
+  const maxScore = config.criteria.length * 10;
+  await query(
+    `insert into custom_sheets (slug, label, appendix, subtitle, abbr, discipline, config, max_score, created_by)
+          values ($1, $2, '', $3, $4, 'dressage', $5, $6, $7)
+     on conflict (slug) do update
+          set label = excluded.label,
+              subtitle = excluded.subtitle,
+              abbr = excluded.abbr,
+              discipline = 'dressage',
+              config = excluded.config,
+              max_score = excluded.max_score`,
+    [slug, config.label, config.subtitle, abbrFrom(config.label), JSON.stringify(config), maxScore, updatedBy]
+  );
+}
+
+export async function createCustomSheet(input: CreateSheetInput, createdBy: string): Promise<string> {
+  const slug = await uniqueSlug(input.label);
 
   const movements = input.movements.map((m, i) => ({
     no: m.no.trim() || String(i + 1),
@@ -135,12 +239,15 @@ export async function deleteCustomSheet(slug: string) {
 export async function getEditableConfig(
   slug: string
 ): Promise<{
-  config: TestConfig;
+  config: TestConfig | ShowJumpingConfig | QualityConfig;
   discipline: Discipline;
   isBuiltIn: boolean;
   hasOverride: boolean;
 } | null> {
-  const rows = await query<{ config: TestConfig; discipline: Discipline }>(
+  const rows = await query<{
+    config: TestConfig | ShowJumpingConfig | QualityConfig;
+    discipline: Discipline;
+  }>(
     `select config, discipline from custom_sheets where slug = $1`,
     [slug]
   );

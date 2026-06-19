@@ -466,7 +466,11 @@ export default function HubPage() {
                     </div>
                     <div className="flex items-center justify-between mt-auto pt-3 border-t border-border">
                       <div className="text-xs text-muted-foreground">
-                        Max <span className="font-mono">{t.maxScore}</span> pts
+                        {disciplineOf(t) === "showjumping" ? (
+                          "Show jumping"
+                        ) : (
+                          <>Max <span className="font-mono">{t.maxScore}</span> pts</>
+                        )}
                         {riderCount > 0 && <> · <span className="text-foreground">{riderCount} riders today</span></>}
                       </div>
                       <div className="flex items-center gap-1.5">
