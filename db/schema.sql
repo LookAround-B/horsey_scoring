@@ -107,6 +107,50 @@ create table if not exists custom_sheets (
 );
 
 -- ============================================================================
+-- Full events (shows): secretary, riders, judges/writers, access code, etc.
+-- (Upgrades the event-tab table above into a complete show.)
+-- ============================================================================
+alter table events add column if not exists location     text;
+alter table events add column if not exists start_date   date;
+alter table events add column if not exists end_date     date;
+alter table events add column if not exists secretary_id uuid references users(id) on delete set null;
+alter table events add column if not exists access_code  text;
+alter table events add column if not exists status       text not null default 'upcoming';
+alter table events add column if not exists visibility   jsonb not null default '{}'::jsonb;
+alter table events add column if not exists created_by   uuid references users(id) on delete set null;
+alter table events add column if not exists updated_at   timestamptz not null default now();
+create unique index if not exists events_access_code_key on events (access_code) where access_code is not null;
+
+-- Judges / writers / examiners attached to an event.
+create table if not exists event_participants (
+  id            uuid primary key default gen_random_uuid(),
+  event_id      uuid not null references events(id) on delete cascade,
+  user_id       uuid not null references users(id) on delete cascade,
+  role_at_event text,
+  invited_at    timestamptz not null default now(),
+  joined_at     timestamptz,
+  unique (event_id, user_id)
+);
+
+-- Riders entered in an event.
+create table if not exists event_riders (
+  id            uuid primary key default gen_random_uuid(),
+  event_id      uuid not null references events(id) on delete cascade,
+  name          text not null,
+  nf            text,
+  competitor_no text,
+  horse         text,
+  horse_no      text,
+  image_url     text,
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now()
+);
+
+-- Profile extras.
+alter table users add column if not exists image_url text;
+alter table users add column if not exists phone     text;
+
+-- ============================================================================
 -- 3. SEED THE SUPER ADMIN
 --    Easiest: run  `node scripts/create-admin.mjs`  (hashes the password for you).
 --    Or manually, after inserting a row, set:

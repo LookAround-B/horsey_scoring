@@ -8,7 +8,7 @@ import { ROLE_LABELS, UserRole } from "@/lib/dummy-data";
 import {
   LayoutDashboard, Calendar, Users, FileText, ClipboardCheck,
   BookOpen, Trophy, Settings, LogOut, Menu, ChevronRight,
-  UserCircle, Pen, Eye, Shield, UserCheck, Layers, FilePlus2,
+  UserCircle, Pen, Eye, Shield, UserCheck, Layers, FilePlus2, KeyRound,
 } from "lucide-react";
 
 type NavItem = { label: string; href: string; icon: React.ElementType };
@@ -23,44 +23,46 @@ const NAV: Record<UserRole, NavItem[]> = {
     { label: "Add Sheet",      href: "/dashboard/admin/add-sheet", icon: FilePlus2 },
     { label: "Sheet Placement", href: "/dashboard/admin/sheets", icon: Layers },
     { label: "Events",         href: "/dashboard/admin/events", icon: Calendar },
-    { label: "Users",          href: "/dashboard/admin",     icon: Users },
+    { label: "Users",          href: "/dashboard/admin/users", icon: Users },
     { label: "All Sessions",   href: "/dashboard/admin",     icon: FileText },
     { label: "Settings",       href: "/dashboard/admin",     icon: Settings },
   ],
   show_secretary: [
     HOME_ITEM,
+    { label: "Events",         href: "/dashboard/admin/events", icon: Calendar },
     { label: "Secretary",      href: "/dashboard/secretary", icon: ClipboardCheck },
-    { label: "Events",         href: "/dashboard/secretary", icon: Calendar },
     { label: "Riders",         href: "/dashboard/secretary", icon: Users },
     { label: "Results",        href: "/dashboard/secretary", icon: Trophy },
   ],
   dressage_judge: [
     HOME_ITEM,
+    { label: "My Events",      href: "/dashboard/events",             icon: Calendar },
+    { label: "Join Event",     href: "/dashboard/join",               icon: KeyRound },
     { label: "Judge Panel",    href: "/dashboard/judge/dressage",     icon: ClipboardCheck },
-    { label: "Today's Rides",  href: "/dashboard/judge/dressage",     icon: Calendar },
-    { label: "History",        href: "/dashboard/judge/dressage",     icon: FileText },
   ],
   showjumping_judge: [
     HOME_ITEM,
+    { label: "My Events",      href: "/dashboard/events",             icon: Calendar },
+    { label: "Join Event",     href: "/dashboard/join",               icon: KeyRound },
     { label: "Judge Panel",    href: "/dashboard/judge/showjumping",  icon: ClipboardCheck },
-    { label: "Today's Rounds", href: "/dashboard/judge/showjumping",  icon: Calendar },
   ],
   dressage_writer: [
     HOME_ITEM,
+    { label: "My Events",      href: "/dashboard/events",             icon: Calendar },
+    { label: "Join Event",     href: "/dashboard/join",               icon: KeyRound },
     { label: "Writer Panel",   href: "/dashboard/writer/dressage",    icon: Pen },
-    { label: "Active Session", href: "/dashboard/writer/dressage",    icon: FileText },
-    { label: "Ride List",      href: "/dashboard/writer/dressage",    icon: BookOpen },
   ],
   showjumping_writer: [
     HOME_ITEM,
+    { label: "My Events",      href: "/dashboard/events",             icon: Calendar },
+    { label: "Join Event",     href: "/dashboard/join",               icon: KeyRound },
     { label: "Writer Panel",   href: "/dashboard/writer/showjumping", icon: Pen },
-    { label: "Active Session", href: "/dashboard/writer/showjumping", icon: FileText },
   ],
   examiner: [
     HOME_ITEM,
+    { label: "My Events",      href: "/dashboard/events",             icon: Calendar },
+    { label: "Join Event",     href: "/dashboard/join",               icon: KeyRound },
     { label: "Examiner Panel", href: "/dashboard/examiner",           icon: Eye },
-    { label: "Review Queue",   href: "/dashboard/examiner",           icon: ClipboardCheck },
-    { label: "Verified",       href: "/dashboard/examiner",           icon: Trophy },
   ],
   rider: [
     HOME_ITEM,

@@ -7,12 +7,14 @@ export type AppUser = {
   email: string | null;
   role: UserRole | null;
   status: ApprovalStatus;
+  image_url: string | null;
+  phone: string | null;
   created_at: string;
 };
 
 export async function listUsers(): Promise<AppUser[]> {
   return query<AppUser>(
-    `select id, name, email, role, status, created_at
+    `select id, name, email, role, status, image_url, phone, created_at
        from users
       order by (status = 'pending') desc, created_at desc`
   );
