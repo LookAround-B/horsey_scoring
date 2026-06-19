@@ -149,6 +149,17 @@ create table if not exists event_riders (
 -- Profile extras.
 alter table users add column if not exists image_url text;
 alter table users add column if not exists phone     text;
+alter table users add column if not exists signature text;
+alter table users add column if not exists updated_at timestamptz not null default now();
+
+-- Which profile fields are mandatory (super-admin controlled).
+create table if not exists profile_field_config (
+  field    text primary key,
+  required boolean not null default false
+);
+insert into profile_field_config (field, required) values
+  ('phone', false), ('image_url', false), ('signature', false)
+  on conflict (field) do nothing;
 
 -- Shared, DB-backed scores (so judges, writers, secretary, admin see the same data).
 -- Dressage/quality: one row per (event, sheet, rider). Show jumping: one row per

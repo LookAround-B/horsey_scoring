@@ -24,8 +24,7 @@ const NAV: Record<UserRole, NavItem[]> = {
     { label: "Sheet Placement", href: "/dashboard/admin/sheets", icon: Layers },
     { label: "Events",         href: "/dashboard/admin/events", icon: Calendar },
     { label: "Users",          href: "/dashboard/admin/users", icon: Users },
-    { label: "All Sessions",   href: "/dashboard/admin",     icon: FileText },
-    { label: "Settings",       href: "/dashboard/admin",     icon: Settings },
+    { label: "Profile Fields", href: "/dashboard/admin/profile-fields", icon: Settings },
   ],
   show_secretary: [
     HOME_ITEM,
@@ -163,6 +162,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div className="text-[10px] text-muted-foreground truncate">{user.email}</div>
           </div>
         </div>
+        <Link
+          href="/profile"
+          onClick={() => setSidebarOpen(false)}
+          className="w-full flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded-lg hover:bg-muted transition-colors mb-0.5"
+        >
+          <UserCircle className="h-3.5 w-3.5" />
+          My profile
+        </Link>
         <button
           onClick={() => { logout(); router.push("/login"); }}
           className="w-full flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded-lg hover:bg-muted transition-colors"

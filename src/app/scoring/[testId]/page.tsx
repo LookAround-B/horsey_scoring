@@ -139,6 +139,7 @@ function ScoringSheet({
   const [courseError, setCourseError] = useState<number>(0);
   const [otherErrors, setOtherErrors] = useState<number>(0);
   const [organisers, setOrganisers] = useState<string>("");
+  const [signature, setSignature] = useState<string>("");
   const [technicalScore, setTechnicalScore] = useState<string>("");
 
   const [showSaveModal, setShowSaveModal] = useState(false);
@@ -286,17 +287,17 @@ function ScoringSheet({
       meta, scores, corrections, coefficients, remarks,
       collectiveScores, collectiveCorrections, collectiveRemarksMap,
       artisticScores, artisticCorrections,
-      courseError, otherErrors, organisers, technicalScore,
+      courseError, otherErrors, organisers, technicalScore, signature,
       ts: Date.now(),
     };
     const t = setTimeout(() => {
-      store.save(payload, { result: eliminated ? -1 : percentage });
+      store.save(payload, { result: eliminated ? -1 : percentage, signature });
       setSavedAt(Date.now());
       setHasDraft(true);
     }, 400);
     return () => clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [meta, scores, corrections, coefficients, remarks, collectiveScores, collectiveCorrections, collectiveRemarksMap, artisticScores, artisticCorrections, courseError, otherErrors, organisers, technicalScore]);
+  }, [meta, scores, corrections, coefficients, remarks, collectiveScores, collectiveCorrections, collectiveRemarksMap, artisticScores, artisticCorrections, courseError, otherErrors, organisers, technicalScore, signature]);
 
   // Populate every field of the sheet from a saved payload (used by both draft restore and "Open" from a saved score).
   const applySheet = (d: Record<string, unknown> | null | undefined) => {
@@ -318,6 +319,7 @@ function ScoringSheet({
     setCourseError((d.courseError as number) ?? 0);
     setOtherErrors((d.otherErrors as number) ?? 0);
     setOrganisers((d.organisers as string) ?? "");
+    setSignature((d.signature as string) ?? "");
     setTechnicalScore((d.technicalScore as string) ?? "");
     setArtisticScores((d.artisticScores as Record<string, string>) ?? {});
     setArtisticCorrections((d.artisticCorrections as Record<string, string>) ?? {});
@@ -1177,10 +1179,13 @@ function ScoringSheet({
           </div>
           <div className="bg-card border border-border rounded-xl p-6 shadow-soft">
             <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Signature of Judge</div>
-            <div className="border-b border-dashed border-border h-16" />
-            <div className="text-xs text-muted-foreground mt-2 italic">
-              {meta.judge ? meta.judge : "—"}
-            </div>
+            <input
+              value={signature}
+              onChange={(e) => setSignature(e.target.value)}
+              placeholder="Type signature…"
+              className="w-full bg-transparent border-b border-dashed border-border py-1 text-sm outline-none focus:border-primary font-display italic"
+            />
+            <div className="text-xs text-muted-foreground mt-2 italic">{meta.judge || "—"}</div>
           </div>
         </section>
       </main>
