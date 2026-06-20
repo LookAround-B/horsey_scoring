@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, Plus, Trash2, RotateCcw, Save, Printer } from "lucide-react";
 import type { ShowJumpingConfig } from "@/lib/sheetTypes";
 import { useScoreStore } from "@/lib/useScoreStore";
+import { EventTimer } from "@/components/EventTimer";
 
 type Row = {
   riderNo: string;
@@ -190,6 +191,7 @@ export function ShowJumpingSheet({
           >
             <RotateCcw className="h-3.5 w-3.5" /> Reset
           </button>
+          <EventTimer timeAllowed={header.timeAllowed} timeLimit={header.timeLimit} discipline="showjumping" />
           <button
             onClick={() => window.print()}
             className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border border-border hover:bg-muted transition-colors"

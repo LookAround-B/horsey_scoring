@@ -191,8 +191,12 @@ export default function HubPage() {
   const allCards = [...cardBySlug.values()];
   const disciplineOf = (t: { slug: string; discipline?: Discipline }): Discipline =>
     placements[t.slug] ?? t.discipline ?? "dressage";
+  const inAnyJoinedEvent = (slug: string) =>
+    events.some((ev) => (membership[slug] ?? []).includes(ev.slug));
   const inEvent = (slug: string) =>
-    selectedEvent === "all" || (membership[slug]?.includes(selectedEvent) ?? false);
+    selectedEvent === "all"
+      ? inAnyJoinedEvent(slug)
+      : (membership[slug]?.includes(selectedEvent) ?? false);
   const sheetCards = allCards.filter(
     (t) => disciplineOf(t) === sheetDiscipline && inEvent(t.slug)
   );
@@ -398,11 +402,11 @@ export default function HubPage() {
       {tab === "sheets" && (
         <div className="space-y-4">
           {/* Event tabs */}
-          <div className="flex items-center gap-1 border-b border-border overflow-x-auto">
+          <div className="flex flex-wrap items-center gap-1 border-b border-border">
             {[{ slug: "all", name: "All" }, ...events].map((ev) => {
               const count =
                 ev.slug === "all"
-                  ? allCards.length
+                  ? allCards.filter((t) => inAnyJoinedEvent(t.slug)).length
                   : allCards.filter((t) => membership[t.slug]?.includes(ev.slug)).length;
               const active = selectedEvent === ev.slug;
               return (

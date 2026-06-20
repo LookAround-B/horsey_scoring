@@ -7,6 +7,7 @@ import {
   createFullEvent,
   updateEventMeta,
   setEventVisibility,
+  setEventTimerConfig,
   regenerateAccessCode,
   addRider,
   addRidersBulk,
@@ -116,6 +117,15 @@ export async function setVisibilityAction(formData: FormData) {
     judges: formData.get("judges") === "on",
     secretary: formData.get("secretary") === "on",
   });
+  revalidatePath(`/dashboard/admin/events/${id}`);
+}
+
+export async function setTimerConfigAction(formData: FormData) {
+  const id = String(formData.get("eventId") ?? "");
+  await requireEventManager(id);
+  const dressage = parseInt(String(formData.get("dressSec") ?? "")) || undefined;
+  const showjumping = parseInt(String(formData.get("sjSec") ?? "")) || undefined;
+  await setEventTimerConfig(id, { dressage, showjumping });
   revalidatePath(`/dashboard/admin/events/${id}`);
 }
 

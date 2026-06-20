@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ROLE_LABELS, type UserRole } from "@/lib/dummy-data";
 import {
   Calendar, KeyRound, UserCircle, ClipboardList, Shield, Users, UserCheck,
-  FilePlus2, CalendarRange, Layers,
+  FilePlus2, CalendarRange, Layers, Trophy,
 } from "lucide-react";
 
 type Action = { label: string; href: string; icon: React.ElementType; hint?: string };
@@ -21,8 +21,8 @@ const ACTIONS: Record<UserRole, Action[]> = {
   ],
   show_secretary: [
     { label: "My Events", href: "/dashboard/admin/events", icon: CalendarRange, hint: "Create & manage shows" },
-    { label: "Scoring Sheets", href: "/dashboard", icon: ClipboardList },
-    { label: "My Profile", href: "/profile", icon: UserCircle },
+    { label: "Secretary", href: "/dashboard/secretary", icon: ClipboardList, hint: "Secretary dashboard" },
+    { label: "My Profile", href: "/profile", icon: UserCircle, hint: "Keep your profile updated" },
   ],
   dressage_judge: officialActions(),
   showjumping_judge: officialActions(),
@@ -30,8 +30,9 @@ const ACTIONS: Record<UserRole, Action[]> = {
   showjumping_writer: officialActions(),
   examiner: officialActions(),
   rider: [
-    { label: "My Events", href: "/dashboard/events", icon: Calendar },
-    { label: "My Profile", href: "/profile", icon: UserCircle },
+    { label: "My Events", href: "/dashboard/events", icon: Calendar, hint: "Events you're entered in" },
+    { label: "My Results", href: "/dashboard/rider/results", icon: Trophy, hint: "Your verified scores" },
+    { label: "My Profile", href: "/profile", icon: UserCircle, hint: "Photo & e-signature" },
   ],
 };
 

@@ -18,20 +18,19 @@ const HOME_ITEM: NavItem = { label: "Home", href: "/dashboard", icon: LayoutDash
 const NAV: Record<UserRole, NavItem[]> = {
   super_admin: [
     HOME_ITEM,
-    { label: "Admin Panel",    href: "/dashboard/admin",     icon: Shield },
-    { label: "Approvals",      href: "/dashboard/admin/approvals", icon: UserCheck },
-    { label: "Add Sheet",      href: "/dashboard/admin/add-sheet", icon: FilePlus2 },
-    { label: "Sheet Placement", href: "/dashboard/admin/sheets", icon: Layers },
-    { label: "Events",         href: "/dashboard/admin/events", icon: Calendar },
-    { label: "Users",          href: "/dashboard/admin/users", icon: Users },
+    { label: "Admin Panel",    href: "/dashboard/admin",              icon: Shield },
+    { label: "Approvals",      href: "/dashboard/admin/approvals",    icon: UserCheck },
+    { label: "Add Sheet",      href: "/dashboard/admin/add-sheet",    icon: FilePlus2 },
+    { label: "Sheet Placement",href: "/dashboard/admin/sheets",       icon: Layers },
+    { label: "Events",         href: "/dashboard/admin/events",       icon: Calendar },
+    { label: "Users",          href: "/dashboard/admin/users",        icon: Users },
     { label: "Profile Fields", href: "/dashboard/admin/profile-fields", icon: Settings },
   ],
   show_secretary: [
     HOME_ITEM,
-    { label: "Events",         href: "/dashboard/admin/events", icon: Calendar },
-    { label: "Secretary",      href: "/dashboard/secretary", icon: ClipboardCheck },
-    { label: "Riders",         href: "/dashboard/secretary", icon: Users },
-    { label: "Results",        href: "/dashboard/secretary", icon: Trophy },
+    { label: "Events",         href: "/dashboard/admin/events",       icon: Calendar },
+    { label: "Secretary",      href: "/dashboard/secretary",          icon: ClipboardCheck },
+    { label: "My Profile",     href: "/profile",                      icon: UserCircle },
   ],
   dressage_judge: [
     HOME_ITEM,
@@ -64,10 +63,9 @@ const NAV: Record<UserRole, NavItem[]> = {
     { label: "Examiner Panel", href: "/dashboard/examiner",           icon: Eye },
   ],
   rider: [
-    HOME_ITEM,
     { label: "My Entries",     href: "/dashboard/rider",              icon: BookOpen },
-    { label: "My Results",     href: "/dashboard/rider",              icon: Trophy },
-    { label: "My Profile",     href: "/dashboard/rider",              icon: UserCircle },
+    { label: "My Results",     href: "/dashboard/rider/results",      icon: Trophy },
+    { label: "My Profile",     href: "/profile",                      icon: UserCircle },
   ],
 };
 
@@ -82,17 +80,45 @@ const ROLE_COLORS: Record<UserRole, string> = {
   rider:              "bg-muted text-muted-foreground",
 };
 
+const FONT_SIZES = ["sm", "md", "lg", "xl"] as const;
+type FontSize = (typeof FONT_SIZES)[number];
+const FONT_LABELS: Record<FontSize, string> = { sm: "A-", md: "A", lg: "A+", xl: "A++" };
+
+function isActive(href: string, pathname: string) {
+  if (href === "/dashboard") return pathname === "/dashboard";
+  return pathname === href || pathname.startsWith(href + "/");
+}
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, logout, isLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [fontSize, setFontSize] = useState<FontSize>("md");
 
   useEffect(() => {
     if (!isLoading && !user) {
       router.replace("/login");
     }
   }, [user, isLoading, router]);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("font-size") as FontSize;
+      if (saved && FONT_SIZES.includes(saved)) {
+        setFontSize(saved);
+        document.documentElement.dataset.fontSize = saved;
+      }
+    } catch {}
+  }, []);
+
+  const changeFontSize = (size: FontSize) => {
+    setFontSize(size);
+    try {
+      localStorage.setItem("font-size", size);
+      document.documentElement.dataset.fontSize = size;
+    } catch {}
+  };
 
   if (isLoading || !user) {
     return (
@@ -114,7 +140,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="h-8 w-8 shrink-0 rounded-md bg-primary text-primary-foreground grid place-items-center font-display font-semibold text-sm">H</div>
           <div className="min-w-0">
             <div className="font-display text-base leading-tight">Horsey</div>
-            <div className="text-[10px] text-muted-foreground uppercase tracking-wide truncate">Dressage Platform</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wide truncate">Platform</div>
           </div>
         </Link>
       </div>
@@ -128,10 +154,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
+      <nav className="flex-1 overflow-y-auto no-scrollbar px-3 py-4 space-y-0.5">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const active = pathname === item.href;
+          const active = isActive(item.href, pathname);
           return (
             <Link
               key={item.label}
@@ -171,12 +197,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           My profile
         </Link>
         <button
-          onClick={() => { logout(); router.push("/login"); }}
-          className="w-full flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded-lg hover:bg-muted transition-colors"
+          onClick={async () => { await logout(); }}
+          className="w-full flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground px-3 py-2 rounded-lg hover:bg-muted transition-colors mb-2"
         >
           <LogOut className="h-3.5 w-3.5" />
           Sign out
         </button>
+
+        {/* Font size controls */}
+        <div className="flex items-center gap-1 pt-2 border-t border-border">
+          <span className="text-[10px] text-muted-foreground mr-1">Text</span>
+          {FONT_SIZES.map((size) => (
+            <button
+              key={size}
+              onClick={() => changeFontSize(size)}
+              title={`Font size: ${size}`}
+              className={`flex-1 py-1 rounded text-center leading-none transition-colors ${
+                fontSize === size
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted"
+              } ${size === "sm" ? "text-[10px]" : size === "md" ? "text-xs" : size === "lg" ? "text-sm" : "text-base"}`}
+            >
+              {FONT_LABELS[size]}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -215,7 +260,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto no-scrollbar">
           {children}
         </main>
       </div>

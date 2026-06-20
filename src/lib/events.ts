@@ -95,14 +95,20 @@ export type EventParticipant = {
   joined_at: string | null;
 };
 
+export type TimerConfig = {
+  dressage?: number;      // seconds
+  showjumping?: number;   // seconds (time allowed)
+};
+
 export type EventFull = EventSummary & {
   visibility: EventVisibility;
   guidelines: string | null;
+  timer_config: TimerConfig;
   riders: EventRider[];
   participants: EventParticipant[];
 };
 
-function genCode(len = 6): string {
+function genCode(len = 5): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no ambiguous chars
   let s = "";
   for (let i = 0; i < len; i++) s += chars[Math.floor(Math.random() * chars.length)];
@@ -226,6 +232,13 @@ export async function setEventVisibility(id: string, visibility: EventVisibility
   ]);
 }
 
+export async function setEventTimerConfig(id: string, config: TimerConfig) {
+  await query(`update events set timer_config = $2, updated_at = now() where id = $1`, [
+    id,
+    JSON.stringify(config),
+  ]);
+}
+
 export async function regenerateAccessCode(id: string): Promise<string> {
   const code = await uniqueCode();
   await query(`update events set access_code = $2, updated_at = now() where id = $1`, [id, code]);
@@ -282,10 +295,15 @@ export async function getEventById(id: string): Promise<EventFull | null> {
       where p.event_id = $1 order by p.invited_at`,
     [id]
   );
+  const timerRows = await query<{ timer_config: TimerConfig }>(
+    `select coalesce(timer_config, '{}') as timer_config from events where id = $1`,
+    [id]
+  );
   return {
     ...rows[0],
     visibility: visRows[0]?.visibility ?? {},
     guidelines: visRows[0]?.guidelines ?? null,
+    timer_config: timerRows[0]?.timer_config ?? {},
     riders,
     participants,
   };

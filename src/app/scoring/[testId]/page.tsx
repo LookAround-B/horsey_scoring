@@ -12,6 +12,7 @@ import { ShowJumpingSheet } from "./ShowJumpingSheet";
 import { QualityScoringSheet } from "./QualityScoringSheet";
 import { useScoreStore } from "@/lib/useScoreStore";
 import { ChevronDown, Check, Calendar as CalendarIcon } from "lucide-react";
+import { EventTimer } from "@/components/EventTimer";
 import { format, parse } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -540,6 +541,7 @@ function ScoringSheet({
             >
               {savedSuccess ? "Saved ✓" : "Save Score"}
             </button>
+            <EventTimer discipline="dressage" />
             <button
               onClick={exportPdf}
               className="text-sm px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:opacity-90 transition-opacity"

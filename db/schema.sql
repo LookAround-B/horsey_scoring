@@ -120,8 +120,10 @@ alter table events add column if not exists visibility   jsonb not null default 
 alter table events add column if not exists created_by   uuid references users(id) on delete set null;
 alter table events add column if not exists updated_at   timestamptz not null default now();
 alter table events add column if not exists guidelines text;
-alter table events add column if not exists start_time text;
-alter table events add column if not exists end_time   text;
+alter table events add column if not exists start_time   text;
+alter table events add column if not exists end_time     text;
+-- Timer limits per discipline, stored as seconds: { "dressage": 90, "showjumping": 75 }
+alter table events add column if not exists timer_config jsonb not null default '{}'::jsonb;
 create unique index if not exists events_access_code_key on events (access_code) where access_code is not null;
 
 -- Reusable guideline templates (save guidelines for future events).

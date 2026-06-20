@@ -34,8 +34,9 @@ export default function JoinEventPage() {
         <form onSubmit={submit} className="space-y-3">
           <input
             value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
-            placeholder="ABC123"
+            onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 5))}
+            placeholder="AB1CD"
+            maxLength={5}
             className="w-full text-center font-mono text-lg tracking-[0.3em] uppercase bg-background border border-border rounded-lg px-3 py-3 outline-none focus:border-primary"
           />
           {error && <p className="text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2">{error}</p>}
