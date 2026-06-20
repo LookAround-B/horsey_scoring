@@ -90,60 +90,6 @@ async function uniqueSlug(label: string): Promise<string> {
   return slug;
 }
 
-const clampInt = (v: number, lo: number, hi: number) =>
-  Math.max(lo, Math.min(hi, Math.round(Number.isFinite(v) ? v : lo)));
-
-export type ShowJumpingInput = {
-  label: string;
-  subtitle: string;
-  obstacleCount: number;
-  defaultRows: number;
-};
-
-function buildShowJumpingConfig(input: ShowJumpingInput): ShowJumpingConfig {
-  return {
-    kind: "showjumping",
-    label: input.label.trim(),
-    subtitle: input.subtitle.trim(),
-    obstacleCount: clampInt(input.obstacleCount, 1, 40),
-    defaultRows: clampInt(input.defaultRows, 1, 60),
-  };
-}
-
-export async function createShowJumpingSheet(
-  input: ShowJumpingInput,
-  createdBy: string
-): Promise<string> {
-  const slug = await uniqueSlug(input.label);
-  const config = buildShowJumpingConfig(input);
-  await query(
-    `insert into custom_sheets (slug, label, appendix, subtitle, abbr, discipline, config, max_score, created_by)
-          values ($1, $2, '', $3, $4, 'showjumping', $5, 0, $6)`,
-    [slug, config.label, config.subtitle, abbrFrom(config.label), JSON.stringify(config), createdBy]
-  );
-  return slug;
-}
-
-export async function updateShowJumpingSheet(
-  slug: string,
-  input: ShowJumpingInput,
-  updatedBy: string
-) {
-  const config = buildShowJumpingConfig(input);
-  await query(
-    `insert into custom_sheets (slug, label, appendix, subtitle, abbr, discipline, config, max_score, created_by)
-          values ($1, $2, '', $3, $4, 'showjumping', $5, 0, $6)
-     on conflict (slug) do update
-          set label = excluded.label,
-              subtitle = excluded.subtitle,
-              abbr = excluded.abbr,
-              discipline = 'showjumping',
-              config = excluded.config,
-              max_score = 0`,
-    [slug, config.label, config.subtitle, abbrFrom(config.label), JSON.stringify(config), updatedBy]
-  );
-}
-
 export type QualityInput = {
   label: string;
   subtitle: string;
@@ -308,6 +254,49 @@ export async function createShowJumpingSheet(
   );
 
   return slug;
+}
+
+export async function updateShowJumpingSheet(
+  slug: string,
+  input: CreateShowJumpingInput,
+  updatedBy: string
+): Promise<void> {
+  const obstacles = input.obstacles.map((o, i) => ({
+    name: o.name.trim() || String(i + 1),
+    type: o.type,
+  }));
+
+  const config: StoredJumpingConfig = {
+    label: input.label.trim(),
+    appendix: input.appendix.trim(),
+    abbr: abbrFrom(input.label),
+    subtitle: input.subtitle.trim(),
+    discipline: "showjumping",
+    obstacles,
+    riderRows: Math.max(1, Math.trunc(input.riderRows) || 1),
+  };
+
+  await query(
+    `insert into custom_sheets (slug, label, appendix, subtitle, abbr, discipline, config, max_score, created_by)
+          values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+     on conflict (slug) do update
+          set label = excluded.label,
+              appendix = excluded.appendix,
+              subtitle = excluded.subtitle,
+              abbr = excluded.abbr,
+              config = excluded.config`,
+    [
+      slug,
+      config.label,
+      config.appendix,
+      config.subtitle,
+      config.abbr,
+      "showjumping",
+      JSON.stringify(config),
+      0,
+      updatedBy,
+    ]
+  );
 }
 
 export async function deleteCustomSheet(slug: string) {

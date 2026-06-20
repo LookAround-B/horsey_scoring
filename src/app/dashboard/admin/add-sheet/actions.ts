@@ -13,7 +13,6 @@ import {
   deleteCustomSheet,
   type SheetMovementInput,
   type ObstacleColumn,
-  type ShowJumpingInput,
   type QualityInput,
 } from "@/lib/customSheets";
 import type { TestConfig } from "@/lib/tests";
@@ -67,23 +66,71 @@ export type CreateShowJumpingFormInput = {
 };
 
 export async function createShowJumpingSheetAction(
-  input: CreateShowJumpingFormInput
+  input: CreateShowJumpingFormInput | { label: string; subtitle: string; obstacleCount: number; defaultRows: number }
 ): Promise<{ slug?: string; error?: string }> {
   const adminId = await requireAdmin();
 
   const label = input.label?.trim();
   if (!label) return { error: "Sheet name is required." };
 
-  const obstacles = (input.obstacles ?? []).slice();
-  if (obstacles.length === 0) return { error: "Set at least one obstacle column." };
+  // Handle both old (obstacleCount/defaultRows) and new (obstacles array) formats
+  let obstacles: ObstacleColumn[] = [];
+  let riderRows = 5;
+
+  if ("obstacleCount" in input) {
+    // Old format from ShowJumpingSheetBuilder
+    const count = Math.max(1, Math.min(40, parseInt(String(input.obstacleCount), 10) || 1));
+    obstacles = Array.from({ length: count }, (_, i) => ({
+      name: `Obstacle ${i + 1}`,
+      type: "" as const,
+    }));
+    riderRows = Math.max(1, Math.min(60, parseInt(String(input.defaultRows), 10) || 5));
+  } else {
+    // New format
+    const formInput = input as CreateShowJumpingFormInput;
+    obstacles = formInput.obstacles ?? [];
+    if (obstacles.length === 0) return { error: "Set at least one obstacle column." };
+    riderRows = formInput.riderRows;
+  }
 
   const slug = await createShowJumpingSheet(
     {
       label,
-      appendix: input.appendix ?? "",
+      appendix: "obstacles" in input ? input.appendix ?? "" : "",
       subtitle: input.subtitle ?? "",
       obstacles,
-      riderRows: input.riderRows,
+      riderRows,
+    },
+    adminId
+  );
+
+  return { slug };
+}
+
+export async function updateShowJumpingSheetAction(
+  slug: string,
+  input: { label: string; subtitle: string; obstacleCount: number; defaultRows: number }
+): Promise<{ slug?: string; error?: string }> {
+  const adminId = await requireAdmin();
+
+  const label = input.label?.trim();
+  if (!label) return { error: "Sheet name is required." };
+
+  const count = Math.max(1, Math.min(40, parseInt(String(input.obstacleCount), 10) || 1));
+  const obstacles: ObstacleColumn[] = Array.from({ length: count }, (_, i) => ({
+    name: `Obstacle ${i + 1}`,
+    type: "" as const,
+  }));
+  const riderRows = Math.max(1, Math.min(60, parseInt(String(input.defaultRows), 10) || 5));
+
+  await updateShowJumpingSheet(
+    slug,
+    {
+      label,
+      appendix: "",
+      subtitle: input.subtitle ?? "",
+      obstacles,
+      riderRows,
     },
     adminId
   );
@@ -125,29 +172,6 @@ export async function updateSheetAction(
   };
 
   await upsertSheet(slug, merged, base.discipline, adminId);
-  return { slug };
-}
-
-// ---- Show jumping ----------------------------------------------------------
-
-export async function createShowJumpingSheetAction(
-  input: ShowJumpingInput
-): Promise<{ slug?: string; error?: string }> {
-  const adminId = await requireAdmin();
-  if (!input.label?.trim()) return { error: "Sheet name is required." };
-  const slug = await createShowJumpingSheet(input, adminId);
-  return { slug };
-}
-
-export async function updateShowJumpingSheetAction(
-  slug: string,
-  input: ShowJumpingInput
-): Promise<{ slug?: string; error?: string }> {
-  const adminId = await requireAdmin();
-  const base = await getEditableConfig(slug);
-  if (!base) return { error: "Sheet not found." };
-  if (!input.label?.trim()) return { error: "Sheet name is required." };
-  await updateShowJumpingSheet(slug, input, adminId);
   return { slug };
 }
 
