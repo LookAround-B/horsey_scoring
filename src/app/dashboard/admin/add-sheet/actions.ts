@@ -4,10 +4,12 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import {
   createCustomSheet,
+  createShowJumpingSheet,
   getEditableConfig,
   upsertSheet,
   deleteCustomSheet,
   type SheetMovementInput,
+  type ObstacleColumn,
 } from "@/lib/customSheets";
 
 async function requireAdmin(): Promise<string> {
@@ -43,6 +45,39 @@ export async function createDressageSheetAction(
       subtitle: input.subtitle ?? "",
       discipline: "dressage",
       movements,
+    },
+    adminId
+  );
+
+  return { slug };
+}
+
+export type CreateShowJumpingFormInput = {
+  label: string;
+  appendix: string;
+  subtitle: string;
+  obstacles: ObstacleColumn[];
+  riderRows: number;
+};
+
+export async function createShowJumpingSheetAction(
+  input: CreateShowJumpingFormInput
+): Promise<{ slug?: string; error?: string }> {
+  const adminId = await requireAdmin();
+
+  const label = input.label?.trim();
+  if (!label) return { error: "Sheet name is required." };
+
+  const obstacles = (input.obstacles ?? []).slice();
+  if (obstacles.length === 0) return { error: "Set at least one obstacle column." };
+
+  const slug = await createShowJumpingSheet(
+    {
+      label,
+      appendix: input.appendix ?? "",
+      subtitle: input.subtitle ?? "",
+      obstacles,
+      riderRows: input.riderRows,
     },
     adminId
   );

@@ -45,7 +45,9 @@ export default async function AddSheetPage() {
           </div>
           <div className="min-w-0 flex-1">
             <div className="font-medium">Add show jumping scoring sheet</div>
-            <div className="text-xs text-muted-foreground mt-0.5">Coming soon.</div>
+            <div className="text-xs text-muted-foreground mt-0.5">
+              Set obstacle columns (name + type) and starting rider rows.
+            </div>
           </div>
           <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
         </Link>

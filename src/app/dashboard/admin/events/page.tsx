@@ -4,7 +4,7 @@ import { TEST_CARDS } from "@/lib/dummy-data";
 import { listEvents, listSheetsByEvent } from "@/lib/events";
 import { listCustomSheetCards } from "@/lib/customSheets";
 import { createEventAction, deleteEventAction, saveEventSheetsAction } from "./actions";
-import { CalendarRange, Plus, Trash2, ChevronDown } from "lucide-react";
+import { CalendarRange, Plus, Trash2, ChevronDown, Eye } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -70,16 +70,27 @@ export default async function EventsAdminPage() {
                     <input type="hidden" name="eventId" value={ev.id} />
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 max-h-80 overflow-y-auto pr-1">
                       {TEST_CARDS_ALL.map((t) => (
-                        <label key={t.slug} className="flex items-center gap-2 text-sm py-0.5 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            name="slug"
-                            value={t.slug}
-                            defaultChecked={assigned.has(t.slug)}
-                            className="h-4 w-4 rounded border-border accent-primary"
-                          />
-                          <span className="truncate">{t.category}</span>
-                        </label>
+                        <div key={t.slug} className="flex items-center gap-2 text-sm py-0.5">
+                          <label className="flex items-center gap-2 cursor-pointer flex-1 min-w-0">
+                            <input
+                              type="checkbox"
+                              name="slug"
+                              value={t.slug}
+                              defaultChecked={assigned.has(t.slug)}
+                              className="h-4 w-4 rounded border-border accent-primary shrink-0"
+                            />
+                            <span className="truncate">{t.category}</span>
+                          </label>
+                          <a
+                            href={`/scoring/${t.slug}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="Preview sheet"
+                            className="shrink-0 text-muted-foreground hover:text-primary transition-colors"
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                          </a>
+                        </div>
                       ))}
                     </div>
                     <button className="bg-primary text-primary-foreground rounded-lg px-4 py-2 text-sm font-medium hover:opacity-90 transition-opacity">

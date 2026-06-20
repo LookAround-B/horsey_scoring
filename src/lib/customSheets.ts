@@ -127,6 +127,85 @@ export async function createCustomSheet(input: CreateSheetInput, createdBy: stri
   return slug;
 }
 
+/* ---------------------------------------------------------------------------
+ * Show jumping sheets
+ * Each sheet is N obstacle columns (each with a free-text name + optional type)
+ * and a starting number of rider rows. Judges add more rows while scoring.
+ * ------------------------------------------------------------------------- */
+
+export type ObstacleType = "" | "vertical" | "oxer" | "combination" | "water";
+
+export type ObstacleColumn = {
+  name: string;
+  type: ObstacleType;
+};
+
+export type CreateShowJumpingInput = {
+  label: string;
+  appendix: string;
+  subtitle: string;
+  obstacles: ObstacleColumn[];
+  riderRows: number;
+};
+
+/** Show-jumping config stored in custom_sheets.config (jsonb). */
+export type StoredJumpingConfig = {
+  label: string;
+  appendix: string;
+  abbr: string;
+  subtitle: string;
+  discipline: "showjumping";
+  obstacles: ObstacleColumn[];
+  riderRows: number;
+};
+
+export async function createShowJumpingSheet(
+  input: CreateShowJumpingInput,
+  createdBy: string
+): Promise<string> {
+  const taken = new Set<string>(TEST_CARDS.map((t) => t.slug));
+  const existing = await query<{ slug: string }>(`select slug from custom_sheets`);
+  existing.forEach((r) => taken.add(r.slug));
+
+  const base = slugify(input.label);
+  let slug = base;
+  let n = 2;
+  while (taken.has(slug)) slug = `${base}-${n++}`;
+
+  const obstacles = input.obstacles.map((o, i) => ({
+    name: o.name.trim() || String(i + 1),
+    type: o.type,
+  }));
+
+  const config: StoredJumpingConfig = {
+    label: input.label.trim(),
+    appendix: input.appendix.trim(),
+    abbr: abbrFrom(input.label),
+    subtitle: input.subtitle.trim(),
+    discipline: "showjumping",
+    obstacles,
+    riderRows: Math.max(1, Math.trunc(input.riderRows) || 1),
+  };
+
+  await query(
+    `insert into custom_sheets (slug, label, appendix, subtitle, abbr, discipline, config, max_score, created_by)
+          values ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+    [
+      slug,
+      config.label,
+      config.appendix,
+      config.subtitle,
+      config.abbr,
+      "showjumping",
+      JSON.stringify(config),
+      0, // faults-based; no fixed max score
+      createdBy,
+    ]
+  );
+
+  return slug;
+}
+
 export async function deleteCustomSheet(slug: string) {
   await query(`delete from custom_sheets where slug = $1`, [slug]);
 }
