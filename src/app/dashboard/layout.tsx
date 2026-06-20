@@ -84,9 +84,22 @@ const FONT_SIZES = ["sm", "md", "lg", "xl"] as const;
 type FontSize = (typeof FONT_SIZES)[number];
 const FONT_LABELS: Record<FontSize, string> = { sm: "A-", md: "A", lg: "A+", xl: "A++" };
 
-function isActive(href: string, pathname: string) {
-  if (href === "/dashboard") return pathname === "/dashboard";
-  return pathname === href || pathname.startsWith(href + "/");
+function getActiveNavHref(pathname: string, items: NavItem[]): string | null {
+  // Find the most specific matching route
+  let best: string | null = null;
+  let bestLength = 0;
+
+  for (const item of items) {
+    if (item.href === pathname) {
+      return item.href; // Exact match wins immediately
+    }
+    if (pathname.startsWith(item.href + "/") && item.href.length > bestLength) {
+      best = item.href;
+      bestLength = item.href.length;
+    }
+  }
+
+  return best;
 }
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -131,6 +144,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const navItems = NAV[user.role] ?? [];
   const roleColor = ROLE_COLORS[user.role] ?? "bg-muted text-muted-foreground";
   const initials = user.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
+  const activeHref = getActiveNavHref(pathname, navItems);
 
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
@@ -157,7 +171,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <nav className="flex-1 overflow-y-auto no-scrollbar px-3 py-4 space-y-0.5">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const active = isActive(item.href, pathname);
+          const active = item.href === activeHref;
           return (
             <Link
               key={item.label}

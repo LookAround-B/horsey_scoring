@@ -52,8 +52,8 @@ export default async function EditSheetPage({ params }: { params: Promise<{ slug
         initial={{
           label: c.label ?? "",
           subtitle: c.subtitle ?? "",
-          obstacleCount: c.obstacleCount ?? 15,
-          defaultRows: c.defaultRows ?? 5,
+          obstacles: c.obstacles ?? [],
+          defaultRows: c.riderRows,
         }}
         noteBuiltIn={base.isBuiltIn}
         deletable={deletable}

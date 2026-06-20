@@ -11,11 +11,15 @@ import {
   getEditableConfig,
   upsertSheet,
   deleteCustomSheet,
+  listCustomSheetCards,
   type SheetMovementInput,
   type ObstacleColumn,
   type QualityInput,
 } from "@/lib/customSheets";
+import { TEST_CARDS } from "@/lib/dummy-data";
 import type { TestConfig } from "@/lib/tests";
+
+export type { ObstacleColumn };
 
 async function requireAdmin(): Promise<string> {
   const session = await auth();
@@ -59,44 +63,34 @@ export async function createDressageSheetAction(
 
 export type CreateShowJumpingFormInput = {
   label: string;
-  appendix: string;
   subtitle: string;
   obstacles: ObstacleColumn[];
-  riderRows: number;
+  defaultRows: number;
 };
 
 export async function createShowJumpingSheetAction(
-  input: CreateShowJumpingFormInput | { label: string; subtitle: string; obstacleCount: number; defaultRows: number }
-): Promise<{ slug?: string; error?: string }> {
+  input: CreateShowJumpingFormInput
+): Promise<{ slug?: string; error?: string; warning?: string }> {
   const adminId = await requireAdmin();
 
   const label = input.label?.trim();
   if (!label) return { error: "Sheet name is required." };
 
-  // Handle both old (obstacleCount/defaultRows) and new (obstacles array) formats
-  let obstacles: ObstacleColumn[] = [];
-  let riderRows = 5;
+  const obstacles = (input.obstacles ?? []).filter((o) => o.name?.trim());
+  if (obstacles.length === 0) return { error: "Add at least one obstacle column." };
 
-  if ("obstacleCount" in input) {
-    // Old format from ShowJumpingSheetBuilder
-    const count = Math.max(1, Math.min(40, parseInt(String(input.obstacleCount), 10) || 1));
-    obstacles = Array.from({ length: count }, (_, i) => ({
-      name: `Obstacle ${i + 1}`,
-      type: "" as const,
-    }));
-    riderRows = Math.max(1, Math.min(60, parseInt(String(input.defaultRows), 10) || 5));
-  } else {
-    // New format
-    const formInput = input as CreateShowJumpingFormInput;
-    obstacles = formInput.obstacles ?? [];
-    if (obstacles.length === 0) return { error: "Set at least one obstacle column." };
-    riderRows = formInput.riderRows;
-  }
+  const riderRows = Math.max(1, Math.min(60, input.defaultRows || 5));
+
+  // Check for existing sheets with same name
+  const existing = await listCustomSheetCards();
+  const builtIn = TEST_CARDS;
+  const allSheets = [...existing, ...builtIn];
+  const duplicate = allSheets.find((s) => s.category?.toLowerCase() === label.toLowerCase());
 
   const slug = await createShowJumpingSheet(
     {
       label,
-      appendix: "obstacles" in input ? input.appendix ?? "" : "",
+      appendix: "",
       subtitle: input.subtitle ?? "",
       obstacles,
       riderRows,
@@ -104,24 +98,31 @@ export async function createShowJumpingSheetAction(
     adminId
   );
 
-  return { slug };
+  return {
+    slug,
+    warning: duplicate ? `A sheet named "${duplicate.category}" already exists. Your new sheet is saved as "${label}" but may be harder to distinguish.` : undefined
+  };
 }
 
 export async function updateShowJumpingSheetAction(
   slug: string,
-  input: { label: string; subtitle: string; obstacleCount: number; defaultRows: number }
-): Promise<{ slug?: string; error?: string }> {
+  input: CreateShowJumpingFormInput
+): Promise<{ slug?: string; error?: string; warning?: string }> {
   const adminId = await requireAdmin();
 
   const label = input.label?.trim();
   if (!label) return { error: "Sheet name is required." };
 
-  const count = Math.max(1, Math.min(40, parseInt(String(input.obstacleCount), 10) || 1));
-  const obstacles: ObstacleColumn[] = Array.from({ length: count }, (_, i) => ({
-    name: `Obstacle ${i + 1}`,
-    type: "" as const,
-  }));
-  const riderRows = Math.max(1, Math.min(60, parseInt(String(input.defaultRows), 10) || 5));
+  const obstacles = (input.obstacles ?? []).filter((o) => o.name?.trim());
+  if (obstacles.length === 0) return { error: "Add at least one obstacle column." };
+
+  const riderRows = Math.max(1, Math.min(60, input.defaultRows || 5));
+
+  // Check for existing sheets with same name (excluding current one)
+  const existing = await listCustomSheetCards();
+  const builtIn = TEST_CARDS;
+  const allSheets = [...existing, ...builtIn];
+  const duplicate = allSheets.find((s) => s.category?.toLowerCase() === label.toLowerCase() && s.slug !== slug);
 
   await updateShowJumpingSheet(
     slug,
@@ -135,7 +136,10 @@ export async function updateShowJumpingSheetAction(
     adminId
   );
 
-  return { slug };
+  return {
+    slug,
+    warning: duplicate ? `A sheet named "${duplicate.category}" already exists. Your sheet is saved as "${label}" but may be harder to distinguish.` : undefined
+  };
 }
 
 export async function updateSheetAction(

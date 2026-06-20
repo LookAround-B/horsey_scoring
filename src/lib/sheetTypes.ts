@@ -1,12 +1,20 @@
 // Client-safe sheet type definitions (no server/DB imports), shared by the
 // scoring page, the builders, and the server data layer.
 
+export type ObstacleColumn = {
+  name: string;
+  type: "" | "vertical" | "oxer" | "combination" | "water";
+};
+
 export type ShowJumpingConfig = {
   kind: "showjumping";
   label: string;
   subtitle: string;
-  obstacleCount: number; // number of obstacle columns
-  defaultRows: number; // rider rows shown initially
+  appendix: string;
+  abbr: string;
+  discipline: "showjumping";
+  obstacles: ObstacleColumn[];
+  riderRows: number;
 };
 
 export function isShowJumping(config: unknown): config is ShowJumpingConfig {

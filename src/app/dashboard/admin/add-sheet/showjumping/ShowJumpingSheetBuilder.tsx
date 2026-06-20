@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Check, ExternalLink, Trash2, RotateCcw } from "lucide-react";
+import { ArrowLeft, Check, ExternalLink, Trash2, RotateCcw, Eye, X } from "lucide-react";
 import {
   createShowJumpingSheetAction,
   updateShowJumpingSheetAction,
   deleteSheetAction,
+  type ObstacleColumn,
 } from "../actions";
 
 export function ShowJumpingSheetBuilder({
@@ -17,7 +18,7 @@ export function ShowJumpingSheetBuilder({
   deletable,
 }: {
   editSlug?: string;
-  initial?: { label: string; subtitle: string; obstacleCount: number; defaultRows: number };
+  initial?: { label: string; subtitle: string; obstacles?: ObstacleColumn[]; defaultRows: number };
   noteBuiltIn?: boolean;
   deletable?: { mode: "reset" | "delete" };
 } = {}) {
@@ -27,29 +28,55 @@ export function ShowJumpingSheetBuilder({
   const [subtitle, setSubtitle] = useState(
     initial?.subtitle ?? "Pony Club · Jumping Phase Score Sheet · Eventing"
   );
-  const [obstacleCount, setObstacleCount] = useState(String(initial?.obstacleCount ?? 15));
+  const [obstacles, setObstacles] = useState<ObstacleColumn[]>(
+    initial?.obstacles ?? Array.from({ length: 15 }, (_, i) => ({ name: `Obstacle ${i + 1}`, type: "" as const }))
+  );
   const [defaultRows, setDefaultRows] = useState(String(initial?.defaultRows ?? 5));
   const [error, setError] = useState("");
+  const [warning, setWarning] = useState("");
+  const [showPreview, setShowPreview] = useState(false);
   const [createdSlug, setCreatedSlug] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, startDelete] = useTransition();
 
+  const handleObstacleCountChange = (count: number) => {
+    const newCount = Math.max(1, Math.min(40, count));
+    if (newCount === obstacles.length) return;
+
+    if (newCount > obstacles.length) {
+      const added: ObstacleColumn[] = Array.from({ length: newCount - obstacles.length }, (_, i) => ({
+        name: `Obstacle ${obstacles.length + i + 1}`,
+        type: "" as const,
+      }));
+      setObstacles([...obstacles, ...added]);
+    } else {
+      setObstacles(obstacles.slice(0, newCount));
+    }
+  };
+
+  const updateObstacle = (index: number, field: "name" | "type", value: string) => {
+    const updated = [...obstacles];
+    updated[index] = { ...updated[index], [field]: value };
+    setObstacles(updated);
+  };
+
   const submit = () => {
     setError("");
+    setWarning("");
     if (!label.trim()) return setError("Sheet name is required.");
-    const obstacles = parseInt(obstacleCount, 10);
+    if (obstacles.length === 0) return setError("Obstacle columns must be at least 1.");
     const rows = parseInt(defaultRows, 10);
-    if (!obstacles || obstacles < 1) return setError("Obstacle columns must be at least 1.");
     if (!rows || rows < 1) return setError("Starting rows must be at least 1.");
 
-    const payload = { label, subtitle, obstacleCount: obstacles, defaultRows: rows };
+    const payload = { label, subtitle, obstacles, defaultRows: rows };
     startTransition(async () => {
       const res = isEdit
         ? await updateShowJumpingSheetAction(editSlug!, payload)
         : await createShowJumpingSheetAction(payload);
       if (res.error) setError(res.error);
-      else if (res.slug) setCreatedSlug(res.slug);
+      else if (res.warning) setWarning(res.warning);
+      if (res.slug) setCreatedSlug(res.slug);
     });
   };
 
@@ -68,8 +95,8 @@ export function ShowJumpingSheetBuilder({
 
   if (createdSlug) {
     return (
-      <div className="p-6 max-w-xl mx-auto">
-        <div className="bg-card border border-border rounded-xl p-8 text-center">
+      <div className="p-6 max-w-xl mx-auto animate-fade-in">
+        <div className="bg-card border border-border rounded-xl p-8 text-center animate-slide-in-up">
           <div className="mx-auto h-12 w-12 rounded-full bg-primary/10 grid place-items-center mb-4">
             <Check className="h-6 w-6 text-primary" />
           </div>
@@ -93,6 +120,82 @@ export function ShowJumpingSheetBuilder({
             >
               Back to dashboard
             </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Preview modal
+  if (showPreview) {
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-fade-in">
+        <div className="bg-background rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-slide-in-up">
+          <div className="sticky top-0 bg-background border-b border-border p-4 flex items-center justify-between">
+            <h2 className="font-display text-lg tracking-tight">{label || "Preview"}</h2>
+            <button
+              onClick={() => setShowPreview(false)}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          <div className="p-6">
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs uppercase tracking-wider text-muted-foreground">Pony Club</label>
+                  <div className="bg-card border border-border rounded-lg px-3 py-2 text-sm h-9" />
+                </div>
+                <div>
+                  <label className="text-xs uppercase tracking-wider text-muted-foreground">Date</label>
+                  <div className="bg-card border border-border rounded-lg px-3 py-2 text-sm h-9" />
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm border-collapse">
+                  <thead>
+                    <tr className="bg-muted">
+                      <th className="border border-border px-2 py-1 text-left font-medium text-xs">Rider No</th>
+                      <th className="border border-border px-2 py-1 text-left font-medium text-xs">Name</th>
+                      <th className="border border-border px-2 py-1 text-left font-medium text-xs">Horse</th>
+                      {obstacles.map((obs, i) => (
+                        <th key={i} className="border border-border px-2 py-1 text-center font-medium text-xs whitespace-nowrap">
+                          {obs.name || `Obstacle ${i + 1}`}
+                          <br />
+                          <span className="text-[10px] text-muted-foreground">{obs.type || "—"}</span>
+                        </th>
+                      ))}
+                      <th className="border border-border px-2 py-1 text-center font-medium text-xs">Jumping Faults</th>
+                      <th className="border border-border px-2 py-1 text-center font-medium text-xs">Time Faults</th>
+                      <th className="border border-border px-2 py-1 text-center font-medium text-xs">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Array.from({ length: parseInt(defaultRows) || 5 }).map((_, rowIdx) => (
+                      <tr key={rowIdx}>
+                        <td className="border border-border px-2 py-1 bg-card" />
+                        <td className="border border-border px-2 py-1 bg-card" />
+                        <td className="border border-border px-2 py-1 bg-card" />
+                        {obstacles.map((_, colIdx) => (
+                          <td key={colIdx} className="border border-border px-2 py-1 bg-card text-center" />
+                        ))}
+                        <td className="border border-border px-2 py-1 bg-card text-center" />
+                        <td className="border border-border px-2 py-1 bg-card text-center" />
+                        <td className="border border-border px-2 py-1 bg-card text-center" />
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="text-xs text-muted-foreground space-y-1">
+                <p>• {obstacles.length} obstacle columns</p>
+                <p>• {parseInt(defaultRows) || 5} starting rider rows</p>
+                <p>• Obstacle types: {[...new Set(obstacles.map(o => o.type).filter(Boolean))].join(", ") || "None"}</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -147,40 +250,82 @@ export function ShowJumpingSheetBuilder({
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">
-              Obstacle columns
+        <div>
+          <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">
+            Number of obstacle columns <span className="text-destructive">*</span>
+          </label>
+          <input
+            type="number"
+            min="1"
+            max="40"
+            value={obstacles.length}
+            onChange={(e) => handleObstacleCountChange(parseInt(e.target.value, 10))}
+            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
+          />
+          <p className="text-[11px] text-muted-foreground mt-1">Number of jumps on the course.</p>
+        </div>
+
+        {obstacles.length > 0 && (
+          <div className="mt-6">
+            <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-3">
+              Obstacle details
             </label>
-            <input
-              type="number"
-              min="1"
-              max="40"
-              value={obstacleCount}
-              onChange={(e) => setObstacleCount(e.target.value)}
-              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
-            />
-            <p className="text-[11px] text-muted-foreground mt-1">Number of jumps on the course.</p>
+            <div className="space-y-3 max-h-96 overflow-y-auto">
+              {obstacles.map((obstacle, i) => (
+                <div key={i} className="grid grid-cols-3 gap-3 items-end">
+                  <div>
+                    <label className="block text-xs text-muted-foreground mb-1">Name</label>
+                    <input
+                      type="text"
+                      value={obstacle.name}
+                      onChange={(e) => updateObstacle(i, "name", e.target.value)}
+                      placeholder={`Obstacle ${i + 1}`}
+                      className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-muted-foreground mb-1">Type</label>
+                    <select
+                      value={obstacle.type}
+                      onChange={(e) => updateObstacle(i, "type", e.target.value)}
+                      className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
+                    >
+                      <option value="">None</option>
+                      <option value="vertical">Vertical</option>
+                      <option value="oxer">Oxer</option>
+                      <option value="combination">Combination</option>
+                      <option value="water">Water</option>
+                    </select>
+                  </div>
+                  <div className="text-xs text-muted-foreground text-center">#{i + 1}</div>
+                </div>
+              ))}
+            </div>
           </div>
-          <div>
-            <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">
-              Starting rider rows
-            </label>
-            <input
-              type="number"
-              min="1"
-              max="60"
-              value={defaultRows}
-              onChange={(e) => setDefaultRows(e.target.value)}
-              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
-            />
-            <p className="text-[11px] text-muted-foreground mt-1">More can be added when scoring.</p>
-          </div>
+        )}
+
+        <div>
+          <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">
+            Starting rider rows <span className="text-destructive">*</span>
+          </label>
+          <input
+            type="number"
+            min="1"
+            max="60"
+            value={defaultRows}
+            onChange={(e) => setDefaultRows(e.target.value)}
+            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
+          />
+          <p className="text-[11px] text-muted-foreground mt-1">More can be added when scoring.</p>
         </div>
       </div>
 
       {error && (
         <p className="text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2 mt-4">{error}</p>
+      )}
+
+      {warning && (
+        <p className="text-sm text-highlight bg-highlight/10 rounded-lg px-3 py-2 mt-4">{warning}</p>
       )}
 
       <div className="flex items-center gap-3 mt-6">
@@ -190,6 +335,12 @@ export function ShowJumpingSheetBuilder({
           className="inline-flex items-center gap-2 bg-primary text-primary-foreground rounded-lg px-5 py-2.5 text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
         >
           {pending ? (isEdit ? "Saving…" : "Creating…") : isEdit ? "Save changes" : "Create sheet"}
+        </button>
+        <button
+          onClick={() => setShowPreview(true)}
+          className="inline-flex items-center gap-2 border border-border text-foreground rounded-lg px-5 py-2.5 text-sm font-medium hover:bg-muted transition-colors"
+        >
+          <Eye className="h-4 w-4" /> Preview
         </button>
         <Link
           href={isEdit ? "/dashboard" : "/dashboard/admin/add-sheet"}

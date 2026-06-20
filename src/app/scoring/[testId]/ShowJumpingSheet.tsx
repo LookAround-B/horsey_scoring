@@ -61,13 +61,13 @@ export function ShowJumpingSheet({
   slug: string;
   eventId?: string | null;
 }) {
-  const obstacleCount = config.obstacleCount;
+  const obstacleCount = config.obstacles.length;
   const STORAGE_KEY = `sj-scoring-v1:${slug}`;
   const store = useScoreStore({ slug, eventId, riderId: null, localKey: STORAGE_KEY });
 
   const [header, setHeader] = useState<Header>(emptyHeader());
   const [rows, setRows] = useState<Row[]>(() =>
-    Array.from({ length: config.defaultRows }, () => emptyRow(obstacleCount))
+    Array.from({ length: config.riderRows }, () => emptyRow(obstacleCount))
   );
   const [signature, setSignature] = useState("");
   const [loaded, setLoaded] = useState(false);
@@ -135,7 +135,7 @@ export function ShowJumpingSheet({
   const reset = () => {
     if (!confirm("Clear this sheet? All entered scores will be removed.")) return;
     setHeader(emptyHeader());
-    setRows(Array.from({ length: config.defaultRows }, () => emptyRow(obstacleCount)));
+    setRows(Array.from({ length: config.riderRows }, () => emptyRow(obstacleCount)));
     setSignature("");
   };
 
