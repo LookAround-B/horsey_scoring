@@ -3,11 +3,16 @@
 import * as React from "react";
 import { useMemo, useState, useEffect, useRef, useCallback, KeyboardEvent } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { type Rider, DUMMY_RIDERS } from "@/lib/dummy-data";
 import { useAuth } from "@/contexts/AuthContext";
 import { TEST_CONFIGS, COURSE_ERRORS, type Movement, type CollectiveCriteria, type TestConfig } from "@/lib/tests";
+import { isShowJumping, isQuality } from "@/lib/sheetTypes";
+import { ShowJumpingSheet } from "./ShowJumpingSheet";
+import { QualityScoringSheet } from "./QualityScoringSheet";
+import { useScoreStore } from "@/lib/useScoreStore";
 import { ChevronDown, Check, Calendar as CalendarIcon } from "lucide-react";
+import { EventTimer } from "@/components/EventTimer";
 import { format, parse } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -23,6 +28,9 @@ const POSITION_OPTIONS = Array.from({ length: 10 }, (_, i) => String(i + 1));
 
 export default function ScoringPage() {
   const params = useParams();
+  const search = useSearchParams();
+  const eventId = search.get("event");
+  const riderId = search.get("rider");
   const testId = (params?.testId as string) ?? "young-rider";
   const staticConfig = TEST_CONFIGS[testId] as TestConfig | undefined;
   // `override`: undefined = still checking the DB, null = no override, object = DB override.
@@ -70,10 +78,26 @@ export default function ScoringPage() {
       </div>
     );
   }
-  return <ScoringSheet config={resolved} testId={testId} />;
+  if (isShowJumping(resolved)) {
+    return <ShowJumpingSheet config={resolved} slug={testId} eventId={eventId} />;
+  }
+  if (isQuality(resolved)) {
+    return <QualityScoringSheet config={resolved} slug={testId} eventId={eventId} riderId={riderId} />;
+  }
+  return <ScoringSheet config={resolved} testId={testId} eventId={eventId} riderId={riderId} />;
 }
 
-function ScoringSheet({ config, testId }: { config: TestConfig; testId: string }) {
+function ScoringSheet({
+  config,
+  testId,
+  eventId,
+  riderId,
+}: {
+  config: TestConfig;
+  testId: string;
+  eventId?: string | null;
+  riderId?: string | null;
+}) {
   const { user } = useAuth();
   const info = config;
   const MOVEMENTS = config.movements;
@@ -85,6 +109,7 @@ function ScoringSheet({ config, testId }: { config: TestConfig; testId: string }
   const GRAND_TOTAL_MAX = config.hasCollective !== false ? TOTAL_MAX + collectivesMax : TOTAL_MAX;
   const OTHER_ERROR_PENALTY = config.otherErrorPenalty ?? 2;
   const STORAGE_KEY = `scoring-draft-v1:${testId}`;
+  const store = useScoreStore({ slug: testId, eventId, riderId, localKey: STORAGE_KEY });
   const EFFECTIVE_COURSE_ERRORS = config.courseErrors ?? COURSE_ERRORS;
 
   const ARTISTIC_MOVEMENTS = config.artisticMovements ?? [];
@@ -115,6 +140,7 @@ function ScoringSheet({ config, testId }: { config: TestConfig; testId: string }
   const [courseError, setCourseError] = useState<number>(0);
   const [otherErrors, setOtherErrors] = useState<number>(0);
   const [organisers, setOrganisers] = useState<string>("");
+  const [signature, setSignature] = useState<string>("");
   const [technicalScore, setTechnicalScore] = useState<string>("");
 
   const [showSaveModal, setShowSaveModal] = useState(false);
@@ -262,19 +288,17 @@ function ScoringSheet({ config, testId }: { config: TestConfig; testId: string }
       meta, scores, corrections, coefficients, remarks,
       collectiveScores, collectiveCorrections, collectiveRemarksMap,
       artisticScores, artisticCorrections,
-      courseError, otherErrors, organisers, technicalScore,
+      courseError, otherErrors, organisers, technicalScore, signature,
       ts: Date.now(),
     };
     const t = setTimeout(() => {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-        setSavedAt(Date.now());
-        setHasDraft(true);
-      } catch {}
+      store.save(payload, { result: eliminated ? -1 : percentage, signature });
+      setSavedAt(Date.now());
+      setHasDraft(true);
     }, 400);
     return () => clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [meta, scores, corrections, coefficients, remarks, collectiveScores, collectiveCorrections, collectiveRemarksMap, artisticScores, artisticCorrections, courseError, otherErrors, organisers, technicalScore]);
+  }, [meta, scores, corrections, coefficients, remarks, collectiveScores, collectiveCorrections, collectiveRemarksMap, artisticScores, artisticCorrections, courseError, otherErrors, organisers, technicalScore, signature]);
 
   // Populate every field of the sheet from a saved payload (used by both draft restore and "Open" from a saved score).
   const applySheet = (d: Record<string, unknown> | null | undefined) => {
@@ -296,6 +320,7 @@ function ScoringSheet({ config, testId }: { config: TestConfig; testId: string }
     setCourseError((d.courseError as number) ?? 0);
     setOtherErrors((d.otherErrors as number) ?? 0);
     setOrganisers((d.organisers as string) ?? "");
+    setSignature((d.signature as string) ?? "");
     setTechnicalScore((d.technicalScore as string) ?? "");
     setArtisticScores((d.artisticScores as Record<string, string>) ?? {});
     setArtisticCorrections((d.artisticCorrections as Record<string, string>) ?? {});
@@ -307,6 +332,19 @@ function ScoringSheet({ config, testId }: { config: TestConfig; testId: string }
       if (raw) applySheet(JSON.parse(raw));
     } catch {}
   };
+
+  // In event context, hydrate the shared DB record (judge + writer see the same sheet).
+  useEffect(() => {
+    if (!store.db) return;
+    let live = true;
+    store.load().then((d) => {
+      if (live && d) applySheet(d);
+    });
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [testId, eventId, riderId]);
 
   // When opened from a saved score card (?session=<id>), restore that whole sheet.
   useEffect(() => {
@@ -503,6 +541,7 @@ function ScoringSheet({ config, testId }: { config: TestConfig; testId: string }
             >
               {savedSuccess ? "Saved ✓" : "Save Score"}
             </button>
+            <EventTimer discipline="dressage" />
             <button
               onClick={exportPdf}
               className="text-sm px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
@@ -1142,10 +1181,13 @@ function ScoringSheet({ config, testId }: { config: TestConfig; testId: string }
           </div>
           <div className="bg-card border border-border rounded-xl p-6 shadow-soft">
             <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Signature of Judge</div>
-            <div className="border-b border-dashed border-border h-16" />
-            <div className="text-xs text-muted-foreground mt-2 italic">
-              {meta.judge ? meta.judge : "—"}
-            </div>
+            <input
+              value={signature}
+              onChange={(e) => setSignature(e.target.value)}
+              placeholder="Type signature…"
+              className="w-full bg-transparent border-b border-dashed border-border py-1 text-sm outline-none focus:border-primary font-display italic"
+            />
+            <div className="text-xs text-muted-foreground mt-2 italic">{meta.judge || "—"}</div>
           </div>
         </section>
       </main>

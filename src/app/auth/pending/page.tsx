@@ -57,6 +57,15 @@ export default function PendingPage() {
           </>
         )}
 
+        {!rejected && (
+          <a
+            href="/profile"
+            className="inline-block mb-4 text-sm text-primary hover:underline"
+          >
+            Complete your profile while you wait →
+          </a>
+        )}
+
         <div className="flex items-center justify-center gap-3">
           {!rejected && (
             <button

@@ -3,16 +3,20 @@ import "./globals.css";
 import Providers from "./providers";
 
 export const metadata: Metadata = {
-  title: "Horsey — FEI Dressage Scoring",
-  description: "Horsey: interactive FEI dressage scoring sheets with live calculations.",
+  title: "Horsey — Equestrian Scoring",
+  description: "Horsey: interactive FEI dressage and show jumping scoring sheets with live calculations.",
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+  },
   openGraph: {
-    title: "Horsey — FEI Dressage Scoring",
-    description: "Interactive FEI dressage scoring sheets with live calculations.",
+    title: "Horsey — Equestrian Scoring",
+    description: "Interactive FEI dressage and show jumping scoring sheets.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Horsey — FEI Dressage Scoring",
-    description: "Interactive FEI dressage scoring sheets with live calculations.",
+    title: "Horsey — Equestrian Scoring",
+    description: "Interactive FEI dressage and show jumping scoring sheets.",
   },
 };
 

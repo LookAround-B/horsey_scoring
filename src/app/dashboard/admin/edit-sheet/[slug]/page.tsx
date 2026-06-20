@@ -1,7 +1,11 @@
 import { redirect, notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { getEditableConfig } from "@/lib/customSheets";
+import { isShowJumping, isQuality } from "@/lib/sheetTypes";
+import type { TestConfig } from "@/lib/tests";
 import { DressageSheetBuilder } from "../../add-sheet/dressage/DressageSheetBuilder";
+import { ShowJumpingSheetBuilder } from "../../add-sheet/showjumping/ShowJumpingSheetBuilder";
+import { QualityMarkingSheetBuilder } from "../../add-sheet/quality/QualityMarkingSheetBuilder";
 
 export const dynamic = "force-dynamic";
 
@@ -15,7 +19,49 @@ export default async function EditSheetPage({ params }: { params: Promise<{ slug
   const base = await getEditableConfig(slug);
   if (!base) notFound();
 
-  const cfg = base.config;
+  const deletable = base.hasOverride
+    ? { mode: base.isBuiltIn ? ("reset" as const) : ("delete" as const) }
+    : undefined;
+
+  // Quality marking sheets use their own builder.
+  if (isQuality(base.config)) {
+    const c = base.config;
+    return (
+      <QualityMarkingSheetBuilder
+        editSlug={slug}
+        initial={{
+          label: c.label ?? "",
+          subtitle: c.subtitle ?? "",
+          rows: (c.criteria ?? []).map((cr) => ({
+            title: cr.title ?? "",
+            description: cr.description ?? "",
+          })),
+        }}
+        noteBuiltIn={base.isBuiltIn}
+        deletable={deletable}
+      />
+    );
+  }
+
+  // Show jumping sheets use a different builder.
+  if (isShowJumping(base.config)) {
+    const c = base.config;
+    return (
+      <ShowJumpingSheetBuilder
+        editSlug={slug}
+        initial={{
+          label: c.label ?? "",
+          subtitle: c.subtitle ?? "",
+          obstacleCount: c.obstacleCount ?? 15,
+          defaultRows: c.defaultRows ?? 5,
+        }}
+        noteBuiltIn={base.isBuiltIn}
+        deletable={deletable}
+      />
+    );
+  }
+
+  const cfg = base.config as TestConfig;
   const initial = {
     label: cfg.label ?? "",
     appendix: cfg.appendix ?? "",
@@ -28,10 +74,6 @@ export default async function EditSheetPage({ params }: { params: Promise<{ slug
       coefficient: String(m.coefficient ?? 1),
     })),
   };
-
-  const deletable = base.hasOverride
-    ? { mode: base.isBuiltIn ? ("reset" as const) : ("delete" as const) }
-    : undefined;
 
   return (
     <DressageSheetBuilder

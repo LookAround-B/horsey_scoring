@@ -107,6 +107,97 @@ create table if not exists custom_sheets (
 );
 
 -- ============================================================================
+-- Full events (shows): secretary, riders, judges/writers, access code, etc.
+-- (Upgrades the event-tab table above into a complete show.)
+-- ============================================================================
+alter table events add column if not exists location     text;
+alter table events add column if not exists start_date   date;
+alter table events add column if not exists end_date     date;
+alter table events add column if not exists secretary_id uuid references users(id) on delete set null;
+alter table events add column if not exists access_code  text;
+alter table events add column if not exists status       text not null default 'upcoming';
+alter table events add column if not exists visibility   jsonb not null default '{}'::jsonb;
+alter table events add column if not exists created_by   uuid references users(id) on delete set null;
+alter table events add column if not exists updated_at   timestamptz not null default now();
+alter table events add column if not exists guidelines text;
+alter table events add column if not exists start_time   text;
+alter table events add column if not exists end_time     text;
+-- Timer limits per discipline, stored as seconds: { "dressage": 90, "showjumping": 75 }
+alter table events add column if not exists timer_config jsonb not null default '{}'::jsonb;
+create unique index if not exists events_access_code_key on events (access_code) where access_code is not null;
+
+-- Reusable guideline templates (save guidelines for future events).
+create table if not exists guideline_templates (
+  id         uuid primary key default gen_random_uuid(),
+  title      text not null,
+  body       text not null,
+  created_by uuid references users(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+-- Judges / writers / examiners attached to an event.
+create table if not exists event_participants (
+  id            uuid primary key default gen_random_uuid(),
+  event_id      uuid not null references events(id) on delete cascade,
+  user_id       uuid not null references users(id) on delete cascade,
+  role_at_event text,
+  invited_at    timestamptz not null default now(),
+  joined_at     timestamptz,
+  unique (event_id, user_id)
+);
+
+-- Riders entered in an event.
+create table if not exists event_riders (
+  id            uuid primary key default gen_random_uuid(),
+  event_id      uuid not null references events(id) on delete cascade,
+  name          text not null,
+  nf            text,
+  competitor_no text,
+  horse         text,
+  horse_no      text,
+  image_url     text,
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now()
+);
+
+-- Profile extras.
+alter table users add column if not exists image_url text;
+alter table users add column if not exists phone     text;
+alter table users add column if not exists signature text;
+alter table users add column if not exists updated_at timestamptz not null default now();
+
+-- Which profile fields are mandatory (super-admin controlled).
+create table if not exists profile_field_config (
+  field    text primary key,
+  required boolean not null default false
+);
+insert into profile_field_config (field, required) values
+  ('phone', false), ('image_url', false), ('signature', false)
+  on conflict (field) do nothing;
+
+-- Shared, DB-backed scores (so judges, writers, secretary, admin see the same data).
+-- Dressage/quality: one row per (event, sheet, rider). Show jumping: one row per
+-- (event, sheet) with all rider rows inside `data` (rider_id null).
+create table if not exists scores (
+  id         uuid primary key default gen_random_uuid(),
+  event_id   uuid not null references events(id) on delete cascade,
+  test_slug  text not null,
+  rider_id   uuid references event_riders(id) on delete cascade,
+  data       jsonb not null default '{}'::jsonb,
+  status     text not null default 'draft' check (status in ('draft','submitted','verified')),
+  result     numeric,
+  signature  text,
+  scored_by  uuid references users(id) on delete set null,
+  updated_by uuid references users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create unique index if not exists scores_event_sheet_rider
+  on scores (event_id, test_slug, rider_id) where rider_id is not null;
+create unique index if not exists scores_event_sheet_norider
+  on scores (event_id, test_slug) where rider_id is null;
+
+-- ============================================================================
 -- 3. SEED THE SUPER ADMIN
 --    Easiest: run  `node scripts/create-admin.mjs`  (hashes the password for you).
 --    Or manually, after inserting a row, set:

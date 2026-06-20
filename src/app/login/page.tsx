@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
-import { DUMMY_USERS, ROLE_LABELS } from "@/lib/dummy-data";
 
 export default function LoginPage() {
   const { login, loginWithGoogle, user, isLoading } = useAuth();
@@ -44,12 +43,6 @@ export default function LoginPage() {
       setGoogleLoading(false);
     }
     // on success the browser is redirected to Google, then /auth/callback
-  };
-
-  const selectDummy = (dummyEmail: string) => {
-    setEmail(dummyEmail);
-    setPassword("Horsey@2025");
-    setError("");
   };
 
   if (isLoading) {
@@ -159,34 +152,6 @@ export default function LoginPage() {
           <p className="text-[11px] text-muted-foreground mt-3 text-center leading-relaxed">
             First time here? Sign in with Google to request access — an admin will approve your account.
           </p>
-
-          {/* Demo accounts */}
-          <div className="mt-10">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex-1 h-px bg-border" />
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Demo accounts</span>
-              <div className="flex-1 h-px bg-border" />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              {DUMMY_USERS.map((u) => (
-                <button
-                  key={u.id}
-                  onClick={() => selectDummy(u.email)}
-                  className={`text-left rounded-lg border px-3 py-2 transition-all text-xs ${
-                    email === u.email
-                      ? "border-primary bg-primary/10"
-                      : "border-border hover:border-foreground/30 bg-card"
-                  }`}
-                >
-                  <div className="font-medium truncate">{u.name}</div>
-                  <div className="text-muted-foreground mt-0.5">{ROLE_LABELS[u.role]}</div>
-                </button>
-              ))}
-            </div>
-            <p className="text-[10px] text-muted-foreground mt-3 text-center">
-              Click a card to pre-fill · password is <code className="font-mono">Horsey@2025</code>
-            </p>
-          </div>
         </div>
       </div>
     </div>

@@ -12,6 +12,17 @@ export async function middleware(request: NextRequest) {
   });
 
   const approved = !!token && token.status === "approved" && !!token.role;
+
+  // /profile only needs a logged-in user (pending users complete it while waiting).
+  if (pathname.startsWith("/profile")) {
+    if (!token) {
+      const url = new URL("/login", request.url);
+      url.searchParams.set("from", pathname);
+      return NextResponse.redirect(url);
+    }
+    return NextResponse.next();
+  }
+
   const isProtected = pathname.startsWith("/dashboard") || pathname.startsWith("/scoring");
 
   // Root → route based on auth state.

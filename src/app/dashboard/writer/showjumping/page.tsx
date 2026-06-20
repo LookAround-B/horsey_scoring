@@ -1,31 +1,28 @@
-"use client";
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
+import { Pen } from "lucide-react";
+import { OfficialPanel } from "@/app/dashboard/_panels/OfficialPanel";
 
-import { useAuth } from "@/contexts/AuthContext";
-import { Construction } from "lucide-react";
+export const dynamic = "force-dynamic";
 
-export default function ShowjumpingWriterDashboard() {
-  const { user } = useAuth();
-  if (!user || user.role !== "showjumping_writer") return null;
+export default async function Page() {
+  const sess = await auth();
+  const user = sess?.user;
+  if (!user || user.status !== "approved") redirect("/dashboard");
 
   return (
-    <div className="p-6 md:p-8 max-w-3xl mx-auto space-y-6">
-      <div>
-        <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground mb-1">Showjumping Writer</div>
-        <h1 className="font-display text-3xl md:text-4xl tracking-tight">
-          Writer <span className="italic text-highlight">Dashboard</span>
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">Welcome, {user.name}</p>
-      </div>
-
-      <div className="bg-card border border-border rounded-xl p-10 shadow-soft flex flex-col items-center text-center gap-4">
-        <Construction className="h-10 w-10 text-muted-foreground" />
-        <div>
-          <div className="font-display text-xl mb-2">Showjumping Scoring — Coming Soon</div>
-          <p className="text-sm text-muted-foreground max-w-xs">
-            Showjumping score entry for writers is currently in development.
-          </p>
-        </div>
-      </div>
-    </div>
+    <OfficialPanel
+      userId={user.id}
+      config={{
+        icon: Pen,
+        label: "Show Jumping Writer Panel",
+        discipline: "showjumping",
+        description:
+          "Record obstacle faults and times as called by the judge during the jumping phase. Open the class sheet and mark each rail down as the round progresses.",
+        sheetAction: "Record",
+        emptyHint:
+          "Your show secretary will send you an access code. Use 'Join Event' to get added to your assigned competition.",
+      }}
+    />
   );
 }

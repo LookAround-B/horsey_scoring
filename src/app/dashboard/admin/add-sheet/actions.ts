@@ -5,12 +5,18 @@ import { auth } from "@/auth";
 import {
   createCustomSheet,
   createShowJumpingSheet,
+  updateShowJumpingSheet,
+  createQualitySheet,
+  updateQualitySheet,
   getEditableConfig,
   upsertSheet,
   deleteCustomSheet,
   type SheetMovementInput,
   type ObstacleColumn,
+  type ShowJumpingInput,
+  type QualityInput,
 } from "@/lib/customSheets";
+import type { TestConfig } from "@/lib/tests";
 
 async function requireAdmin(): Promise<string> {
   const session = await auth();
@@ -110,8 +116,8 @@ export async function updateSheetAction(
 
   // Preserve advanced fields (collectives, artistic/freestyle, quality, …); only the
   // header and the technical movement rows are editable here.
-  const merged = {
-    ...base.config,
+  const merged: TestConfig = {
+    ...(base.config as TestConfig),
     label,
     appendix: input.appendix ?? "",
     subtitle: input.subtitle ?? "",
@@ -119,6 +125,58 @@ export async function updateSheetAction(
   };
 
   await upsertSheet(slug, merged, base.discipline, adminId);
+  return { slug };
+}
+
+// ---- Show jumping ----------------------------------------------------------
+
+export async function createShowJumpingSheetAction(
+  input: ShowJumpingInput
+): Promise<{ slug?: string; error?: string }> {
+  const adminId = await requireAdmin();
+  if (!input.label?.trim()) return { error: "Sheet name is required." };
+  const slug = await createShowJumpingSheet(input, adminId);
+  return { slug };
+}
+
+export async function updateShowJumpingSheetAction(
+  slug: string,
+  input: ShowJumpingInput
+): Promise<{ slug?: string; error?: string }> {
+  const adminId = await requireAdmin();
+  const base = await getEditableConfig(slug);
+  if (!base) return { error: "Sheet not found." };
+  if (!input.label?.trim()) return { error: "Sheet name is required." };
+  await updateShowJumpingSheet(slug, input, adminId);
+  return { slug };
+}
+
+// ---- Dressage quality marking sheet ---------------------------------------
+
+export async function createQualitySheetAction(
+  input: QualityInput
+): Promise<{ slug?: string; error?: string }> {
+  const adminId = await requireAdmin();
+  if (!input.label?.trim()) return { error: "Sheet name is required." };
+  if (!input.criteria?.some((c) => c.title.trim())) {
+    return { error: "Add at least one assessment row." };
+  }
+  const slug = await createQualitySheet(input, adminId);
+  return { slug };
+}
+
+export async function updateQualitySheetAction(
+  slug: string,
+  input: QualityInput
+): Promise<{ slug?: string; error?: string }> {
+  const adminId = await requireAdmin();
+  const base = await getEditableConfig(slug);
+  if (!base) return { error: "Sheet not found." };
+  if (!input.label?.trim()) return { error: "Sheet name is required." };
+  if (!input.criteria?.some((c) => c.title.trim())) {
+    return { error: "Add at least one assessment row." };
+  }
+  await updateQualitySheet(slug, input, adminId);
   return { slug };
 }
 
