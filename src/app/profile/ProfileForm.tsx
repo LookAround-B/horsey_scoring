@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, Check } from "lucide-react";
 import { updateProfileAction } from "./actions";
 import type { Profile, ProfileFields } from "@/lib/users";
+import { sanitizeImageSrc } from "@/lib/validation";
 
 export function ProfileForm({
   profile,
@@ -60,8 +61,8 @@ export function ProfileForm({
 
         <form onSubmit={submit} className="space-y-4">
           <div className="flex items-center gap-4">
-            {imageUrl ? (
-              <img src={imageUrl} alt="" className="h-16 w-16 rounded-full object-cover border border-border" />
+            {sanitizeImageSrc(imageUrl) ? (
+              <img src={sanitizeImageSrc(imageUrl)} alt="" className="h-16 w-16 rounded-full object-cover border border-border" />
             ) : (
               <div className="h-16 w-16 rounded-full bg-muted grid place-items-center text-lg font-semibold">
                 {(name || profile.email || "?").slice(0, 2).toUpperCase()}

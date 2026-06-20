@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { updateProfile, getProfileFieldConfig } from "@/lib/users";
+import { parseAction, profileSchema } from "@/lib/validation";
 
 export async function updateProfileAction(
   formData: FormData
@@ -10,12 +11,14 @@ export async function updateProfileAction(
   const s = await auth();
   if (!s?.user) redirect("/login");
 
-  const name = String(formData.get("name") ?? "").trim();
-  const phone = String(formData.get("phone") ?? "").trim();
-  const image_url = String(formData.get("image_url") ?? "").trim();
-  const signature = String(formData.get("signature") ?? "").trim();
-
-  if (!name) return { error: "Name is required." };
+  const parsed = parseAction(profileSchema, {
+    name: formData.get("name"),
+    phone: formData.get("phone"),
+    image_url: formData.get("image_url"),
+    signature: formData.get("signature"),
+  });
+  if (parsed.error) return { error: parsed.error };
+  const { name, phone, image_url, signature } = parsed.parsed!;
 
   const cfg = await getProfileFieldConfig();
   if (cfg.phone && !phone) return { error: "Phone number is required." };

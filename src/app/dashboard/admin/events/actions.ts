@@ -22,6 +22,13 @@ import {
   deleteGuidelineTemplate,
   type EventStatus,
 } from "@/lib/events";
+import {
+  parseAction,
+  createEventSchema,
+  eventMetaSchema,
+  addRiderSchema,
+  guidelineTemplateSchema,
+} from "@/lib/validation";
 
 async function session() {
   const s = await auth();
@@ -47,21 +54,30 @@ async function requireEventManager(eventId: string) {
 
 export async function createFullEventAction(formData: FormData) {
   const u = await requireCreator();
-  const name = String(formData.get("name") ?? "").trim();
-  if (!name) return;
-  // Secretaries own their own events; super admin may assign one.
+  const parsed = parseAction(createEventSchema, {
+    name: formData.get("name"),
+    location: formData.get("location"),
+    startDate: formData.get("startDate") || null,
+    endDate: formData.get("endDate") || null,
+    startTime: formData.get("startTime") || null,
+    endTime: formData.get("endTime") || null,
+    guidelines: formData.get("guidelines") || null,
+    secretaryId: formData.get("secretaryId"),
+  });
+  if (parsed.error) return;
+  const data = parsed.parsed!;
   const secretaryId =
-    u.role === "super_admin" ? String(formData.get("secretaryId") ?? "") || u.id : u.id;
+    u.role === "super_admin" ? data.secretaryId || u.id : u.id;
 
   const id = await createFullEvent(
     {
-      name,
-      location: String(formData.get("location") ?? ""),
-      startDate: String(formData.get("startDate") ?? "") || null,
-      endDate: String(formData.get("endDate") ?? "") || null,
-      startTime: String(formData.get("startTime") ?? "") || null,
-      endTime: String(formData.get("endTime") ?? "") || null,
-      guidelines: String(formData.get("guidelines") ?? "") || null,
+      name: data.name,
+      location: data.location,
+      startDate: data.startDate ?? null,
+      endDate: data.endDate ?? null,
+      startTime: data.startTime ?? null,
+      endTime: data.endTime ?? null,
+      guidelines: data.guidelines ?? null,
       secretaryId,
     },
     u.id
@@ -75,19 +91,32 @@ export async function createFullEventAction(formData: FormData) {
 }
 
 export async function updateEventMetaAction(formData: FormData) {
-  const id = String(formData.get("eventId") ?? "");
-  await requireEventManager(id);
-  await updateEventMeta(id, {
-    name: String(formData.get("name") ?? ""),
-    location: String(formData.get("location") ?? ""),
-    startDate: String(formData.get("startDate") ?? "") || null,
-    endDate: String(formData.get("endDate") ?? "") || null,
-    startTime: String(formData.get("startTime") ?? "") || null,
-    endTime: String(formData.get("endTime") ?? "") || null,
-    guidelines: String(formData.get("guidelines") ?? "") || null,
-    status: (String(formData.get("status") ?? "") as EventStatus) || undefined,
+  const eventId = String(formData.get("eventId") ?? "");
+  await requireEventManager(eventId);
+  const parsed = parseAction(eventMetaSchema, {
+    eventId,
+    name: formData.get("name"),
+    location: formData.get("location"),
+    startDate: formData.get("startDate") || null,
+    endDate: formData.get("endDate") || null,
+    startTime: formData.get("startTime") || null,
+    endTime: formData.get("endTime") || null,
+    guidelines: formData.get("guidelines") || null,
+    status: formData.get("status") || undefined,
   });
-  revalidatePath(`/dashboard/admin/events/${id}`);
+  if (parsed.error) return;
+  const d = parsed.parsed!;
+  await updateEventMeta(eventId, {
+    name: d.name,
+    location: d.location,
+    startDate: d.startDate ?? null,
+    endDate: d.endDate ?? null,
+    startTime: d.startTime ?? null,
+    endTime: d.endTime ?? null,
+    guidelines: d.guidelines ?? null,
+    status: d.status as EventStatus | undefined,
+  });
+  revalidatePath(`/dashboard/admin/events/${eventId}`);
 }
 
 export async function saveGuidelineTemplateAction(
@@ -95,9 +124,9 @@ export async function saveGuidelineTemplateAction(
   body: string
 ): Promise<{ ok?: boolean; error?: string }> {
   const u = await requireCreator();
-  if (!title.trim()) return { error: "Give the template a title." };
-  if (!body.trim()) return { error: "Guidelines are empty." };
-  await createGuidelineTemplate(title, body, u.id);
+  const parsed = parseAction(guidelineTemplateSchema, { title, body });
+  if (parsed.error) return { error: parsed.error };
+  await createGuidelineTemplate(parsed.parsed!.title, parsed.parsed!.body, u.id);
   revalidatePath("/dashboard/admin/events");
   return { ok: true };
 }
@@ -137,19 +166,28 @@ export async function regenerateCodeAction(formData: FormData) {
 }
 
 export async function addRiderAction(formData: FormData) {
-  const id = String(formData.get("eventId") ?? "");
-  await requireEventManager(id);
-  const name = String(formData.get("name") ?? "").trim();
-  if (!name) return;
-  await addRider(id, {
-    name,
-    nf: String(formData.get("nf") ?? ""),
-    competitorNo: String(formData.get("competitorNo") ?? ""),
-    horse: String(formData.get("horse") ?? ""),
-    horseNo: String(formData.get("horseNo") ?? ""),
-    imageUrl: String(formData.get("imageUrl") ?? ""),
+  const eventId = String(formData.get("eventId") ?? "");
+  await requireEventManager(eventId);
+  const parsed = parseAction(addRiderSchema, {
+    eventId,
+    name: formData.get("name"),
+    nf: formData.get("nf"),
+    competitorNo: formData.get("competitorNo"),
+    horse: formData.get("horse"),
+    horseNo: formData.get("horseNo"),
+    imageUrl: formData.get("imageUrl"),
   });
-  revalidatePath(`/dashboard/admin/events/${id}`);
+  if (parsed.error) return;
+  const d = parsed.parsed!;
+  await addRider(eventId, {
+    name: d.name,
+    nf: d.nf,
+    competitorNo: d.competitorNo,
+    horse: d.horse,
+    horseNo: d.horseNo,
+    imageUrl: d.imageUrl,
+  });
+  revalidatePath(`/dashboard/admin/events/${eventId}`);
 }
 
 export async function importRidersAction(

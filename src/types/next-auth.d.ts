@@ -16,5 +16,6 @@ declare module "next-auth/jwt" {
     id?: string;
     role?: UserRole | null;
     status?: ApprovalStatus;
+    refreshedAt?: number;
   }
 }

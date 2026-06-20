@@ -20,6 +20,7 @@ import {
   deleteEventAction,
 } from "../actions";
 import { ArrowLeft, KeyRound, Trash2, Plus, Eye, Timer } from "lucide-react";
+import { sanitizeImageSrc } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
 
@@ -238,7 +239,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
           {ev.riders.map((r) => (
             <div key={r.id} className="flex items-center gap-3 py-2">
               {r.image_url ? (
-                <img src={r.image_url} alt={r.name} className="h-8 w-8 rounded-full object-cover" />
+                <img src={sanitizeImageSrc(r.image_url) ?? ""} alt={r.name} className="h-8 w-8 rounded-full object-cover" />
               ) : (
                 <div className="h-8 w-8 rounded-full bg-muted grid place-items-center text-[10px] font-semibold">
                   {r.competitor_no ?? "—"}
@@ -286,7 +287,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
           {ev.participants.map((p) => (
             <div key={p.id} className="flex items-center gap-3 py-2">
               {p.image_url ? (
-                <img src={p.image_url} alt={p.name ?? ""} className="h-8 w-8 rounded-full object-cover" />
+                <img src={sanitizeImageSrc(p.image_url) ?? ""} alt={p.name ?? ""} className="h-8 w-8 rounded-full object-cover" />
               ) : (
                 <div className="h-8 w-8 rounded-full bg-muted grid place-items-center text-[10px] font-semibold">
                   {(p.name ?? p.email ?? "?").slice(0, 2).toUpperCase()}

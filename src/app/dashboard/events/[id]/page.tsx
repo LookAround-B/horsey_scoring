@@ -7,6 +7,7 @@ import { listCustomSheetCards } from "@/lib/customSheets";
 import { TEST_CARDS, type TestCard } from "@/lib/dummy-data";
 import { ROLE_LABELS, type UserRole } from "@/lib/roles";
 import { MapPin, CalendarRange, ExternalLink, Users as UsersIcon, ClipboardList, ChevronDown } from "lucide-react";
+import { sanitizeImageSrc } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,8 @@ const fmt = (d: string | null) =>
   d ? new Date(d).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) : null;
 
 function Avatar({ name, image }: { name: string; image: string | null }) {
-  if (image) return <img src={image} alt={name} className="h-9 w-9 rounded-full object-cover" />;
+  const safeSrc = sanitizeImageSrc(image);
+  if (safeSrc) return <img src={safeSrc} alt={name} className="h-9 w-9 rounded-full object-cover" />;
   return (
     <div className="h-9 w-9 rounded-full bg-muted grid place-items-center text-xs font-semibold">
       {name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() || "?"}

@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { setPlacement, type Discipline } from "@/lib/sheets";
+import { disciplineSchema } from "@/lib/validation";
 
 async function requireAdmin(): Promise<string> {
   const session = await auth();
@@ -14,6 +15,7 @@ async function requireAdmin(): Promise<string> {
 
 export async function setPlacementAction(slug: string, discipline: Discipline) {
   const adminId = await requireAdmin();
-  if (!slug || (discipline !== "dressage" && discipline !== "showjumping")) return;
+  if (!slug) return;
+  if (!disciplineSchema.safeParse(discipline).success) return;
   await setPlacement(slug, discipline, adminId);
 }

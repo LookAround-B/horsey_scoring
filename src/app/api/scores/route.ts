@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { canAccessEvent, getScore, saveScore, type ScoreStatus } from "@/lib/scores";
+import { canAccessEvent, getScore, saveScore } from "@/lib/scores";
+import {
+  parseOr400,
+  readJsonLimited,
+  scoreGetSchema,
+  scoreSubmitSchema,
+} from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
 
@@ -9,11 +15,15 @@ export async function GET(request: Request) {
   if (!session?.user || session.user.status !== "approved") {
     return NextResponse.json(null, { status: 401 });
   }
+
   const { searchParams } = new URL(request.url);
-  const eventId = searchParams.get("event");
-  const slug = searchParams.get("slug");
-  const riderId = searchParams.get("rider");
-  if (!eventId || !slug) return NextResponse.json(null, { status: 400 });
+  const parsed = parseOr400(scoreGetSchema, {
+    event: searchParams.get("event"),
+    slug: searchParams.get("slug"),
+    rider: searchParams.get("rider") ?? undefined,
+  });
+  if (parsed instanceof NextResponse) return parsed;
+  const { event: eventId, slug, rider: riderId } = parsed.parsed;
 
   if (!(await canAccessEvent(session.user.id, session.user.role, eventId))) {
     return NextResponse.json(null, { status: 403 });
@@ -26,10 +36,14 @@ export async function POST(request: Request) {
   if (!session?.user || session.user.status !== "approved") {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
-  const body = await request.json().catch(() => null);
-  if (!body?.eventId || !body?.slug) {
-    return NextResponse.json({ error: "bad request" }, { status: 400 });
-  }
+
+  const bodyResult = await readJsonLimited(request);
+  if (bodyResult instanceof NextResponse) return bodyResult;
+
+  const parsed = parseOr400(scoreSubmitSchema, bodyResult.data);
+  if (parsed instanceof NextResponse) return parsed;
+  const body = parsed.parsed;
+
   if (!(await canAccessEvent(session.user.id, session.user.role, body.eventId))) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
@@ -38,11 +52,11 @@ export async function POST(request: Request) {
     {
       eventId: body.eventId,
       slug: body.slug,
-      riderId: body.riderId || null,
+      riderId: body.riderId ?? null,
       data: body.data ?? {},
-      status: (body.status as ScoreStatus) || undefined,
-      result: typeof body.result === "number" ? body.result : null,
-      signature: typeof body.signature === "string" ? body.signature : null,
+      status: body.status,
+      result: body.result ?? null,
+      signature: body.signature ?? null,
     },
     session.user.id
   );

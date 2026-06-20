@@ -46,17 +46,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    // Keep role/status fresh in the token so approvals take effect on next session refetch.
+    // Refresh role/status from DB at most once per 30s so approvals take effect quickly
+    // without hammering the DB on every session check.
     async jwt({ token, user }) {
       if (user?.id) token.id = user.id;
       const id = (token.id ?? token.sub) as string | undefined;
-      if (id) {
-        const rows = await query<{ role: UserRole | null; status: ApprovalStatus }>(
-          `select role, status from users where id = $1`,
-          [id]
-        );
-        token.role = rows[0]?.role ?? null;
-        token.status = rows[0]?.status ?? "pending";
+      const freshLogin = !!user?.id;
+      const stale = !token.refreshedAt || Date.now() - token.refreshedAt > 30_000;
+      if (id && (freshLogin || stale)) {
+        try {
+          const rows = await query<{ role: UserRole | null; status: ApprovalStatus }>(
+            `select role, status from users where id = $1`,
+            [id]
+          );
+          token.role = rows[0]?.role ?? null;
+          token.status = rows[0]?.status ?? "pending";
+          token.refreshedAt = Date.now();
+        } catch (err) {
+          console.error("[auth] jwt DB refresh failed, keeping cached values:", (err as Error).message);
+        }
       }
       return token;
     },

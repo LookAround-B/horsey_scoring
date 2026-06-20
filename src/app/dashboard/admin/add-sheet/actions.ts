@@ -18,6 +18,12 @@ import {
 } from "@/lib/customSheets";
 import { TEST_CARDS } from "@/lib/dummy-data";
 import type { TestConfig } from "@/lib/tests";
+import {
+  parseAction,
+  dressageSheetSchema,
+  showJumpingSheetSchema,
+  qualitySheetSchema,
+} from "@/lib/validation";
 
 export type { ObstacleColumn };
 
@@ -41,19 +47,17 @@ export async function createDressageSheetAction(
 ): Promise<{ slug?: string; error?: string }> {
   const adminId = await requireAdmin();
 
-  const label = input.label?.trim();
-  if (!label) return { error: "Sheet name is required." };
-
-  const movements = (input.movements ?? []).filter((m) => m.test?.trim());
-  if (movements.length === 0) return { error: "Add at least one movement row." };
+  const parsed = parseAction(dressageSheetSchema, input);
+  if (parsed.error) return { error: parsed.error };
+  const d = parsed.parsed!;
 
   const slug = await createCustomSheet(
     {
-      label,
-      appendix: input.appendix ?? "",
-      subtitle: input.subtitle ?? "",
+      label: d.label,
+      appendix: d.appendix,
+      subtitle: d.subtitle,
       discipline: "dressage",
-      movements,
+      movements: d.movements as SheetMovementInput[],
     },
     adminId
   );
@@ -73,13 +77,11 @@ export async function createShowJumpingSheetAction(
 ): Promise<{ slug?: string; error?: string; warning?: string }> {
   const adminId = await requireAdmin();
 
-  const label = input.label?.trim();
-  if (!label) return { error: "Sheet name is required." };
-
-  const obstacles = (input.obstacles ?? []).filter((o) => o.name?.trim());
-  if (obstacles.length === 0) return { error: "Add at least one obstacle column." };
-
-  const riderRows = Math.max(1, Math.min(60, input.defaultRows || 5));
+  const parsed = parseAction(showJumpingSheetSchema, input);
+  if (parsed.error) return { error: parsed.error };
+  const d = parsed.parsed!;
+  const { label, obstacles, defaultRows } = d;
+  const riderRows = defaultRows ?? 5;
 
   // Check for existing sheets with same name
   const existing = await listCustomSheetCards();
@@ -91,8 +93,8 @@ export async function createShowJumpingSheetAction(
     {
       label,
       appendix: "",
-      subtitle: input.subtitle ?? "",
-      obstacles,
+      subtitle: d.subtitle ?? "",
+      obstacles: obstacles as ObstacleColumn[],
       riderRows,
     },
     adminId
@@ -110,13 +112,11 @@ export async function updateShowJumpingSheetAction(
 ): Promise<{ slug?: string; error?: string; warning?: string }> {
   const adminId = await requireAdmin();
 
-  const label = input.label?.trim();
-  if (!label) return { error: "Sheet name is required." };
-
-  const obstacles = (input.obstacles ?? []).filter((o) => o.name?.trim());
-  if (obstacles.length === 0) return { error: "Add at least one obstacle column." };
-
-  const riderRows = Math.max(1, Math.min(60, input.defaultRows || 5));
+  const parsed = parseAction(showJumpingSheetSchema, input);
+  if (parsed.error) return { error: parsed.error };
+  const d = parsed.parsed!;
+  const { label, obstacles, defaultRows } = d;
+  const riderRows = defaultRows ?? 5;
 
   // Check for existing sheets with same name (excluding current one)
   const existing = await listCustomSheetCards();
@@ -129,8 +129,8 @@ export async function updateShowJumpingSheetAction(
     {
       label,
       appendix: "",
-      subtitle: input.subtitle ?? "",
-      obstacles,
+      subtitle: d.subtitle ?? "",
+      obstacles: obstacles as ObstacleColumn[],
       riderRows,
     },
     adminId
@@ -151,27 +151,23 @@ export async function updateSheetAction(
   const base = await getEditableConfig(slug);
   if (!base) return { error: "Sheet not found." };
 
-  const label = input.label?.trim();
-  if (!label) return { error: "Sheet name is required." };
+  const parsed = parseAction(dressageSheetSchema, input);
+  if (parsed.error) return { error: parsed.error };
+  const d = parsed.parsed!;
 
-  const movements = (input.movements ?? [])
-    .filter((m) => m.test?.trim())
-    .map((m, i) => ({
-      no: m.no.trim() || String(i + 1),
-      letters: m.letters,
-      test: m.test,
-      directive: m.directive,
-      coefficient: Number.isFinite(m.coefficient) && m.coefficient > 0 ? m.coefficient : 1,
-    }));
-  if (movements.length === 0) return { error: "Add at least one movement row." };
+  const movements = d.movements.map((m, i) => ({
+    no: (m.no ?? "").trim() || String(i + 1),
+    letters: m.letters ?? "",
+    test: m.test,
+    directive: m.directive ?? "",
+    coefficient: Number.isFinite(m.coefficient) && m.coefficient > 0 ? m.coefficient : 1,
+  }));
 
-  // Preserve advanced fields (collectives, artistic/freestyle, quality, …); only the
-  // header and the technical movement rows are editable here.
   const merged: TestConfig = {
     ...(base.config as TestConfig),
-    label,
-    appendix: input.appendix ?? "",
-    subtitle: input.subtitle ?? "",
+    label: d.label,
+    appendix: d.appendix,
+    subtitle: d.subtitle,
     movements,
   };
 
@@ -185,11 +181,9 @@ export async function createQualitySheetAction(
   input: QualityInput
 ): Promise<{ slug?: string; error?: string }> {
   const adminId = await requireAdmin();
-  if (!input.label?.trim()) return { error: "Sheet name is required." };
-  if (!input.criteria?.some((c) => c.title.trim())) {
-    return { error: "Add at least one assessment row." };
-  }
-  const slug = await createQualitySheet(input, adminId);
+  const parsed = parseAction(qualitySheetSchema, input);
+  if (parsed.error) return { error: parsed.error };
+  const slug = await createQualitySheet(parsed.parsed! as QualityInput, adminId);
   return { slug };
 }
 
@@ -200,11 +194,9 @@ export async function updateQualitySheetAction(
   const adminId = await requireAdmin();
   const base = await getEditableConfig(slug);
   if (!base) return { error: "Sheet not found." };
-  if (!input.label?.trim()) return { error: "Sheet name is required." };
-  if (!input.criteria?.some((c) => c.title.trim())) {
-    return { error: "Add at least one assessment row." };
-  }
-  await updateQualitySheet(slug, input, adminId);
+  const parsed = parseAction(qualitySheetSchema, input);
+  if (parsed.error) return { error: parsed.error };
+  await updateQualitySheet(slug, parsed.parsed! as QualityInput, adminId);
   return { slug };
 }
 
