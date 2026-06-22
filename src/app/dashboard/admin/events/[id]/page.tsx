@@ -5,12 +5,12 @@ import { listUsers } from "@/lib/users";
 import { listCustomSheetCards } from "@/lib/customSheets";
 import { GuidelinesField } from "../GuidelinesField";
 import { BulkRiderImport } from "../BulkRiderImport";
+import { PermissionsForm } from "../PermissionsForm";
+import { TimerConfigForm } from "../TimerConfigForm";
 import { TEST_CARDS } from "@/lib/dummy-data";
 import { ROLE_LABELS, type UserRole } from "@/lib/roles";
 import {
   updateEventMetaAction,
-  setVisibilityAction,
-  setTimerConfigAction,
   regenerateCodeAction,
   addRiderAction,
   deleteRiderAction,
@@ -19,7 +19,7 @@ import {
   saveEventSheetsAction,
   deleteEventAction,
 } from "../actions";
-import { ArrowLeft, KeyRound, Trash2, Plus, Eye, Timer } from "lucide-react";
+import { ArrowLeft, KeyRound, Trash2, Plus } from "lucide-react";
 import { sanitizeImageSrc } from "@/lib/validation";
 
 export const dynamic = "force-dynamic";
@@ -160,20 +160,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
         <p className="text-xs text-muted-foreground mb-3">
           Toggle which sections are visible to judges, writers, and examiners on the event dashboard.
         </p>
-        <form action={setVisibilityAction} className="space-y-3">
-          <input type="hidden" name="eventId" value={id} />
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {(["riders", "scores", "judges", "secretary"] as const).map((k) => (
-              <label key={k} className="flex items-center gap-2.5 text-sm capitalize cursor-pointer bg-muted/40 rounded-lg px-3 py-2.5 border border-border hover:bg-muted transition-colors">
-                <input type="checkbox" name={k} defaultChecked={vis[k] ?? true} className="h-4 w-4 rounded border-border accent-primary" />
-                <span>{k === "judges" ? "Officials" : k}</span>
-              </label>
-            ))}
-          </div>
-          <button className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground rounded-lg px-4 py-2 text-sm font-medium hover:opacity-90 transition-opacity">
-            <Eye className="h-4 w-4" /> Save permissions
-          </button>
-        </form>
+        <PermissionsForm eventId={id} vis={vis} />
       </Section>
 
       {/* Timer config */}
@@ -181,43 +168,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
         <p className="text-xs text-muted-foreground mb-3">
           Set the default time allowed (in seconds) for each discipline. Judges see this pre-filled in their scoring timer.
         </p>
-        <form action={setTimerConfigAction} className="space-y-3">
-          <input type="hidden" name="eventId" value={id} />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
-                Dressage time allowed (seconds)
-              </label>
-              <input
-                type="number"
-                name="dressSec"
-                min="0"
-                defaultValue={ev.timer_config?.dressage ?? ""}
-                placeholder="e.g. 90"
-                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
-              />
-            </div>
-            <div>
-              <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
-                Show Jumping time allowed (seconds)
-              </label>
-              <input
-                type="number"
-                name="sjSec"
-                min="0"
-                defaultValue={ev.timer_config?.showjumping ?? ""}
-                placeholder="e.g. 75"
-                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
-              />
-            </div>
-          </div>
-          <p className="text-[11px] text-muted-foreground">
-            Time limit (elimination) is automatically set to 2× the time allowed.
-          </p>
-          <button className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground rounded-lg px-4 py-2 text-sm font-medium hover:opacity-90 transition-opacity">
-            <Timer className="h-4 w-4" /> Save timer config
-          </button>
-        </form>
+        <TimerConfigForm eventId={id} config={ev.timer_config ?? {}} />
       </Section>
 
       {/* Riders */}

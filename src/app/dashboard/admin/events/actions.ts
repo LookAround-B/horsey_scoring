@@ -137,25 +137,35 @@ export async function deleteGuidelineTemplateAction(formData: FormData) {
   revalidatePath("/dashboard/admin/events");
 }
 
-export async function setVisibilityAction(formData: FormData) {
-  const id = String(formData.get("eventId") ?? "");
-  await requireEventManager(id);
-  await setEventVisibility(id, {
-    riders: formData.get("riders") === "on",
-    scores: formData.get("scores") === "on",
-    judges: formData.get("judges") === "on",
-    secretary: formData.get("secretary") === "on",
-  });
-  revalidatePath(`/dashboard/admin/events/${id}`);
+export async function setVisibilityAction(formData: FormData): Promise<{ ok?: boolean; error?: string }> {
+  try {
+    const id = String(formData.get("eventId") ?? "");
+    await requireEventManager(id);
+    await setEventVisibility(id, {
+      riders: formData.get("riders") === "on",
+      scores: formData.get("scores") === "on",
+      judges: formData.get("judges") === "on",
+      secretary: formData.get("secretary") === "on",
+    });
+    revalidatePath(`/dashboard/admin/events/${id}`);
+    return { ok: true };
+  } catch {
+    return { error: "Failed to save permissions." };
+  }
 }
 
-export async function setTimerConfigAction(formData: FormData) {
-  const id = String(formData.get("eventId") ?? "");
-  await requireEventManager(id);
-  const dressage = parseInt(String(formData.get("dressSec") ?? "")) || undefined;
-  const showjumping = parseInt(String(formData.get("sjSec") ?? "")) || undefined;
-  await setEventTimerConfig(id, { dressage, showjumping });
-  revalidatePath(`/dashboard/admin/events/${id}`);
+export async function setTimerConfigAction(formData: FormData): Promise<{ ok?: boolean; error?: string }> {
+  try {
+    const id = String(formData.get("eventId") ?? "");
+    await requireEventManager(id);
+    const dressage = parseInt(String(formData.get("dressSec") ?? "")) || undefined;
+    const showjumping = parseInt(String(formData.get("sjSec") ?? "")) || undefined;
+    await setEventTimerConfig(id, { dressage, showjumping });
+    revalidatePath(`/dashboard/admin/events/${id}`);
+    return { ok: true };
+  } catch {
+    return { error: "Failed to save timer config." };
+  }
 }
 
 export async function regenerateCodeAction(formData: FormData) {
