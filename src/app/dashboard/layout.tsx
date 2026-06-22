@@ -151,7 +151,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Brand */}
       <div className="flex items-center gap-3 px-5 py-5 border-b border-border">
         <Link href="/" className="flex items-center gap-3 min-w-0">
-          <div className="h-8 w-8 shrink-0 rounded-md bg-primary text-primary-foreground grid place-items-center font-display font-semibold text-sm">H</div>
+          <img src="/logo.png" alt="Horsey" className="h-8 w-8 shrink-0 object-contain" />
           <div className="min-w-0">
             <div className="font-display text-base leading-tight">Horsey</div>
             <div className="text-[10px] text-muted-foreground uppercase tracking-wide truncate">Platform</div>

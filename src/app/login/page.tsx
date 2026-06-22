@@ -63,7 +63,7 @@ export default function LoginPage() {
         <div className="absolute -top-12 -right-12 h-60 w-60 rounded-full bg-white/5 blur-3xl" />
         <div className="relative">
           <div className="flex items-center gap-3 mb-16">
-            <div className="h-9 w-9 rounded-md bg-primary-foreground/10 grid place-items-center font-display font-semibold">H</div>
+            <img src="/logo.png" alt="Horsey" className="h-9 w-9 object-contain" />
             <span className="font-display text-xl">Horsey</span>
           </div>
           <h1 className="font-display text-5xl leading-[1.1] tracking-tight mb-6">
@@ -84,7 +84,7 @@ export default function LoginPage() {
       <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm">
           <div className="lg:hidden flex items-center gap-3 mb-10">
-            <div className="h-9 w-9 rounded-md bg-primary text-primary-foreground grid place-items-center font-display font-semibold">H</div>
+            <img src="/logo.png" alt="Horsey" className="h-9 w-9 object-contain" />
             <span className="font-display text-xl">Horsey</span>
           </div>
 

@@ -6,8 +6,9 @@ export const metadata: Metadata = {
   title: "Horsey — Equestrian Scoring",
   description: "Horsey: interactive FEI dressage and show jumping scoring sheets with live calculations.",
   icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon.ico",
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
   },
   openGraph: {
     title: "Horsey — Equestrian Scoring",
