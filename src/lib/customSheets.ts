@@ -196,6 +196,14 @@ export type CreateShowJumpingInput = {
   subtitle: string;
   obstacles: ObstacleColumn[];
   riderRows: number;
+  // Live dashboard optional fields
+  jumpoffObstacles?: string[];
+  firstRoundObstacles?: string[];
+  defaultSpeed?: number;
+  defaultCourseLength?: number;
+  defaultTimeAllowed?: number;
+  defaultTimeLimit?: number;
+  defaultJoTimeAllowed?: number;
 };
 
 /** Show-jumping config stored in custom_sheets.config (jsonb). */
@@ -207,6 +215,14 @@ export type StoredJumpingConfig = {
   discipline: "showjumping";
   obstacles: ObstacleColumn[];
   riderRows: number;
+  // Live dashboard optional fields (backward-compatible)
+  jumpoffObstacles?: string[];
+  firstRoundObstacles?: string[];
+  defaultSpeed?: number;
+  defaultCourseLength?: number;
+  defaultTimeAllowed?: number;
+  defaultTimeLimit?: number;
+  defaultJoTimeAllowed?: number;
 };
 
 export async function createShowJumpingSheet(
@@ -235,6 +251,13 @@ export async function createShowJumpingSheet(
     discipline: "showjumping",
     obstacles,
     riderRows: Math.max(1, Math.trunc(input.riderRows) || 1),
+    ...(input.jumpoffObstacles?.length   ? { jumpoffObstacles:    input.jumpoffObstacles   } : {}),
+    ...(input.firstRoundObstacles?.length? { firstRoundObstacles: input.firstRoundObstacles } : {}),
+    ...(input.defaultSpeed        != null ? { defaultSpeed:        input.defaultSpeed        } : {}),
+    ...(input.defaultCourseLength != null ? { defaultCourseLength: input.defaultCourseLength } : {}),
+    ...(input.defaultTimeAllowed  != null ? { defaultTimeAllowed:  input.defaultTimeAllowed  } : {}),
+    ...(input.defaultTimeLimit    != null ? { defaultTimeLimit:    input.defaultTimeLimit    } : {}),
+    ...(input.defaultJoTimeAllowed!= null ? { defaultJoTimeAllowed:input.defaultJoTimeAllowed} : {}),
   };
 
   await query(
@@ -274,6 +297,13 @@ export async function updateShowJumpingSheet(
     discipline: "showjumping",
     obstacles,
     riderRows: Math.max(1, Math.trunc(input.riderRows) || 1),
+    ...(input.jumpoffObstacles?.length   ? { jumpoffObstacles:    input.jumpoffObstacles   } : {}),
+    ...(input.firstRoundObstacles?.length? { firstRoundObstacles: input.firstRoundObstacles } : {}),
+    ...(input.defaultSpeed        != null ? { defaultSpeed:        input.defaultSpeed        } : {}),
+    ...(input.defaultCourseLength != null ? { defaultCourseLength: input.defaultCourseLength } : {}),
+    ...(input.defaultTimeAllowed  != null ? { defaultTimeAllowed:  input.defaultTimeAllowed  } : {}),
+    ...(input.defaultTimeLimit    != null ? { defaultTimeLimit:    input.defaultTimeLimit    } : {}),
+    ...(input.defaultJoTimeAllowed!= null ? { defaultJoTimeAllowed:input.defaultJoTimeAllowed} : {}),
   };
 
   await query(

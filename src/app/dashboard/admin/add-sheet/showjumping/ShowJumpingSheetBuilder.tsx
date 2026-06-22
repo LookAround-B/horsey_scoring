@@ -11,6 +11,15 @@ import {
   type ObstacleColumn,
 } from "../actions";
 
+type LiveSettings = {
+  speed: string;
+  courseLength: string;
+  timeAllowed: string;
+  timeLimit: string;
+  jumpoffStr: string;   // comma-separated obstacle labels for JO
+  joTimeAllowed: string;
+};
+
 export function ShowJumpingSheetBuilder({
   editSlug,
   initial,
@@ -18,7 +27,19 @@ export function ShowJumpingSheetBuilder({
   deletable,
 }: {
   editSlug?: string;
-  initial?: { label: string; subtitle: string; obstacles?: ObstacleColumn[]; defaultRows: number };
+  initial?: {
+    label: string;
+    subtitle: string;
+    obstacles?: ObstacleColumn[];
+    defaultRows: number;
+    // live fields pre-populated when editing
+    defaultSpeed?: number;
+    defaultCourseLength?: number;
+    defaultTimeAllowed?: number;
+    defaultTimeLimit?: number;
+    jumpoffObstacles?: string[];
+    defaultJoTimeAllowed?: number;
+  };
   noteBuiltIn?: boolean;
   deletable?: { mode: "reset" | "delete" };
 } = {}) {
@@ -32,6 +53,14 @@ export function ShowJumpingSheetBuilder({
     initial?.obstacles ?? Array.from({ length: 15 }, (_, i) => ({ name: `Obstacle ${i + 1}`, type: "" as const }))
   );
   const [defaultRows, setDefaultRows] = useState(String(initial?.defaultRows ?? 5));
+  const [live, setLive] = useState<LiveSettings>({
+    speed:        initial?.defaultSpeed        != null ? String(initial.defaultSpeed)        : "",
+    courseLength: initial?.defaultCourseLength != null ? String(initial.defaultCourseLength) : "",
+    timeAllowed:  initial?.defaultTimeAllowed  != null ? String(initial.defaultTimeAllowed)  : "",
+    timeLimit:    initial?.defaultTimeLimit    != null ? String(initial.defaultTimeLimit)    : "",
+    jumpoffStr:   initial?.jumpoffObstacles?.join(", ") ?? "",
+    joTimeAllowed:initial?.defaultJoTimeAllowed!= null ? String(initial.defaultJoTimeAllowed): "",
+  });
   const [error, setError] = useState("");
   const [warning, setWarning] = useState("");
   const [showPreview, setShowPreview] = useState(false);
@@ -39,6 +68,16 @@ export function ShowJumpingSheetBuilder({
   const [pending, startTransition] = useTransition();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, startDelete] = useTransition();
+
+  const patchLive = (patch: Partial<LiveSettings>) => setLive(l => ({ ...l, ...patch }));
+
+  const parseOptNum = (s: string): number | undefined => {
+    const n = parseFloat(s);
+    return isFinite(n) && n > 0 ? n : undefined;
+  };
+
+  const parseObsList = (s: string): string[] =>
+    s.split(",").map(x => x.trim()).filter(Boolean);
 
   const handleObstacleCountChange = (count: number) => {
     const newCount = Math.max(1, Math.min(40, count));
@@ -69,7 +108,16 @@ export function ShowJumpingSheetBuilder({
     const rows = parseInt(defaultRows, 10);
     if (!rows || rows < 1) return setError("Starting rows must be at least 1.");
 
-    const payload = { label, subtitle, obstacles, defaultRows: rows };
+    const joList = parseObsList(live.jumpoffStr);
+    const payload = {
+      label, subtitle, obstacles, defaultRows: rows,
+      jumpoffObstacles:     joList.length > 0 ? joList : undefined,
+      defaultSpeed:         parseOptNum(live.speed),
+      defaultCourseLength:  parseOptNum(live.courseLength),
+      defaultTimeAllowed:   parseOptNum(live.timeAllowed),
+      defaultTimeLimit:     parseOptNum(live.timeLimit),
+      defaultJoTimeAllowed: joList.length > 0 ? parseOptNum(live.joTimeAllowed) : undefined,
+    };
     startTransition(async () => {
       const res = isEdit
         ? await updateShowJumpingSheetAction(editSlug!, payload)
@@ -317,6 +365,65 @@ export function ShowJumpingSheetBuilder({
             className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
           />
           <p className="text-[11px] text-muted-foreground mt-1">More can be added when scoring.</p>
+        </div>
+
+        {/* ── Live Scoring Defaults ─────────────────────────────────── */}
+        <div className="pt-4 border-t border-border">
+          <h3 className="font-display text-base mb-1">Live Scoring Defaults</h3>
+          <p className="text-xs text-muted-foreground mb-4">
+            Pre-fill the course info panel in the live dashboard. All fields are optional and editable during scoring.
+          </p>
+
+          <div className="grid grid-cols-2 gap-3">
+            {([
+              ["speed",        "Speed (m/min)",        "e.g. 350"],
+              ["courseLength", "Course Length (m)",    "e.g. 450"],
+              ["timeAllowed",  "Time Allowed — FR (sec)", "e.g. 77"],
+              ["timeLimit",    "Time Limit — FR (sec)",   "e.g. 154"],
+            ] as [keyof LiveSettings, string, string][]).map(([k, label, ph]) => (
+              <label key={k} className="block">
+                <span className="block text-xs text-muted-foreground mb-1">{label}</span>
+                <input
+                  type="number"
+                  min="1"
+                  value={live[k]}
+                  onChange={e => patchLive({ [k]: e.target.value })}
+                  placeholder={ph}
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
+                />
+              </label>
+            ))}
+          </div>
+
+          <div className="mt-4">
+            <label className="block text-xs text-muted-foreground mb-1">
+              Jump-off obstacles <span className="text-muted-foreground/60">(comma-separated — leave blank for no jump-off)</span>
+            </label>
+            <input
+              type="text"
+              value={live.jumpoffStr}
+              onChange={e => patchLive({ jumpoffStr: e.target.value })}
+              placeholder="e.g. 1, 2, 4, 5, 6a, 6b"
+              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
+            />
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Use the same labels as your obstacle names above. Enables the jump-off grid and JO standings algorithm.
+            </p>
+          </div>
+
+          {live.jumpoffStr.trim() && (
+            <div className="mt-3">
+              <label className="block text-xs text-muted-foreground mb-1">Jump-off Time Allowed (sec)</label>
+              <input
+                type="number"
+                min="1"
+                value={live.joTimeAllowed}
+                onChange={e => patchLive({ joTimeAllowed: e.target.value })}
+                placeholder="Defaults to FR Time Allowed if blank"
+                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
+              />
+            </div>
+          )}
         </div>
       </div>
 

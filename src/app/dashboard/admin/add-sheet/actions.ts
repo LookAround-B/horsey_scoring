@@ -70,6 +70,14 @@ export type CreateShowJumpingFormInput = {
   subtitle: string;
   obstacles: ObstacleColumn[];
   defaultRows: number;
+  // Live dashboard optional fields
+  jumpoffObstacles?: string[];
+  firstRoundObstacles?: string[];
+  defaultSpeed?: number;
+  defaultCourseLength?: number;
+  defaultTimeAllowed?: number;
+  defaultTimeLimit?: number;
+  defaultJoTimeAllowed?: number;
 };
 
 export async function createShowJumpingSheetAction(
@@ -96,6 +104,13 @@ export async function createShowJumpingSheetAction(
       subtitle: d.subtitle ?? "",
       obstacles: obstacles as ObstacleColumn[],
       riderRows,
+      jumpoffObstacles:     d.jumpoffObstacles,
+      firstRoundObstacles:  d.firstRoundObstacles,
+      defaultSpeed:         d.defaultSpeed,
+      defaultCourseLength:  d.defaultCourseLength,
+      defaultTimeAllowed:   d.defaultTimeAllowed,
+      defaultTimeLimit:     d.defaultTimeLimit,
+      defaultJoTimeAllowed: d.defaultJoTimeAllowed,
     },
     adminId
   );
@@ -132,6 +147,13 @@ export async function updateShowJumpingSheetAction(
       subtitle: d.subtitle ?? "",
       obstacles: obstacles as ObstacleColumn[],
       riderRows,
+      jumpoffObstacles:     d.jumpoffObstacles,
+      firstRoundObstacles:  d.firstRoundObstacles,
+      defaultSpeed:         d.defaultSpeed,
+      defaultCourseLength:  d.defaultCourseLength,
+      defaultTimeAllowed:   d.defaultTimeAllowed,
+      defaultTimeLimit:     d.defaultTimeLimit,
+      defaultJoTimeAllowed: d.defaultJoTimeAllowed,
     },
     adminId
   );

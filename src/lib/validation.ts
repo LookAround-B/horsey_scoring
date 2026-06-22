@@ -205,6 +205,14 @@ export const showJumpingSheetSchema = z.object({
   subtitle: z.string().max(200).optional().default(""),
   obstacles: z.array(obstacleSchema).min(1, "Add at least one obstacle column.").max(50),
   defaultRows: z.number().int().min(1).max(60).optional().default(5),
+  // Live dashboard fields (all optional)
+  jumpoffObstacles:     z.array(z.string()).optional(),
+  firstRoundObstacles:  z.array(z.string()).optional(),
+  defaultSpeed:         z.number().positive().optional(),
+  defaultCourseLength:  z.number().positive().optional(),
+  defaultTimeAllowed:   z.number().positive().optional(),
+  defaultTimeLimit:     z.number().positive().optional(),
+  defaultJoTimeAllowed: z.number().positive().optional(),
 });
 
 export const qualitySheetSchema = z.object({

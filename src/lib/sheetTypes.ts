@@ -15,6 +15,16 @@ export type ShowJumpingConfig = {
   discipline: "showjumping";
   obstacles: ObstacleColumn[];
   riderRows: number;
+  // Live dashboard fields (all optional — backward-compatible)
+  firstRoundObstacles?: string[];  // obstacle labels for FR; defaults to obstacles[].name
+  jumpoffObstacles?: string[];     // obstacle labels for JO; empty = no JO mode
+  defaultSpeed?: number;           // m/min (editable in header)
+  defaultCourseLength?: number;    // metres
+  defaultTimeAllowed?: number;     // seconds (FR)
+  defaultTimeLimit?: number;       // seconds (FR); defaults to TA × 2
+  defaultJoTimeAllowed?: number;   // seconds (JO); defaults to FR TA
+  timePenaltyRateFR?: number;      // seconds per 1 fault in FR (FEI Table A default = 4)
+  timePenaltyRateJO?: number;      // seconds per 1 fault in JO (default = 1)
 };
 
 export function isShowJumping(config: unknown): config is ShowJumpingConfig {
