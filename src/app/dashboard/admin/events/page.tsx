@@ -5,10 +5,8 @@ import { listAllEvents, listEventsForSecretary, listGuidelineTemplates, type Eve
 import { listUsers } from "@/lib/users";
 import { listCustomSheetCards } from "@/lib/customSheets";
 import { TEST_CARDS } from "@/lib/dummy-data";
-import { createFullEventAction } from "./actions";
-import { GuidelinesField } from "./GuidelinesField";
-import { SheetsField } from "./SheetsField";
-import { CalendarRange, Plus, MapPin, Users as UsersIcon, ChevronRight } from "lucide-react";
+import { CreateEventForm } from "./CreateEventForm";
+import { CalendarRange, MapPin, Users as UsersIcon, ChevronRight } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -55,65 +53,12 @@ export default async function EventsAdminPage() {
       </p>
 
       {/* Create */}
-      <form
-        action={createFullEventAction}
-        className="bg-card border border-border rounded-xl p-4 mb-8 grid grid-cols-1 sm:grid-cols-2 gap-3"
-      >
-        <div className="sm:col-span-2">
-          <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Event name</label>
-          <input name="name" required placeholder="e.g. KSEC Spring Classic 2026"
-            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
-        </div>
-        <div>
-          <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Venue</label>
-          <input name="location" placeholder="Arena / city"
-            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
-        </div>
-        {isAdmin && (
-          <div>
-            <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Secretary</label>
-            <select name="secretaryId"
-              className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary">
-              <option value="">— Me (admin) —</option>
-              {secretaries.map((s) => (
-                <option key={s.id} value={s.id}>{s.name ?? s.email}</option>
-              ))}
-            </select>
-          </div>
-        )}
-        <div>
-          <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Start date</label>
-          <input type="date" name="startDate"
-            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
-        </div>
-        <div>
-          <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">End date</label>
-          <input type="date" name="endDate"
-            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
-        </div>
-        <div>
-          <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Start time</label>
-          <input type="time" name="startTime"
-            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
-        </div>
-        <div>
-          <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">End time</label>
-          <input type="time" name="endTime"
-            className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
-        </div>
-        <div className="sm:col-span-2">
-          <GuidelinesField templates={templates} />
-        </div>
-        <SheetsField sheets={allSheets} />
-        <div className="sm:col-span-2">
-          <button type="submit" className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground rounded-lg px-4 py-2 text-sm font-medium hover:opacity-90 transition-opacity">
-            <Plus className="h-4 w-4" /> Create event
-          </button>
-          <p className="text-[11px] text-muted-foreground mt-2">
-            After creating, you&apos;ll set up riders, judges, examiners, the access code and visibility.
-          </p>
-        </div>
-      </form>
+      <CreateEventForm
+        isAdmin={isAdmin}
+        secretaries={secretaries}
+        allSheets={allSheets}
+        templates={templates}
+      />
 
       {events.length === 0 ? (
         <div className="text-sm text-muted-foreground border border-dashed border-border rounded-xl py-10 text-center">

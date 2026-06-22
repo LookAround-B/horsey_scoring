@@ -2,6 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { Check, Loader2 } from "lucide-react";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import type { Discipline } from "@/lib/sheets";
 import { setPlacementAction } from "./actions";
 
@@ -20,11 +23,12 @@ export function SheetPlacementRow({
   const [saved, setSaved] = useState(false);
   const [pending, startTransition] = useTransition();
 
-  const onChange = (next: Discipline) => {
-    setValue(next);
+  const onChange = (next: string) => {
+    const disc = next as Discipline;
+    setValue(disc);
     setSaved(false);
     startTransition(async () => {
-      await setPlacementAction(slug, next);
+      await setPlacementAction(slug, disc);
       setSaved(true);
       setTimeout(() => setSaved(false), 1500);
     });
@@ -38,18 +42,22 @@ export function SheetPlacementRow({
       </div>
 
       <div className="w-5 shrink-0 text-primary">
-        {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : saved ? <Check className="h-4 w-4" /> : null}
+        {pending ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : saved ? (
+          <Check className="h-4 w-4" />
+        ) : null}
       </div>
 
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value as Discipline)}
-        disabled={pending}
-        className="shrink-0 bg-background border border-border rounded-lg px-3 py-1.5 text-sm outline-none focus:border-primary disabled:opacity-60"
-      >
-        <option value="dressage">Dressage</option>
-        <option value="showjumping">Show Jumping</option>
-      </select>
+      <Select value={value} onValueChange={onChange} disabled={pending}>
+        <SelectTrigger className="w-36 bg-background border-border text-sm h-8 rounded-lg disabled:opacity-60">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="dressage">Dressage</SelectItem>
+          <SelectItem value="showjumping">Show Jumping</SelectItem>
+        </SelectContent>
+      </Select>
     </div>
   );
 }

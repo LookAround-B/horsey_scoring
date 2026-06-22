@@ -52,71 +52,81 @@ async function requireEventManager(eventId: string) {
   return u;
 }
 
-export async function createFullEventAction(formData: FormData) {
-  const u = await requireCreator();
-  const parsed = parseAction(createEventSchema, {
-    name: formData.get("name"),
-    location: formData.get("location"),
-    startDate: formData.get("startDate") || null,
-    endDate: formData.get("endDate") || null,
-    startTime: formData.get("startTime") || null,
-    endTime: formData.get("endTime") || null,
-    guidelines: formData.get("guidelines") || null,
-    secretaryId: formData.get("secretaryId"),
-  });
-  if (parsed.error) return;
-  const data = parsed.parsed!;
-  const secretaryId =
-    u.role === "super_admin" ? data.secretaryId || u.id : u.id;
+export async function createFullEventAction(
+  formData: FormData
+): Promise<{ id?: string; error?: string }> {
+  try {
+    const u = await requireCreator();
+    const parsed = parseAction(createEventSchema, {
+      name: formData.get("name"),
+      location: formData.get("location"),
+      startDate: formData.get("startDate") || null,
+      endDate: formData.get("endDate") || null,
+      startTime: formData.get("startTime") || null,
+      endTime: formData.get("endTime") || null,
+      guidelines: formData.get("guidelines") || null,
+      secretaryId: formData.get("secretaryId"),
+    });
+    if (parsed.error) return { error: parsed.error };
+    const data = parsed.parsed!;
+    const secretaryId =
+      u.role === "super_admin" ? data.secretaryId || u.id : u.id;
 
-  const id = await createFullEvent(
-    {
-      name: data.name,
-      location: data.location,
-      startDate: data.startDate ?? null,
-      endDate: data.endDate ?? null,
-      startTime: data.startTime ?? null,
-      endTime: data.endTime ?? null,
-      guidelines: data.guidelines ?? null,
-      secretaryId,
-    },
-    u.id
-  );
-  // Sheets chosen at creation time.
-  const slugs = formData.getAll("slug").map(String);
-  if (slugs.length) await setEventSheets(id, slugs);
+    const id = await createFullEvent(
+      {
+        name: data.name,
+        location: data.location,
+        startDate: data.startDate ?? null,
+        endDate: data.endDate ?? null,
+        startTime: data.startTime ?? null,
+        endTime: data.endTime ?? null,
+        guidelines: data.guidelines ?? null,
+        secretaryId,
+      },
+      u.id
+    );
+    const slugs = formData.getAll("slug").map(String);
+    if (slugs.length) await setEventSheets(id, slugs);
 
-  revalidatePath("/dashboard/admin/events");
-  redirect(`/dashboard/admin/events/${id}`);
+    revalidatePath("/dashboard/admin/events");
+    return { id };
+  } catch {
+    return { error: "Failed to create event." };
+  }
 }
 
-export async function updateEventMetaAction(formData: FormData) {
-  const eventId = String(formData.get("eventId") ?? "");
-  await requireEventManager(eventId);
-  const parsed = parseAction(eventMetaSchema, {
-    eventId,
-    name: formData.get("name"),
-    location: formData.get("location"),
-    startDate: formData.get("startDate") || null,
-    endDate: formData.get("endDate") || null,
-    startTime: formData.get("startTime") || null,
-    endTime: formData.get("endTime") || null,
-    guidelines: formData.get("guidelines") || null,
-    status: formData.get("status") || undefined,
-  });
-  if (parsed.error) return;
-  const d = parsed.parsed!;
-  await updateEventMeta(eventId, {
-    name: d.name,
-    location: d.location,
-    startDate: d.startDate ?? null,
-    endDate: d.endDate ?? null,
-    startTime: d.startTime ?? null,
-    endTime: d.endTime ?? null,
-    guidelines: d.guidelines ?? null,
-    status: d.status as EventStatus | undefined,
-  });
-  revalidatePath(`/dashboard/admin/events/${eventId}`);
+export async function updateEventMetaAction(formData: FormData): Promise<{ ok?: boolean; error?: string }> {
+  try {
+    const eventId = String(formData.get("eventId") ?? "");
+    await requireEventManager(eventId);
+    const parsed = parseAction(eventMetaSchema, {
+      eventId,
+      name: formData.get("name"),
+      location: formData.get("location"),
+      startDate: formData.get("startDate") || null,
+      endDate: formData.get("endDate") || null,
+      startTime: formData.get("startTime") || null,
+      endTime: formData.get("endTime") || null,
+      guidelines: formData.get("guidelines") || null,
+      status: formData.get("status") || undefined,
+    });
+    if (parsed.error) return { error: parsed.error };
+    const d = parsed.parsed!;
+    await updateEventMeta(eventId, {
+      name: d.name,
+      location: d.location,
+      startDate: d.startDate ?? null,
+      endDate: d.endDate ?? null,
+      startTime: d.startTime ?? null,
+      endTime: d.endTime ?? null,
+      guidelines: d.guidelines ?? null,
+      status: d.status as EventStatus | undefined,
+    });
+    revalidatePath(`/dashboard/admin/events/${eventId}`);
+    return { ok: true };
+  } catch {
+    return { error: "Failed to save details." };
+  }
 }
 
 export async function saveGuidelineTemplateAction(
@@ -235,11 +245,18 @@ export async function removeParticipantAction(formData: FormData) {
   revalidatePath(`/dashboard/admin/events/${id}`);
 }
 
-export async function saveEventSheetsAction(formData: FormData) {
-  const id = String(formData.get("eventId") ?? "");
-  await requireEventManager(id);
-  await setEventSheets(id, formData.getAll("slug").map(String));
-  revalidatePath(`/dashboard/admin/events/${id}`);
+export async function saveEventSheetsAction(
+  formData: FormData
+): Promise<{ ok?: boolean; error?: string }> {
+  try {
+    const id = String(formData.get("eventId") ?? "");
+    await requireEventManager(id);
+    await setEventSheets(id, formData.getAll("slug").map(String));
+    revalidatePath(`/dashboard/admin/events/${id}`);
+    return { ok: true };
+  } catch {
+    return { error: "Failed to save sheets." };
+  }
 }
 
 export async function deleteEventAction(formData: FormData) {

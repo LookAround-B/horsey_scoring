@@ -109,7 +109,7 @@ export default function AdminDashboard() {
         <div className="px-5 py-4 border-b border-border">
           <h2 className="font-display text-lg">Recent Scoring Sessions</h2>
         </div>
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto no-scrollbar">
           <table className="w-full text-sm">
             <thead className="bg-muted text-[11px] uppercase tracking-wider text-muted-foreground">
               <tr>

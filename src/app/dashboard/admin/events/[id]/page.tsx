@@ -3,20 +3,19 @@ import { auth } from "@/auth";
 import { getEventById, listSheetsByEvent, listGuidelineTemplates } from "@/lib/events";
 import { listUsers } from "@/lib/users";
 import { listCustomSheetCards } from "@/lib/customSheets";
-import { GuidelinesField } from "../GuidelinesField";
 import { BulkRiderImport } from "../BulkRiderImport";
+import { DetailsForm } from "../DetailsForm";
 import { PermissionsForm } from "../PermissionsForm";
 import { TimerConfigForm } from "../TimerConfigForm";
+import { SaveSheetsForm } from "../SaveSheetsForm";
 import { TEST_CARDS } from "@/lib/dummy-data";
 import { ROLE_LABELS, type UserRole } from "@/lib/roles";
 import {
-  updateEventMetaAction,
   regenerateCodeAction,
   addRiderAction,
   deleteRiderAction,
   addParticipantAction,
   removeParticipantAction,
-  saveEventSheetsAction,
   deleteEventAction,
 } from "../actions";
 import { ArrowLeft, KeyRound, Trash2, Plus } from "lucide-react";
@@ -112,47 +111,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
 
       {/* Meta */}
       <Section title="Details">
-        <form action={updateEventMetaAction} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <input type="hidden" name="eventId" value={id} />
-          <div className="sm:col-span-2">
-            <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Name</label>
-            <input name="name" defaultValue={ev.name} required className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
-          </div>
-          <div>
-            <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Venue</label>
-            <input name="location" defaultValue={ev.location ?? ""} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
-          </div>
-          <div>
-            <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Status</label>
-            <select name="status" defaultValue={ev.status} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary">
-              <option value="upcoming">Upcoming</option>
-              <option value="active">Active</option>
-              <option value="completed">Completed</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Start date</label>
-            <input type="date" name="startDate" defaultValue={ev.start_date ?? ""} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
-          </div>
-          <div>
-            <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">End date</label>
-            <input type="date" name="endDate" defaultValue={ev.end_date ?? ""} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
-          </div>
-          <div>
-            <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Start time</label>
-            <input type="time" name="startTime" defaultValue={ev.start_time ?? ""} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
-          </div>
-          <div>
-            <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">End time</label>
-            <input type="time" name="endTime" defaultValue={ev.end_time ?? ""} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
-          </div>
-          <div className="sm:col-span-2">
-            <GuidelinesField initial={ev.guidelines} templates={templates} />
-          </div>
-          <div className="sm:col-span-2">
-            <button className="bg-primary text-primary-foreground rounded-lg px-4 py-2 text-sm font-medium hover:opacity-90 transition-opacity">Save details</button>
-          </div>
-        </form>
+        <DetailsForm eventId={id} ev={ev} templates={templates} />
       </Section>
 
       {/* Permissions */}
@@ -265,18 +224,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
 
       {/* Sheets */}
       <Section title="Scoring sheets in this event">
-        <form action={saveEventSheetsAction} className="space-y-3">
-          <input type="hidden" name="eventId" value={id} />
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 max-h-72 overflow-y-auto pr-1">
-            {sheets.map((t) => (
-              <label key={t.slug} className="flex items-center gap-2 text-sm py-0.5 cursor-pointer">
-                <input type="checkbox" name="slug" value={t.slug} defaultChecked={assignedSlugs.has(t.slug)} className="h-4 w-4 rounded border-border accent-primary" />
-                <span className="truncate">{t.category}</span>
-              </label>
-            ))}
-          </div>
-          <button className="bg-primary text-primary-foreground rounded-lg px-4 py-2 text-sm font-medium hover:opacity-90 transition-opacity">Save sheets</button>
-        </form>
+        <SaveSheetsForm eventId={id} sheets={sheets} assignedSlugs={assignedSlugs} />
       </Section>
 
       {/* Danger */}

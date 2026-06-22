@@ -287,7 +287,7 @@ export default function HubPage() {
         })}
       </div>
 
-      <div className="flex items-center gap-0.5 border-b border-border overflow-x-auto">
+      <div className="flex items-center gap-0.5 border-b border-border overflow-x-auto no-scrollbar">
         {(["overview", "sheets", "riders", "sessions"] as Tab[]).map((t) => (
           <button key={t} onClick={() => setTab(t)}
             className={`px-4 py-2.5 text-sm whitespace-nowrap border-b-2 transition-colors -mb-px ${
@@ -370,7 +370,7 @@ export default function HubPage() {
                 All {allRiders.length} <ChevronRight className="h-3 w-3" />
               </button>
             </div>
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto no-scrollbar">
               <table className="w-full text-sm">
                 <thead className="bg-muted text-[11px] uppercase tracking-wider text-muted-foreground">
                   <tr>
