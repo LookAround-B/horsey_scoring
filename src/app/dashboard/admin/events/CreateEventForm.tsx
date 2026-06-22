@@ -86,7 +86,6 @@ export function CreateEventForm({
               <SelectValue placeholder="— Me (admin) —" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">— Me (admin) —</SelectItem>
               {secretaries.map((s) => (
                 <SelectItem key={s.id} value={s.id}>
                   {s.name ?? s.email}
