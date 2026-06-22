@@ -8,18 +8,17 @@ import { DetailsForm } from "../DetailsForm";
 import { PermissionsForm } from "../PermissionsForm";
 import { TimerConfigForm } from "../TimerConfigForm";
 import { SaveSheetsForm } from "../SaveSheetsForm";
+import { RidersListClient } from "./RidersListClient";
+import { OfficialsListClient } from "./OfficialsListClient";
 import { TEST_CARDS } from "@/lib/dummy-data";
 import { ROLE_LABELS, type UserRole } from "@/lib/roles";
 import {
   regenerateCodeAction,
   addRiderAction,
-  deleteRiderAction,
   addParticipantAction,
-  removeParticipantAction,
   deleteEventAction,
 } from "../actions";
-import { ArrowLeft, KeyRound, Trash2, Plus } from "lucide-react";
-import { sanitizeImageSrc } from "@/lib/validation";
+import { ArrowLeft, KeyRound, Plus, Trash2 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -145,31 +144,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
             <button className="inline-flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors"><Plus className="h-3.5 w-3.5" /> Add rider</button>
           </div>
         </form>
-        <div className="divide-y divide-border">
-          {ev.riders.map((r) => (
-            <div key={r.id} className="flex items-center gap-3 py-2">
-              {r.image_url ? (
-                <img src={sanitizeImageSrc(r.image_url) ?? ""} alt={r.name} className="h-8 w-8 rounded-full object-cover" />
-              ) : (
-                <div className="h-8 w-8 rounded-full bg-muted grid place-items-center text-[10px] font-semibold">
-                  {r.competitor_no ?? "—"}
-                </div>
-              )}
-              <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium truncate">{r.name}</div>
-                <div className="text-xs text-muted-foreground truncate">
-                  {[r.competitor_no && `#${r.competitor_no}`, r.horse, r.nf].filter(Boolean).join(" · ") || "—"}
-                </div>
-              </div>
-              <form action={deleteRiderAction}>
-                <input type="hidden" name="eventId" value={id} />
-                <input type="hidden" name="riderId" value={r.id} />
-                <button className="text-muted-foreground hover:text-destructive p-1.5 rounded-md hover:bg-muted transition-colors"><Trash2 className="h-4 w-4" /></button>
-              </form>
-            </div>
-          ))}
-          {ev.riders.length === 0 && <p className="text-sm text-muted-foreground py-3">No riders yet.</p>}
-        </div>
+        <RidersListClient riders={ev.riders} eventId={id} />
       </Section>
 
       {/* Officials / participants */}
@@ -193,33 +168,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
           </div>
           <button className="inline-flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors"><Plus className="h-3.5 w-3.5" /> Invite</button>
         </form>
-        <div className="divide-y divide-border">
-          {ev.participants.map((p) => (
-            <div key={p.id} className="flex items-center gap-3 py-2">
-              {p.image_url ? (
-                <img src={sanitizeImageSrc(p.image_url) ?? ""} alt={p.name ?? ""} className="h-8 w-8 rounded-full object-cover" />
-              ) : (
-                <div className="h-8 w-8 rounded-full bg-muted grid place-items-center text-[10px] font-semibold">
-                  {(p.name ?? p.email ?? "?").slice(0, 2).toUpperCase()}
-                </div>
-              )}
-              <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium truncate">{p.name ?? p.email}</div>
-                <div className="text-xs text-muted-foreground truncate">
-                  {p.role_at_event ? ROLE_LABELS[p.role_at_event as UserRole] ?? p.role_at_event : "—"}
-                  {" · "}
-                  {p.joined_at ? `Joined ${fmtDateTime(p.joined_at)}` : "Invited (not joined)"}
-                </div>
-              </div>
-              <form action={removeParticipantAction}>
-                <input type="hidden" name="eventId" value={id} />
-                <input type="hidden" name="participantId" value={p.id} />
-                <button className="text-muted-foreground hover:text-destructive p-1.5 rounded-md hover:bg-muted transition-colors"><Trash2 className="h-4 w-4" /></button>
-              </form>
-            </div>
-          ))}
-          {ev.participants.length === 0 && <p className="text-sm text-muted-foreground py-3">No officials yet.</p>}
-        </div>
+        <OfficialsListClient officials={ev.participants} eventId={id} />
       </Section>
 
       {/* Sheets */}

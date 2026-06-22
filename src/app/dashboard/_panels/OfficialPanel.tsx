@@ -3,6 +3,7 @@ import {
   CalendarRange, MapPin, KeyRound, ExternalLink,
   ClipboardList, CheckCircle, FileEdit, Clock, AlertCircle,
 } from "lucide-react";
+import { PastEventsClient } from "./PastEventsClient";
 import { listEventsForParticipant, listSheetsByEvent, type EventSummary } from "@/lib/events";
 import { listCustomSheetCards } from "@/lib/customSheets";
 import { TEST_CARDS, type TestCard } from "@/lib/dummy-data";
@@ -104,7 +105,7 @@ export async function OfficialPanel({
         </div>
 
         {events.length > 0 && (
-          <div className="mt-5 pt-5 border-t border-border grid grid-cols-3 gap-4 text-center">
+          <div className="mt-5 pt-5 border-t border-border grid grid-cols-3 gap-2 sm:gap-4 text-center">
             <div>
               <div className="font-display text-2xl tabular-nums text-highlight">{activeEvents.length}</div>
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5">Active events</div>
@@ -166,22 +167,7 @@ export async function OfficialPanel({
           <h2 className="text-xs uppercase tracking-wider text-muted-foreground mb-3">
             Completed events ({pastEvents.length})
           </h2>
-          <div className="space-y-2">
-            {pastEvents.map((ev) => (
-              <div key={ev.id} className="flex items-center gap-3 bg-card border border-border rounded-xl px-4 py-3">
-                <div className="min-w-0 flex-1">
-                  <div className="text-sm font-medium truncate text-muted-foreground">{ev.name}</div>
-                  <div className="text-xs text-muted-foreground/60">{fmt(ev.start_date)}</div>
-                </div>
-                <Link
-                  href={`/dashboard/events/${ev.id}`}
-                  className="text-xs text-muted-foreground hover:text-foreground hover:underline"
-                >
-                  View →
-                </Link>
-              </div>
-            ))}
-          </div>
+          <PastEventsClient events={pastEvents.map((ev) => ({ id: ev.id, name: ev.name, start_date: ev.start_date }))} />
         </section>
       )}
 

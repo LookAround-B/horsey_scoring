@@ -6,6 +6,7 @@ import { listScoresForEvent } from "@/lib/scores";
 import { listCustomSheetCards } from "@/lib/customSheets";
 import { TEST_CARDS, type TestCard } from "@/lib/dummy-data";
 import { ROLE_LABELS, type UserRole } from "@/lib/roles";
+import { RidersSectionClient } from "./RidersSectionClient";
 import { MapPin, CalendarRange, ExternalLink, Users as UsersIcon, ClipboardList, ChevronDown } from "lucide-react";
 import { sanitizeImageSrc } from "@/lib/validation";
 
@@ -174,18 +175,7 @@ export default async function EventDashboardPage({ params }: { params: Promise<{
         {canSee("riders") && (
           <section className="bg-card border border-border rounded-xl p-5">
             <h2 className="font-display text-base mb-4 flex items-center gap-2"><UsersIcon className="h-4 w-4 text-primary" /> Riders ({ev.riders.length})</h2>
-            <div className="divide-y divide-border">
-              {ev.riders.map((r) => (
-                <div key={r.id} className="flex items-center gap-3 py-2">
-                  <Avatar name={r.name} image={r.image_url} />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium truncate">{r.name}</div>
-                    <div className="text-xs text-muted-foreground truncate">{[r.competitor_no && `#${r.competitor_no}`, r.horse, r.nf].filter(Boolean).join(" · ") || "—"}</div>
-                  </div>
-                </div>
-              ))}
-              {ev.riders.length === 0 && <p className="text-sm text-muted-foreground py-2">No riders.</p>}
-            </div>
+            <RidersSectionClient riders={ev.riders} />
           </section>
         )}
 

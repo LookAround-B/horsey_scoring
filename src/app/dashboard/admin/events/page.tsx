@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { listAllEvents, listEventsForSecretary, listGuidelineTemplates, type EventSummary } from "@/lib/events";
@@ -6,18 +5,10 @@ import { listUsers } from "@/lib/users";
 import { listCustomSheetCards } from "@/lib/customSheets";
 import { TEST_CARDS } from "@/lib/dummy-data";
 import { CreateEventForm } from "./CreateEventForm";
-import { CalendarRange, MapPin, Users as UsersIcon, ChevronRight } from "lucide-react";
+import { EventsListClient } from "./EventsListClient";
+import { CalendarRange } from "lucide-react";
 
 export const dynamic = "force-dynamic";
-
-const STATUS_STYLES: Record<string, string> = {
-  upcoming: "bg-muted text-muted-foreground",
-  active: "bg-highlight/20 text-highlight",
-  completed: "bg-primary/10 text-primary",
-};
-
-const fmt = (d: string | null) =>
-  d ? new Date(d).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) : null;
 
 export default async function EventsAdminPage() {
   const sess = await auth();
@@ -60,43 +51,7 @@ export default async function EventsAdminPage() {
         templates={templates}
       />
 
-      {events.length === 0 ? (
-        <div className="text-sm text-muted-foreground border border-dashed border-border rounded-xl py-10 text-center">
-          No events yet. Create one above.
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {events.map((e, idx) => (
-            <Link
-              key={e.id}
-              href={`/dashboard/admin/events/${e.id}`}
-              className="flex items-center gap-4 bg-card border border-border rounded-xl p-4 hover:border-foreground/20 hover:shadow-sm transition-all duration-300 animate-fade-in"
-              style={{ animationDelay: `${idx * 50}ms` }}
-            >
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium truncate">{e.name}</span>
-                  <span className={`text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full ${STATUS_STYLES[e.status] ?? ""}`}>
-                    {e.status}
-                  </span>
-                </div>
-                <div className="text-xs text-muted-foreground mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5">
-                  {fmt(e.start_date) && <span>{fmt(e.start_date)}{fmt(e.end_date) ? ` – ${fmt(e.end_date)}` : ""}</span>}
-                  {e.location && <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {e.location}</span>}
-                  <span className="flex items-center gap-1"><UsersIcon className="h-3 w-3" /> {e.rider_count} riders · {e.participant_count} officials</span>
-                  {isAdmin && e.secretary_name && <span>Secretary: {e.secretary_name}</span>}
-                </div>
-              </div>
-              {e.access_code && (
-                <span className="hidden sm:block text-xs font-mono px-2 py-1 rounded bg-muted text-muted-foreground">
-                  {e.access_code}
-                </span>
-              )}
-              <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-            </Link>
-          ))}
-        </div>
-      )}
+      <EventsListClient events={events} isAdmin={isAdmin} />
     </div>
   );
 }

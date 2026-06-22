@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { TEST_CARDS } from "@/lib/dummy-data";
 import { listPlacements, type Discipline } from "@/lib/sheets";
 import { listCustomSheetCards } from "@/lib/customSheets";
-import { SheetPlacementRow } from "./SheetPlacementRow";
+import { SheetsListClient } from "./SheetsListClient";
 import { Layers } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -35,17 +35,14 @@ export default async function SheetPlacementPage() {
         for everyone. ({dressageCount} dressage · {sjCount} show jumping)
       </p>
 
-      <div className="border border-border rounded-xl overflow-hidden divide-y divide-border bg-card">
-        {TEST_CARDS_ALL.map((t) => (
-          <SheetPlacementRow
-            key={t.slug}
-            slug={t.slug}
-            category={t.category}
-            appendix={t.appendix}
-            initial={effective(t.slug, t.discipline)}
-          />
-        ))}
-      </div>
+      <SheetsListClient
+        sheets={TEST_CARDS_ALL.map((t) => ({
+          slug: t.slug,
+          category: t.category,
+          appendix: t.appendix,
+          initial: effective(t.slug, t.discipline),
+        }))}
+      />
     </div>
   );
 }
