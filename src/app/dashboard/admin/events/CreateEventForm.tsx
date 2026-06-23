@@ -118,7 +118,7 @@ export function CreateEventForm({
           {pending ? "Creating…" : "Create event"}
         </button>
         <p className="text-[11px] text-muted-foreground mt-2">
-          After creating, you&apos;ll set up riders, judges, examiners, the access code and visibility.
+          After creating, you&apos;ll set up riders, judges, writers, the access code and visibility.
         </p>
       </div>
     </form>

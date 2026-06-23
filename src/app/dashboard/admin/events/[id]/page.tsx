@@ -27,7 +27,6 @@ const OFFICIAL_ROLES: UserRole[] = [
   "showjumping_judge",
   "dressage_writer",
   "showjumping_writer",
-  "examiner",
 ];
 
 const fmtDateTime = (iso: string | null) =>
@@ -84,7 +83,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
           {isAdmin && ev.secretary_name ? ` · Secretary: ${ev.secretary_name}` : ""}
         </p>
         <p className="text-xs text-muted-foreground mt-2">
-          Set up the event below — add riders, invite judges/examiners/writers, choose scoring sheets,
+          Set up the event below — add riders, invite judges/writers, choose scoring sheets,
           and share the access code. Add as many as you need.
         </p>
       </div>
@@ -116,7 +115,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
       {/* Permissions */}
       <Section title="Permissions — what officials can see">
         <p className="text-xs text-muted-foreground mb-3">
-          Toggle which sections are visible to judges, writers, and examiners on the event dashboard.
+          Toggle which sections are visible to judges and writers on the event dashboard.
         </p>
         <PermissionsForm eventId={id} vis={vis} />
       </Section>

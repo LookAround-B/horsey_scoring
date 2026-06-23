@@ -425,7 +425,7 @@ export default function HubPage() {
           {/* Discipline toggle */}
           <div className="inline-flex items-center gap-1 p-1 rounded-lg bg-muted">
             {DISCIPLINES.map((d) => {
-              const count = allCards.filter((t) => disciplineOf(t) === d.id).length;
+              const count = allCards.filter((t) => disciplineOf(t) === d.id && inEvent(t.slug)).length;
               const active = sheetDiscipline === d.id;
               return (
                 <button key={d.id} onClick={() => setSheetDiscipline(d.id)}

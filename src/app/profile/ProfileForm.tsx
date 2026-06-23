@@ -1,11 +1,42 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { ArrowLeft, Check } from "lucide-react";
+import { ArrowLeft, Check, Type, Upload, Link2 } from "lucide-react";
 import { updateProfileAction } from "./actions";
 import type { Profile, ProfileFields } from "@/lib/users";
 import { sanitizeImageSrc } from "@/lib/validation";
+
+const FONT_SIZES = ["sm", "md", "lg", "xl"] as const;
+type FontSize = (typeof FONT_SIZES)[number];
+const FONT_LABELS: Record<FontSize, string> = { sm: "A-", md: "A", lg: "A+", xl: "A++" };
+
+/** Read a picked image file, downscale to <= 512px, and return a compact JPEG data URL. */
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Could not read the file."));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("That file isn't a valid image."));
+      img.onload = () => {
+        const max = 512;
+        const scale = Math.min(1, max / Math.max(img.width, img.height));
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return reject(new Error("Image processing not supported."));
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL("image/jpeg", 0.85));
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
+}
 
 export function ProfileForm({
   profile,
@@ -23,6 +54,41 @@ export function ProfileForm({
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
   const [pending, startTransition] = useTransition();
+  const [fontSize, setFontSize] = useState<FontSize>("md");
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-picking the same file
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { setError("Please choose an image file."); return; }
+    try {
+      setError("");
+      const dataUrl = await fileToDataUrl(file);
+      setImageUrl(dataUrl);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not load that image.");
+    }
+  };
+
+  // Load the saved text size and apply it (also applied app-wide by the dashboard layout).
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("font-size") as FontSize;
+      if (stored && FONT_SIZES.includes(stored)) {
+        setFontSize(stored);
+        document.documentElement.dataset.fontSize = stored;
+      }
+    } catch {}
+  }, []);
+
+  const changeFontSize = (size: FontSize) => {
+    setFontSize(size);
+    try {
+      localStorage.setItem("font-size", size);
+      document.documentElement.dataset.fontSize = size;
+    } catch {}
+  };
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,8 +148,36 @@ export function ProfileForm({
           </div>
 
           <div>
-            <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">Profile image URL{star("image_url")}</label>
-            <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://…" className="w-full bg-card border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary" />
+            <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">Profile image{star("image_url")}</label>
+            <input ref={fileRef} type="file" accept="image/*" onChange={handleFile} className="hidden" />
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                className="inline-flex items-center gap-1.5 text-sm px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors"
+              >
+                <Upload className="h-3.5 w-3.5" /> Choose from device
+              </button>
+              {imageUrl && (
+                <button
+                  type="button"
+                  onClick={() => setImageUrl("")}
+                  className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+            {imageUrl.startsWith("data:") ? (
+              <p className="text-[11px] text-muted-foreground mt-2">Uploaded from device.</p>
+            ) : (
+              <div className="mt-2">
+                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mb-1">
+                  <Link2 className="h-3 w-3" /> or paste an image URL
+                </div>
+                <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://…" className="w-full bg-card border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary" />
+              </div>
+            )}
           </div>
 
           <div>
@@ -104,6 +198,34 @@ export function ProfileForm({
             </Link>
           )}
         </form>
+
+        {/* Text size — applies across all portals, saved on this device */}
+        <div className="mt-10 pt-6 border-t border-border">
+          <div className="flex items-center gap-2 mb-1">
+            <Type className="h-4 w-4 text-muted-foreground" />
+            <h2 className="text-sm font-medium">Text size</h2>
+          </div>
+          <p className="text-xs text-muted-foreground mb-3">
+            Adjust how large text appears across the app. Saved on this device.
+          </p>
+          <div className="inline-flex items-center gap-1 p-1 rounded-lg bg-muted">
+            {FONT_SIZES.map((size) => (
+              <button
+                key={size}
+                type="button"
+                onClick={() => changeFontSize(size)}
+                title={`Text size: ${size}`}
+                className={`min-w-10 px-3 py-1.5 rounded-md text-center leading-none transition-colors ${
+                  fontSize === size
+                    ? "bg-card text-foreground shadow-soft font-medium"
+                    : "text-muted-foreground hover:text-foreground"
+                } ${size === "sm" ? "text-xs" : size === "md" ? "text-sm" : size === "lg" ? "text-base" : "text-lg"}`}
+              >
+                {FONT_LABELS[size]}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );

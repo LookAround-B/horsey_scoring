@@ -109,7 +109,7 @@ export const DUMMY_USERS: User[] = [
   { id: "u3", name: "Mark Johnson",    email: "judge.sj@horsey.app",       role: "showjumping_judge" },
   { id: "u4", name: "Priya Sharma",    email: "writer.dressage@horsey.app",role: "dressage_writer" },
   { id: "u5", name: "Tom Wilson",      email: "writer.sj@horsey.app",      role: "showjumping_writer" },
-  { id: "u6", name: "Emma Davis",      email: "examiner@horsey.app",       role: "examiner" },
+  { id: "u6", name: "Emma Davis",      email: "club@horsey.app",           role: "club" },
   { id: "u7", name: "Sophia Patel",    email: "rider@horsey.app",          role: "rider" },
   { id: "u8", name: "James O'Brien",   email: "secretary@horsey.app",      role: "show_secretary" },
 ];

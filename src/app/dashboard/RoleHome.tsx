@@ -20,19 +20,21 @@ const ACTIONS: Record<UserRole, Action[]> = {
     { label: "Sheet Placement", href: "/dashboard/admin/sheets", icon: Layers },
   ],
   show_secretary: [
-    { label: "My Events", href: "/dashboard/admin/events", icon: CalendarRange, hint: "Create & manage shows" },
+    { label: "My Events", href: "/dashboard/events", icon: CalendarRange, hint: "Events you manage" },
     { label: "Secretary", href: "/dashboard/secretary", icon: ClipboardList, hint: "Secretary dashboard" },
-    { label: "My Profile", href: "/profile", icon: UserCircle, hint: "Keep your profile updated" },
   ],
   dressage_judge: officialActions(),
   showjumping_judge: officialActions(),
   dressage_writer: officialActions(),
   showjumping_writer: officialActions(),
-  examiner: officialActions(),
+  club: [
+    { label: "Events", href: "/dashboard/club", icon: CalendarRange, hint: "Browse all events" },
+    { label: "Riders", href: "/dashboard/club/riders", icon: Users, hint: "All riders across events" },
+    { label: "Scores", href: "/dashboard/club/scores", icon: Trophy, hint: "All recorded scores" },
+  ],
   rider: [
     { label: "My Events", href: "/dashboard/events", icon: Calendar, hint: "Events you're entered in" },
     { label: "My Results", href: "/dashboard/rider/results", icon: Trophy, hint: "Your verified scores" },
-    { label: "My Profile", href: "/profile", icon: UserCircle, hint: "Photo & e-signature" },
   ],
 };
 
@@ -40,7 +42,6 @@ function officialActions(): Action[] {
   return [
     { label: "My Events", href: "/dashboard/events", icon: Calendar, hint: "Events you've joined" },
     { label: "Join Event", href: "/dashboard/join", icon: KeyRound, hint: "Enter an access code" },
-    { label: "My Profile", href: "/profile", icon: UserCircle, hint: "Photo & e-signature" },
   ];
 }
 
@@ -62,12 +63,14 @@ export function RoleHome() {
         </h1>
         <p className="text-sm text-muted-foreground mt-2 max-w-prose">
           {user.role === "show_secretary"
-            ? "Create events, add riders, invite judges and examiners, and share the access code so officials can score."
+            ? "Create events, add riders, invite judges and writers, and share the access code so officials can score."
             : user.role === "super_admin"
               ? "Manage users, events, scoring sheets and approvals across the platform."
               : user.role === "rider"
                 ? "View the events you're entered in and keep your profile up to date."
-                : "Join an event with the code your secretary shares, then open its sheets to score."}
+                : user.role === "club"
+                  ? "Browse all events, riders and their scores across the platform."
+                  : "Join an event with the code your secretary shares, then open its sheets to score."}
         </p>
       </div>
 

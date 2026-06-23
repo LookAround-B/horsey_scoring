@@ -11,7 +11,7 @@ create extension if not exists pgcrypto;
 do $$ begin
   create type user_role as enum (
     'super_admin','dressage_judge','showjumping_judge','dressage_writer',
-    'showjumping_writer','examiner','rider','show_secretary'
+    'showjumping_writer','club','rider','show_secretary'
   );
 exception when duplicate_object then null; end $$;
 
@@ -135,7 +135,7 @@ create table if not exists guideline_templates (
   created_at timestamptz not null default now()
 );
 
--- Judges / writers / examiners attached to an event.
+-- Judges / writers attached to an event.
 create table if not exists event_participants (
   id            uuid primary key default gen_random_uuid(),
   event_id      uuid not null references events(id) on delete cascade,

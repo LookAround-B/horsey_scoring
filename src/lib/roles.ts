@@ -8,7 +8,7 @@ export type UserRole =
   | "showjumping_judge"
   | "dressage_writer"
   | "showjumping_writer"
-  | "examiner"
+  | "club"
   | "rider"
   | "show_secretary";
 
@@ -20,7 +20,7 @@ export const ROLE_LABELS: Record<UserRole, string> = {
   showjumping_judge: "Showjumping Judge",
   dressage_writer: "Dressage Writer",
   showjumping_writer: "Showjumping Writer",
-  examiner: "Examiner",
+  club: "Club",
   rider: "Rider",
   show_secretary: "Show Secretary",
 };
@@ -31,7 +31,7 @@ export const ROLE_DASHBOARD: Record<UserRole, string> = {
   showjumping_judge: "/dashboard/judge/showjumping",
   dressage_writer: "/dashboard/writer/dressage",
   showjumping_writer: "/dashboard/writer/showjumping",
-  examiner: "/dashboard/examiner",
+  club: "/dashboard/club",
   rider: "/dashboard/rider",
   show_secretary: "/dashboard/secretary",
 };
@@ -42,7 +42,7 @@ export const ASSIGNABLE_ROLES: UserRole[] = [
   "showjumping_judge",
   "dressage_writer",
   "showjumping_writer",
-  "examiner",
+  "club",
   "rider",
   "show_secretary",
 ];

@@ -23,15 +23,29 @@ export const safeUrl = z
     { message: "Must be a valid http or https URL." }
   );
 
-/** Sanitize at render: returns the URL string only if http/https, else undefined. */
+/** http/https URL, or an inline image data URL (image MIME only — never data:text/html). */
+const DATA_IMAGE_RE = /^data:image\/(png|jpe?g|webp|gif);base64,[a-z0-9+/=\s]+$/i;
+export function isSafeImageSrc(val: string): boolean {
+  if (DATA_IMAGE_RE.test(val)) return true;
+  try {
+    return SAFE_URL_PROTOCOLS.includes(new URL(val).protocol);
+  } catch {
+    return false;
+  }
+}
+
+/** Image source: an http/https URL or an inline image data URL. */
+export const safeImageUrl = z
+  .string()
+  .trim()
+  .refine((val) => !val || isSafeImageSrc(val), {
+    message: "Must be an http/https URL or an uploaded image.",
+  });
+
+/** Sanitize at render: returns the source only if it's a safe image src, else undefined. */
 export function sanitizeImageSrc(url: string | null | undefined): string | undefined {
   if (!url) return undefined;
-  try {
-    const u = new URL(url);
-    return SAFE_URL_PROTOCOLS.includes(u.protocol) ? url : undefined;
-  } catch {
-    return undefined;
-  }
+  return isSafeImageSrc(url) ? url : undefined;
 }
 
 export const roleSchema = z.enum(
@@ -118,7 +132,7 @@ export const scoreSubmitSchema = z.object({
 export const profileSchema = z.object({
   name: z.string().trim().min(1, "Name is required."),
   phone: z.string().trim().max(30).optional().default(""),
-  image_url: safeUrl.optional().default(""),
+  image_url: safeImageUrl.optional().default(""),
   signature: z.string().trim().max(500).optional().default(""),
 });
 

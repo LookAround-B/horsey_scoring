@@ -22,7 +22,7 @@ const MEMBERS = [
   { role: "showjumping_judge", name: "Showjumping Judge" },
   { role: "dressage_writer", name: "Dressage Writer" },
   { role: "showjumping_writer", name: "Showjumping Writer" },
-  { role: "examiner", name: "Examiner" },
+  { role: "club", name: "Club" },
   { role: "rider", name: "Rider" },
 ];
 
