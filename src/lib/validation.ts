@@ -48,6 +48,28 @@ export function sanitizeImageSrc(url: string | null | undefined): string | undef
   return isSafeImageSrc(url) ? url : undefined;
 }
 
+/** True if a signature value is an uploaded/inline image rather than typed text. */
+export function isImageSignature(val: string | null | undefined): boolean {
+  return !!val && val.startsWith("data:");
+}
+
+/**
+ * E-signature: either typed text (≤ 500 chars) or an uploaded inline image
+ * (a safe image data URL, capped at 2 MB to bound the request body).
+ */
+export const signatureSchema = z
+  .string()
+  .trim()
+  .max(2_000_000, "Signature image is too large.")
+  .refine(
+    (val) => {
+      if (!val) return true;
+      if (val.startsWith("data:")) return isSafeImageSrc(val);
+      return val.length <= 500;
+    },
+    { message: "Signature must be typed text or an uploaded image." }
+  );
+
 export const roleSchema = z.enum(
   ASSIGNABLE_ROLES as [UserRole, ...UserRole[]]
 );
@@ -133,7 +155,7 @@ export const profileSchema = z.object({
   name: z.string().trim().min(1, "Name is required."),
   phone: z.string().trim().max(30).optional().default(""),
   image_url: safeImageUrl.optional().default(""),
-  signature: z.string().trim().max(500).optional().default(""),
+  signature: signatureSchema.optional().default(""),
 });
 
 export const createUserSchema = z.object({

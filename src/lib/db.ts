@@ -1,4 +1,9 @@
-import { Pool } from "pg";
+import { Pool, types } from "pg";
+
+// Return DATE (OID 1082) columns as the raw "yyyy-MM-dd" string instead of a JS
+// Date. Every consumer (and our types) treats start_date/end_date as `string`;
+// the default Date object broke date-fns `parse()` ("t.match is not a function").
+types.setTypeParser(1082, (v) => v);
 
 declare global {
   var __horseyPool: Pool | undefined;
