@@ -3,6 +3,9 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { UserPlus, Check } from "lucide-react";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { ASSIGNABLE_ROLES, ROLE_LABELS } from "@/lib/roles";
 import { createUserAction } from "./actions";
 
@@ -11,6 +14,7 @@ export function AddUserForm() {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
+  const [role, setRole] = useState<string>(ASSIGNABLE_ROLES[0]);
   const [pending, startTransition] = useTransition();
 
   const submit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -25,6 +29,7 @@ export function AddUserForm() {
       else {
         setSaved(true);
         form.reset();
+        setRole(ASSIGNABLE_ROLES[0]);
         router.refresh();
         setTimeout(() => setSaved(false), 2000);
       }
@@ -54,9 +59,17 @@ export function AddUserForm() {
       </div>
       <div>
         <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Role</label>
-        <select name="role" className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary">
-          {ASSIGNABLE_ROLES.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
-        </select>
+        <input type="hidden" name="role" value={role} />
+        <Select value={role} onValueChange={setRole}>
+          <SelectTrigger className="w-full bg-background border-border text-sm h-9 rounded-lg">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {ASSIGNABLE_ROLES.map((r) => (
+              <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       <div>
         <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Temp password</label>

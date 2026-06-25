@@ -5,11 +5,22 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Check, ExternalLink, Trash2, RotateCcw, Eye, X } from "lucide-react";
 import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
   createShowJumpingSheetAction,
   updateShowJumpingSheetAction,
   deleteSheetAction,
   type ObstacleColumn,
 } from "../actions";
+
+const OBSTACLE_TYPES = [
+  { value: "none", label: "None" },
+  { value: "vertical", label: "Vertical" },
+  { value: "oxer", label: "Oxer" },
+  { value: "combination", label: "Combination" },
+  { value: "water", label: "Water" },
+] as const;
 
 type LiveSettings = {
   speed: string;
@@ -333,17 +344,19 @@ export function ShowJumpingSheetBuilder({
                   </div>
                   <div>
                     <label className="block text-xs text-muted-foreground mb-1">Type</label>
-                    <select
-                      value={obstacle.type}
-                      onChange={(e) => updateObstacle(i, "type", e.target.value)}
-                      className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
+                    <Select
+                      value={obstacle.type || "none"}
+                      onValueChange={(v) => updateObstacle(i, "type", v === "none" ? "" : v)}
                     >
-                      <option value="">None</option>
-                      <option value="vertical">Vertical</option>
-                      <option value="oxer">Oxer</option>
-                      <option value="combination">Combination</option>
-                      <option value="water">Water</option>
-                    </select>
+                      <SelectTrigger className="w-full bg-background border-border text-sm h-9 rounded-lg">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {OBSTACLE_TYPES.map((t) => (
+                          <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="text-xs text-muted-foreground text-center">#{i + 1}</div>
                 </div>

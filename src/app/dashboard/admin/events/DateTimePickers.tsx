@@ -5,6 +5,9 @@ import { format, parse, isValid } from "date-fns";
 import { CalendarIcon, Clock } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 const HOURS = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, "0"));
@@ -88,27 +91,31 @@ export function TimePicker({
     <div>
       <FieldLabel>{label}</FieldLabel>
       <input type="hidden" name={name} value={combined} />
-      <div className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-border bg-background">
+      <div className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-border bg-background">
         <Clock className="h-4 w-4 shrink-0 text-muted-foreground" />
-        <select
-          value={value.h}
-          onChange={(e) => onChange({ ...value, h: e.target.value })}
-          className="flex-1 bg-transparent text-sm outline-none cursor-pointer"
-          aria-label={`${label} hour`}
-        >
-          <option value="">HH</option>
-          {HOURS.map((h) => <option key={h} value={h}>{h}</option>)}
-        </select>
+        <Select value={value.h} onValueChange={(h) => onChange({ ...value, h })}>
+          <SelectTrigger
+            aria-label={`${label} hour`}
+            className="flex-1 h-7 border-0 bg-transparent px-1.5 text-sm shadow-none focus:ring-0 focus:ring-offset-0"
+          >
+            <SelectValue placeholder="HH" />
+          </SelectTrigger>
+          <SelectContent className="max-h-52">
+            {HOURS.map((h) => <SelectItem key={h} value={h}>{h}</SelectItem>)}
+          </SelectContent>
+        </Select>
         <span className="text-muted-foreground font-medium">:</span>
-        <select
-          value={value.m}
-          onChange={(e) => onChange({ ...value, m: e.target.value })}
-          className="flex-1 bg-transparent text-sm outline-none cursor-pointer"
-          aria-label={`${label} minute`}
-        >
-          <option value="">MM</option>
-          {MINUTES.map((m) => <option key={m} value={m}>{m}</option>)}
-        </select>
+        <Select value={value.m} onValueChange={(m) => onChange({ ...value, m })}>
+          <SelectTrigger
+            aria-label={`${label} minute`}
+            className="flex-1 h-7 border-0 bg-transparent px-1.5 text-sm shadow-none focus:ring-0 focus:ring-offset-0"
+          >
+            <SelectValue placeholder="MM" />
+          </SelectTrigger>
+          <SelectContent className="max-h-52">
+            {MINUTES.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+          </SelectContent>
+        </Select>
       </div>
     </div>
   );
