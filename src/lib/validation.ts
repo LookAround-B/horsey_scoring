@@ -174,7 +174,7 @@ export const eventMetaSchema = z.object({
   startTime: z.string().optional().nullable(),
   endTime: z.string().optional().nullable(),
   guidelines: z.string().max(10_000).optional().nullable(),
-  status: z.enum(["draft", "active", "completed", "cancelled"]).optional(),
+  status: z.enum(["upcoming", "active", "completed"]).optional(),
 });
 
 export const createEventSchema = z.object({
