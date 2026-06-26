@@ -208,6 +208,7 @@ export type CreateShowJumpingInput = {
 
 /** Show-jumping config stored in custom_sheets.config (jsonb). */
 export type StoredJumpingConfig = {
+  kind: "showjumping";
   label: string;
   appendix: string;
   abbr: string;
@@ -244,6 +245,7 @@ export async function createShowJumpingSheet(
   }));
 
   const config: StoredJumpingConfig = {
+    kind: "showjumping",
     label: input.label.trim(),
     appendix: input.appendix.trim(),
     abbr: abbrFrom(input.label),
@@ -290,6 +292,7 @@ export async function updateShowJumpingSheet(
   }));
 
   const config: StoredJumpingConfig = {
+    kind: "showjumping",
     label: input.label.trim(),
     appendix: input.appendix.trim(),
     abbr: abbrFrom(input.label),
