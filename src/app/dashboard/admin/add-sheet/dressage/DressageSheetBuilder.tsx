@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Plus, Trash2, GripVertical, Check, ExternalLink, RotateCcw } from "lucide-react";
 import { createDressageSheetAction, updateSheetAction, deleteSheetAction } from "../../add-sheet/actions";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 export type Row = { no: string; letters: string; test: string; directive: string; coefficient: string };
 
@@ -145,7 +147,7 @@ export function DressageSheetBuilder({
           <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">
             Sheet name <span className="text-destructive">*</span>
           </label>
-          <input
+          <Input
             value={label}
             onChange={(e) => setLabel(e.target.value)}
             placeholder="e.g. Novice 2025"
@@ -154,7 +156,7 @@ export function DressageSheetBuilder({
         </div>
         <div>
           <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">Appendix</label>
-          <input
+          <Input
             value={appendix}
             onChange={(e) => setAppendix(e.target.value)}
             placeholder="e.g. Appendix A"
@@ -163,7 +165,7 @@ export function DressageSheetBuilder({
         </div>
         <div>
           <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">Subtitle</label>
-          <input
+          <Input
             value={subtitle}
             onChange={(e) => setSubtitle(e.target.value)}
             placeholder="e.g. Time 5 min · Min age of horse: 6 years"
@@ -201,33 +203,33 @@ export function DressageSheetBuilder({
               key={i}
               className="grid grid-cols-2 md:grid-cols-[40px_70px_1fr_1fr_70px_36px] gap-2 px-3 py-2 items-start"
             >
-              <input
+              <Input
                 value={r.no}
                 onChange={(e) => setRow(i, { no: e.target.value })}
                 placeholder={String(i + 1)}
                 className="bg-background border border-border rounded-md px-2 py-1.5 text-sm outline-none focus:border-primary"
               />
-              <input
+              <Input
                 value={r.letters}
                 onChange={(e) => setRow(i, { letters: e.target.value })}
                 placeholder="A X"
                 className="bg-background border border-border rounded-md px-2 py-1.5 text-sm outline-none focus:border-primary"
               />
-              <textarea
+              <Textarea
                 value={r.test}
                 onChange={(e) => setRow(i, { test: e.target.value })}
                 placeholder="Movement description"
                 rows={2}
                 className="col-span-2 md:col-span-1 bg-background border border-border rounded-md px-2 py-1.5 text-sm outline-none focus:border-primary resize-y"
               />
-              <textarea
+              <Textarea
                 value={r.directive}
                 onChange={(e) => setRow(i, { directive: e.target.value })}
                 placeholder="Directive ideas"
                 rows={2}
                 className="col-span-2 md:col-span-1 bg-background border border-border rounded-md px-2 py-1.5 text-sm outline-none focus:border-primary resize-y"
               />
-              <input
+              <Input
                 type="number"
                 min="1"
                 step="1"

@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/select";
 import { ASSIGNABLE_ROLES, ROLE_LABELS } from "@/lib/roles";
 import { createUserAction } from "./actions";
+import { Input } from "@/components/ui/input";
 
 export function AddUserForm() {
   const router = useRouter();
@@ -51,11 +52,11 @@ export function AddUserForm() {
     <form onSubmit={submit} className="bg-card border border-border rounded-xl p-4 mb-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
       <div>
         <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Name</label>
-        <input name="name" required className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
+        <Input name="name" required className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
       </div>
       <div>
         <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Email</label>
-        <input name="email" type="email" required className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
+        <Input name="email" type="email" required className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
       </div>
       <div>
         <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Role</label>
@@ -73,7 +74,7 @@ export function AddUserForm() {
       </div>
       <div>
         <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Temp password</label>
-        <input name="password" required minLength={6} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
+        <Input name="password" required minLength={6} className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
       </div>
       {error && <p className="sm:col-span-2 text-sm text-destructive bg-destructive/10 rounded-lg px-3 py-2">{error}</p>}
       <div className="sm:col-span-2 flex items-center gap-2">

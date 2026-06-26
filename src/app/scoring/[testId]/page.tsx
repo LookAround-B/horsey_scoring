@@ -18,6 +18,12 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { toast } from "sonner";
+import {
+  Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 /* ---------- dummy option lists for the sheet header dropdowns ---------- */
 const JUDGE_OPTIONS = [
@@ -707,7 +713,7 @@ function ScoringSheet({
                           {m.directive}
                         </td>
                         <td className="px-1 py-2">
-                          <input
+                          <Input
                             className="w-full bg-transparent border border-border rounded-md px-2 py-1.5 text-xs outline-none focus:bg-background focus:ring-1 focus:ring-ring transition-all"
                             value={remarks[m.no] || ""}
                             onChange={(e) => setRemarks((r) => ({ ...r, [m.no]: e.target.value }))}
@@ -804,7 +810,7 @@ function ScoringSheet({
                     </summary>
                     <div className="mt-2 space-y-2">
                       <p className="text-xs text-muted-foreground leading-snug">{m.directive}</p>
-                      <input
+                      <Input
                         className="w-full bg-background border border-border rounded-md px-2 py-1.5 text-xs outline-none focus:ring-1 focus:ring-ring transition-all"
                         placeholder="Remarks"
                         value={remarks[m.no] || ""}
@@ -987,7 +993,7 @@ function ScoringSheet({
                             {hasVal ? rowFinal.toFixed(1) : "—"}
                           </td>
                           <td className="px-1 py-2 w-44">
-                            <input
+                            <Input
                               className="w-full bg-transparent border border-border rounded-md px-2 py-1.5 text-xs outline-none focus:bg-background focus:ring-1 focus:ring-ring transition-all"
                               placeholder="Remarks"
                               value={collectiveRemarksMap[c.no] ?? ""}
@@ -1036,7 +1042,7 @@ function ScoringSheet({
                       Technical Score (%)
                     </label>
                     <div className="flex items-center gap-3">
-                      <input
+                      <Input
                         type="number"
                         inputMode="decimal"
                         min={0}
@@ -1182,7 +1188,7 @@ function ScoringSheet({
         <section className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-12">
           <div className="bg-card border border-border rounded-xl p-6 shadow-soft">
             <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Organisers</div>
-            <textarea
+            <Textarea
               rows={3}
               placeholder="Exact address…"
               className="w-full bg-transparent outline-none resize-none text-sm focus:ring-1 focus:ring-ring rounded-md p-2 -m-2"
@@ -1192,7 +1198,7 @@ function ScoringSheet({
           </div>
           <div className="bg-card border border-border rounded-xl p-6 shadow-soft">
             <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Signature of Judge</div>
-            <input
+            <Input
               value={signature}
               onChange={(e) => setSignature(e.target.value)}
               placeholder="Type signature…"
@@ -1246,20 +1252,13 @@ function ScoringSheet({
       </footer>
 
       {/* ── SAVE SCORE MODAL ─────────────────────────────── */}
-      {showSaveModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm print:hidden">
-          <div className="w-full max-w-md bg-card border border-border rounded-2xl shadow-xl">
+      <Dialog open={showSaveModal} onOpenChange={setShowSaveModal}>
+        <DialogContent className="max-w-md p-0 gap-0 print:hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-border">
               <div>
                 <h2 className="font-display text-lg">Save Score Sheet</h2>
                 <p className="text-xs text-muted-foreground mt-0.5">{info.label} · {info.appendix}</p>
               </div>
-              <button
-                onClick={() => setShowSaveModal(false)}
-                className="p-1.5 rounded-md hover:bg-muted transition-colors"
-              >
-                ✕
-              </button>
             </div>
 
             <div className="px-6 py-5 space-y-5">
@@ -1284,24 +1283,26 @@ function ScoringSheet({
                 <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">
                   Rider
                 </label>
-                <select
-                  value={saveRiderId}
-                  onChange={(e) => setSaveRiderId(e.target.value)}
-                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
-                >
-                  <option value="_meta">
-                    {meta.name ? `${meta.name}${meta.competitorNo ? ` (#${meta.competitorNo})` : ""}` : "— From sheet info —"}
-                  </option>
-                  {allRidersList.length > 0 && (
-                    <optgroup label="Registered riders">
-                      {allRidersList.map((r) => (
-                        <option key={r.id} value={r.id}>
-                          {r.name} (#{r.competitorNo}) · {r.horse}
-                        </option>
-                      ))}
-                    </optgroup>
-                  )}
-                </select>
+                <Select value={saveRiderId} onValueChange={setSaveRiderId}>
+                  <SelectTrigger className="w-full bg-background border-border text-sm h-10 rounded-lg">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="_meta">
+                      {meta.name ? `${meta.name}${meta.competitorNo ? ` (#${meta.competitorNo})` : ""}` : "— From sheet info —"}
+                    </SelectItem>
+                    {allRidersList.length > 0 && (
+                      <SelectGroup>
+                        <SelectLabel>Registered riders</SelectLabel>
+                        {allRidersList.map((r) => (
+                          <SelectItem key={r.id} value={r.id}>
+                            {r.name} (#{r.competitorNo}) · {r.horse}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    )}
+                  </SelectContent>
+                </Select>
 
                 {/* Rider info preview */}
                 <div className="mt-2 grid grid-cols-3 gap-2">
@@ -1367,9 +1368,8 @@ function ScoringSheet({
                 Save Score →
               </button>
             </div>
-          </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -1389,7 +1389,7 @@ const Field = ({
     <span className="block text-[10px] uppercase tracking-[0.15em] text-muted-foreground mb-1.5">
       {label}
     </span>
-    <input
+    <Input
       value={value}
       onChange={(e) => onChange(e.target.value)}
       suppressHydrationWarning
@@ -1578,7 +1578,7 @@ const NumInput = ({
   className,
   ...rest
 }: NumInputProps) => (
-  <input
+  <Input
     type="number"
     inputMode="decimal"
     suppressHydrationWarning

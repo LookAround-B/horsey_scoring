@@ -3,7 +3,8 @@
 import { useState, useTransition, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Check, ExternalLink, Trash2, RotateCcw, Eye, X } from "lucide-react";
+import { ArrowLeft, Check, ExternalLink, Trash2, RotateCcw, Eye } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -13,6 +14,7 @@ import {
   deleteSheetAction,
   type ObstacleColumn,
 } from "../actions";
+import { Input } from "@/components/ui/input";
 
 const OBSTACLE_TYPES = [
   { value: "none", label: "None" },
@@ -188,16 +190,10 @@ export function ShowJumpingSheetBuilder({
   // Preview modal
   if (showPreview) {
     return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-fade-in">
-        <div className="bg-background rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto animate-slide-in-up">
+      <Dialog open onOpenChange={(o) => { if (!o) setShowPreview(false); }}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 gap-0">
           <div className="sticky top-0 bg-background border-b border-border p-4 flex items-center justify-between">
             <h2 className="font-display text-lg tracking-tight">{label || "Preview"}</h2>
-            <button
-              onClick={() => setShowPreview(false)}
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <X className="h-5 w-5" />
-            </button>
           </div>
           <div className="p-6">
             <div className="space-y-4">
@@ -256,8 +252,8 @@ export function ShowJumpingSheetBuilder({
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </DialogContent>
+      </Dialog>
     );
   }
 
@@ -289,7 +285,7 @@ export function ShowJumpingSheetBuilder({
           <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">
             Sheet name <span className="text-destructive">*</span>
           </label>
-          <input
+          <Input
             value={label}
             onChange={(e) => setLabel(e.target.value)}
             placeholder="e.g. Jumping Phase — Eventing"
@@ -301,7 +297,7 @@ export function ShowJumpingSheetBuilder({
           <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">
             Subtitle
           </label>
-          <input
+          <Input
             value={subtitle}
             onChange={(e) => setSubtitle(e.target.value)}
             placeholder="e.g. Pony Club · Jumping Phase Score Sheet · Eventing"
@@ -313,7 +309,7 @@ export function ShowJumpingSheetBuilder({
           <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">
             Number of obstacle columns <span className="text-destructive">*</span>
           </label>
-          <input
+          <Input
             type="number"
             min="1"
             max="40"
@@ -334,7 +330,7 @@ export function ShowJumpingSheetBuilder({
                 <div key={i} className="grid grid-cols-3 gap-3 items-end">
                   <div>
                     <label className="block text-xs text-muted-foreground mb-1">Name</label>
-                    <input
+                    <Input
                       type="text"
                       value={obstacle.name}
                       onChange={(e) => updateObstacle(i, "name", e.target.value)}
@@ -369,7 +365,7 @@ export function ShowJumpingSheetBuilder({
           <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">
             Starting rider rows <span className="text-destructive">*</span>
           </label>
-          <input
+          <Input
             type="number"
             min="1"
             max="60"
@@ -396,7 +392,7 @@ export function ShowJumpingSheetBuilder({
             ] as [keyof LiveSettings, string, string][]).map(([k, label, ph]) => (
               <label key={k} className="block">
                 <span className="block text-xs text-muted-foreground mb-1">{label}</span>
-                <input
+                <Input
                   type="number"
                   min="1"
                   value={live[k]}
@@ -412,7 +408,7 @@ export function ShowJumpingSheetBuilder({
             <label className="block text-xs text-muted-foreground mb-1">
               Jump-off obstacles <span className="text-muted-foreground/60">(comma-separated — leave blank for no jump-off)</span>
             </label>
-            <input
+            <Input
               type="text"
               value={live.jumpoffStr}
               onChange={e => patchLive({ jumpoffStr: e.target.value })}
@@ -427,7 +423,7 @@ export function ShowJumpingSheetBuilder({
           {live.jumpoffStr.trim() && (
             <div className="mt-3">
               <label className="block text-xs text-muted-foreground mb-1">Jump-off Time Allowed (sec)</label>
-              <input
+              <Input
                 type="number"
                 min="1"
                 value={live.joTimeAllowed}

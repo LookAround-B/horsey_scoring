@@ -13,6 +13,7 @@ import { SheetsField } from "./SheetsField";
 import { DatePicker, TimePicker, FieldLabel, parseTimeParts } from "./DateTimePickers";
 import type { TestCard } from "@/lib/dummy-data";
 import type { GuidelineTemplate } from "@/lib/events";
+import { Input } from "@/components/ui/input";
 
 type Secretary = { id: string; name: string | null; email: string };
 
@@ -58,7 +59,7 @@ export function CreateEventForm({
       {/* Name */}
       <div className="sm:col-span-2">
         <FieldLabel>Event name</FieldLabel>
-        <input
+        <Input
           name="name"
           required
           placeholder="e.g. KSEC Spring Classic 2026"
@@ -69,7 +70,7 @@ export function CreateEventForm({
       {/* Venue */}
       <div>
         <FieldLabel>Venue</FieldLabel>
-        <input
+        <Input
           name="location"
           placeholder="Arena / city"
           className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"

@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import { Eye } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
+import { Checkbox } from "@/components/ui/checkbox";
 import { setVisibilityAction } from "./actions";
 
 type Vis = { riders?: boolean; scores?: boolean; judges?: boolean; secretary?: boolean };
@@ -31,12 +32,7 @@ export function PermissionsForm({ eventId, vis }: { eventId: string; vis: Vis })
             key={k}
             className="flex items-center gap-2.5 text-sm capitalize cursor-pointer bg-muted/40 rounded-lg px-3 py-2.5 border border-border hover:bg-muted transition-colors"
           >
-            <input
-              type="checkbox"
-              name={k}
-              defaultChecked={vis[k] ?? true}
-              className="h-4 w-4 rounded border-border accent-primary"
-            />
+            <Checkbox name={k} defaultChecked={vis[k] ?? true} />
             <span>{k === "judges" ? "Officials" : k}</span>
           </label>
         ))}

@@ -10,6 +10,8 @@ import { toast } from "sonner";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 type Header = { efiRegNo: string; name: string; horse: string; organisers: string; signature: string };
 
@@ -187,15 +189,15 @@ export function QualityScoringSheet({
         <div className="bg-card border border-border rounded-xl p-5 grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-4">
           <div className="sm:col-span-1">
             <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">EFI Registration No</label>
-            <input value={header.efiRegNo} onChange={(e) => setH({ efiRegNo: e.target.value })} className="w-full bg-transparent border-b border-border py-1 text-sm outline-none focus:border-primary" />
+            <Input value={header.efiRegNo} onChange={(e) => setH({ efiRegNo: e.target.value })} className="w-full bg-transparent border-b border-border py-1 text-sm outline-none focus:border-primary" />
           </div>
           <div>
             <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Name</label>
-            <input value={header.name} onChange={(e) => setH({ name: e.target.value })} className="w-full bg-transparent border-b border-border py-1 text-sm outline-none focus:border-primary" />
+            <Input value={header.name} onChange={(e) => setH({ name: e.target.value })} className="w-full bg-transparent border-b border-border py-1 text-sm outline-none focus:border-primary" />
           </div>
           <div>
             <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Horse</label>
-            <input value={header.horse} onChange={(e) => setH({ horse: e.target.value })} className="w-full bg-transparent border-b border-border py-1 text-sm outline-none focus:border-primary" />
+            <Input value={header.horse} onChange={(e) => setH({ horse: e.target.value })} className="w-full bg-transparent border-b border-border py-1 text-sm outline-none focus:border-primary" />
           </div>
         </div>
 
@@ -221,7 +223,7 @@ export function QualityScoringSheet({
                     )}
                   </td>
                   <td className="border border-border px-1 py-1">
-                    <textarea
+                    <Textarea
                       value={comments[i] ?? ""}
                       onChange={(e) => setComments((m) => ({ ...m, [i]: e.target.value }))}
                       rows={2}
@@ -229,7 +231,7 @@ export function QualityScoringSheet({
                     />
                   </td>
                   <td className="border border-border px-1 py-1">
-                    <input
+                    <Input
                       inputMode="decimal"
                       value={marks[i] ?? ""}
                       onChange={(e) => setMarks((m) => ({ ...m, [i]: e.target.value }))}
@@ -271,7 +273,7 @@ export function QualityScoringSheet({
           <div className="bg-card border border-border rounded-xl divide-y divide-border overflow-hidden">
             <div className="flex items-center justify-between px-4 py-2.5">
               <span className="text-sm text-muted-foreground">Technical score in %</span>
-              <input
+              <Input
                 inputMode="decimal"
                 value={technical}
                 onChange={(e) => setTechnical(e.target.value)}
@@ -314,7 +316,7 @@ export function QualityScoringSheet({
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <div className="bg-card border border-border rounded-xl p-5">
             <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">Organisers (exact address)</div>
-            <textarea
+            <Textarea
               value={header.organisers}
               onChange={(e) => setH({ organisers: e.target.value })}
               rows={2}
@@ -323,7 +325,7 @@ export function QualityScoringSheet({
           </div>
           <div className="bg-card border border-border rounded-xl p-5">
             <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">Signature of Judge</div>
-            <input
+            <Input
               value={header.signature}
               onChange={(e) => setH({ signature: e.target.value })}
               className="w-full bg-transparent border-b border-dashed border-border py-1 text-sm outline-none focus:border-primary"

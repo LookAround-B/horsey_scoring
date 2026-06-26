@@ -9,6 +9,7 @@ import { updateEventMetaAction } from "./actions";
 import { GuidelinesField } from "./GuidelinesField";
 import { DatePicker, TimePicker, FieldLabel, parseISODate, parseTimeParts } from "./DateTimePickers";
 import type { GuidelineTemplate } from "@/lib/events";
+import { Input } from "@/components/ui/input";
 
 type EventMeta = {
   name: string;
@@ -54,7 +55,7 @@ export function DetailsForm({
       {/* Name */}
       <div className="sm:col-span-2">
         <FieldLabel>Name</FieldLabel>
-        <input
+        <Input
           name="name"
           defaultValue={ev.name}
           required
@@ -65,7 +66,7 @@ export function DetailsForm({
       {/* Venue */}
       <div>
         <FieldLabel>Venue</FieldLabel>
-        <input
+        <Input
           name="location"
           defaultValue={ev.location ?? ""}
           className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"

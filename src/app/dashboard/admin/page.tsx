@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { DUMMY_USERS, DUMMY_EVENTS, DUMMY_SESSIONS, DUMMY_RIDERS, ROLE_LABELS, TEST_NAMES } from "@/lib/dummy-data";
-import { Users, Calendar, FileText, Shield, X } from "lucide-react";
+import { Users, Calendar, FileText, Shield } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 function Stat({ label, value, sub, icon: Icon }: { label: string; value: string | number; sub?: string; icon: React.ElementType }) {
   return (
@@ -149,41 +151,36 @@ export default function AdminDashboard() {
       </div>
 
       {/* New Event Modal (UI only) */}
-      {showNewEvent && (
-        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-card border border-border rounded-xl shadow-card w-full max-w-md p-6">
-            <div className="flex items-center justify-between mb-5">
-              <h2 className="font-display text-xl">New Event</h2>
-              <button onClick={() => setShowNewEvent(false)} className="text-muted-foreground hover:text-foreground transition-colors">
-                <X className="h-5 w-5" />
+      <Dialog open={showNewEvent} onOpenChange={setShowNewEvent}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display text-xl">New Event</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">Event Name</label>
+              <Input value={newEvent.name} onChange={(e) => setNewEvent((p) => ({ ...p, name: e.target.value }))}
+                placeholder="Spring Dressage Championship" />
+            </div>
+            <div>
+              <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">Date</label>
+              <Input value={newEvent.date} onChange={(e) => setNewEvent((p) => ({ ...p, date: e.target.value }))}
+                placeholder="2025-06-15" />
+            </div>
+            <div>
+              <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">Location</label>
+              <Input value={newEvent.location} onChange={(e) => setNewEvent((p) => ({ ...p, location: e.target.value }))}
+                placeholder="Wellington Arena" />
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button onClick={() => setShowNewEvent(false)} className="flex-1 border border-border rounded-lg py-2.5 text-sm hover:bg-muted transition-colors">Cancel</button>
+              <button onClick={() => setShowNewEvent(false)} className="flex-1 bg-primary text-primary-foreground rounded-lg py-2.5 text-sm font-medium hover:opacity-90 transition-opacity">
+                Create Event
               </button>
             </div>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">Event Name</label>
-                <input value={newEvent.name} onChange={(e) => setNewEvent((p) => ({ ...p, name: e.target.value }))}
-                  className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary" placeholder="Spring Dressage Championship" />
-              </div>
-              <div>
-                <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">Date</label>
-                <input value={newEvent.date} onChange={(e) => setNewEvent((p) => ({ ...p, date: e.target.value }))}
-                  className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary" placeholder="2025-06-15" />
-              </div>
-              <div>
-                <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">Location</label>
-                <input value={newEvent.location} onChange={(e) => setNewEvent((p) => ({ ...p, location: e.target.value }))}
-                  className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary" placeholder="Wellington Arena" />
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button onClick={() => setShowNewEvent(false)} className="flex-1 border border-border rounded-lg py-2.5 text-sm hover:bg-muted transition-colors">Cancel</button>
-                <button onClick={() => setShowNewEvent(false)} className="flex-1 bg-primary text-primary-foreground rounded-lg py-2.5 text-sm font-medium hover:opacity-90 transition-opacity">
-                  Create Event
-                </button>
-              </div>
-            </div>
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -9,6 +9,8 @@ import {
   updateQualitySheetAction,
   deleteSheetAction,
 } from "../actions";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 type Row = { title: string; description: string };
 
@@ -144,7 +146,7 @@ export function QualityMarkingSheetBuilder({
           <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">
             Sheet name <span className="text-destructive">*</span>
           </label>
-          <input
+          <Input
             value={label}
             onChange={(e) => setLabel(e.target.value)}
             placeholder="e.g. Children Quality 2025"
@@ -153,7 +155,7 @@ export function QualityMarkingSheetBuilder({
         </div>
         <div>
           <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">Subtitle</label>
-          <input
+          <Input
             value={subtitle}
             onChange={(e) => setSubtitle(e.target.value)}
             className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
@@ -181,13 +183,13 @@ export function QualityMarkingSheetBuilder({
                 {i + 1}.
               </span>
               <div className="flex-1 space-y-2">
-                <input
+                <Input
                   value={r.title}
                   onChange={(e) => setRow(i, { title: e.target.value })}
                   placeholder="Criterion title (e.g. Rider's position and seat)"
                   className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm font-medium outline-none focus:border-primary"
                 />
-                <textarea
+                <Textarea
                   value={r.description}
                   onChange={(e) => setRow(i, { description: e.target.value })}
                   placeholder="Description / directives (optional, one idea per line)"

@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { Eye, X, ChevronDown } from "lucide-react";
+import { Eye, ChevronDown } from "lucide-react";
 import type { TestCard } from "@/lib/dummy-data";
 import { TEST_CONFIGS } from "@/lib/tests";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 export function SheetsField({ sheets }: { sheets: TestCard[] }) {
   const [preview, setPreview] = useState<TestCard | null>(null);
@@ -20,7 +22,7 @@ export function SheetsField({ sheets }: { sheets: TestCard[] }) {
           {sheets.map((t, idx) => (
             <div key={t.slug} className="flex items-center gap-2 text-sm py-0.5 animate-fade-in" style={{ animationDelay: `${idx * 30}ms` }}>
               <label className="flex items-center gap-2 cursor-pointer flex-1 hover:opacity-80 transition-opacity">
-                <input type="checkbox" name="slug" value={t.slug} className="h-4 w-4 rounded border-border accent-primary cursor-pointer" />
+                <Checkbox name="slug" value={t.slug} className="cursor-pointer" />
                 <span className="truncate">{t.category}</span>
               </label>
               <button
@@ -36,10 +38,10 @@ export function SheetsField({ sheets }: { sheets: TestCard[] }) {
         </div>
       </details>
 
-      {preview && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-background rounded-xl w-full max-w-3xl max-h-[90vh] flex flex-col animate-slide-in-up">
-
+      <Dialog open={preview !== null} onOpenChange={(open) => { if (!open) setPreview(null); }}>
+        <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col gap-0 p-0">
+          {preview && (
+            <>
             {/* Modal header */}
             <div className="sticky top-0 bg-background border-b border-border px-5 py-4 flex items-start justify-between gap-4 rounded-t-xl">
               <div className="min-w-0">
@@ -61,12 +63,6 @@ export function SheetsField({ sheets }: { sheets: TestCard[] }) {
                   )}
                 </div>
               </div>
-              <button
-                onClick={() => setPreview(null)}
-                className="text-muted-foreground hover:text-foreground transition-colors shrink-0 mt-0.5"
-              >
-                <X className="h-5 w-5" />
-              </button>
             </div>
 
             {/* Modal body */}
@@ -191,10 +187,10 @@ export function SheetsField({ sheets }: { sheets: TestCard[] }) {
                 </div>
               )}
             </div>
-
-          </div>
-        </div>
-      )}
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

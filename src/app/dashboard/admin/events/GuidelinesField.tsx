@@ -8,6 +8,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 
 export function GuidelinesField({
   initial,
@@ -72,7 +73,7 @@ export function GuidelinesField({
       <div className="mt-2">
         {showSave ? (
           <div className="flex flex-wrap items-center gap-2">
-            <input
+            <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Template name"

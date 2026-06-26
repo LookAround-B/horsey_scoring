@@ -4,6 +4,7 @@ import { useTransition } from "react";
 import { Timer } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { setTimerConfigAction } from "./actions";
+import { Input } from "@/components/ui/input";
 
 type TimerConfig = { dressage?: number; showjumping?: number };
 
@@ -28,7 +29,7 @@ export function TimerConfigForm({ eventId, config }: { eventId: string; config: 
           <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
             Dressage time allowed (seconds)
           </label>
-          <input
+          <Input
             type="number"
             name="dressSec"
             min="0"
@@ -41,7 +42,7 @@ export function TimerConfigForm({ eventId, config }: { eventId: string; config: 
           <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
             Show Jumping time allowed (seconds)
           </label>
-          <input
+          <Input
             type="number"
             name="sjSec"
             min="0"

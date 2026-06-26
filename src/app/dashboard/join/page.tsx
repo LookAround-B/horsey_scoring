@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { KeyRound } from "lucide-react";
 import { joinByCodeAction } from "./actions";
+import { Input } from "@/components/ui/input";
 
 export default function JoinEventPage() {
   const [code, setCode] = useState("");
@@ -32,7 +33,7 @@ export default function JoinEventPage() {
           Enter the access code your show secretary shared with you.
         </p>
         <form onSubmit={submit} className="space-y-3">
-          <input
+          <Input
             value={code}
             onChange={(e) => setCode(e.target.value.toUpperCase().slice(0, 5))}
             placeholder="AB1CD"

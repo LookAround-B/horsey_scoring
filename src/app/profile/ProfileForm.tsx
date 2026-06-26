@@ -6,6 +6,7 @@ import { ArrowLeft, Check, Type, Upload, Link2 } from "lucide-react";
 import { updateProfileAction } from "./actions";
 import type { Profile, ProfileFields } from "@/lib/users";
 import { sanitizeImageSrc, isImageSignature } from "@/lib/validation";
+import { Input } from "@/components/ui/input";
 
 const FONT_SIZES = ["sm", "md", "lg", "xl"] as const;
 type FontSize = (typeof FONT_SIZES)[number];
@@ -163,12 +164,12 @@ export function ProfileForm({
 
           <div>
             <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">Name<span className="text-destructive"> *</span></label>
-            <input value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-card border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary" />
+            <Input value={name} onChange={(e) => setName(e.target.value)} className="w-full bg-card border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary" />
           </div>
 
           <div>
             <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">Phone{star("phone")}</label>
-            <input value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full bg-card border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary" />
+            <Input value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full bg-card border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary" />
           </div>
 
           <div>
@@ -199,7 +200,7 @@ export function ProfileForm({
                 <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mb-1">
                   <Link2 className="h-3 w-3" /> or paste an image URL
                 </div>
-                <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://…" className="w-full bg-card border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary" />
+                <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="https://…" className="w-full bg-card border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary" />
               </div>
             )}
           </div>
@@ -220,7 +221,7 @@ export function ProfileForm({
               </div>
             ) : (
               <>
-                <input value={signature} onChange={(e) => setSignature(e.target.value)} placeholder="Type your full name as signature" className="w-full bg-card border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary font-display italic" />
+                <Input value={signature} onChange={(e) => setSignature(e.target.value)} placeholder="Type your full name as signature" className="w-full bg-card border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-primary font-display italic" />
                 <div className="flex items-center gap-2 mt-2">
                   <button
                     type="button"

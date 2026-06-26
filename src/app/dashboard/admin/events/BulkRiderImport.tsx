@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Upload, Check } from "lucide-react";
 import { importRidersAction } from "./actions";
+import { Textarea } from "@/components/ui/textarea";
 
 type Parsed = { name: string; competitorNo: string; nf: string; horse: string; horseNo: string };
 
@@ -69,7 +70,7 @@ export function BulkRiderImport({ eventId }: { eventId: string }) {
       <div className="text-xs text-muted-foreground mb-2">
         Paste one rider per line: <code className="font-mono">Name, Competitor No, NF, Horse, Horse No</code>
       </div>
-      <textarea
+      <Textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
         rows={6}

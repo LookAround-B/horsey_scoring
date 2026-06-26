@@ -2,6 +2,7 @@
 
 import { useTransition } from "react";
 import { toast } from "@/components/ui/sonner";
+import { Checkbox } from "@/components/ui/checkbox";
 import { saveEventSheetsAction } from "./actions";
 
 type Sheet = { slug: string; category: string };
@@ -33,13 +34,7 @@ export function SaveSheetsForm({
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 max-h-72 overflow-y-auto pr-1 no-scrollbar">
         {sheets.map((t) => (
           <label key={t.slug} className="flex items-center gap-2 text-sm py-0.5 cursor-pointer">
-            <input
-              type="checkbox"
-              name="slug"
-              value={t.slug}
-              defaultChecked={assignedSlugs.has(t.slug)}
-              className="h-4 w-4 rounded border-border accent-primary"
-            />
+            <Checkbox name="slug" value={t.slug} defaultChecked={assignedSlugs.has(t.slug)} />
             <span className="truncate">{t.category}</span>
           </label>
         ))}

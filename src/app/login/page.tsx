@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { Input } from "@/components/ui/input";
 
 export default function LoginPage() {
   const { login, loginWithGoogle, user, isLoading } = useAuth();
@@ -94,7 +95,7 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">Email</label>
-              <input
+              <Input
                 type="email"
                 required
                 value={email}
@@ -106,7 +107,7 @@ export default function LoginPage() {
             <div>
               <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">Password</label>
               <div className="relative">
-                <input
+                <Input
                   type={showPassword ? "text" : "password"}
                   required
                   value={password}

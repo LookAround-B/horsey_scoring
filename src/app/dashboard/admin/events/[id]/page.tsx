@@ -19,6 +19,7 @@ import {
   deleteEventAction,
 } from "../actions";
 import { ArrowLeft, KeyRound, Plus, Trash2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
 
 export const dynamic = "force-dynamic";
 
@@ -133,12 +134,12 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
         <BulkRiderImport eventId={id} />
         <form action={addRiderAction} className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
           <input type="hidden" name="eventId" value={id} />
-          <input name="name" required placeholder="Rider name" className="col-span-2 sm:col-span-1 bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
-          <input name="competitorNo" placeholder="No." className="bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
-          <input name="nf" placeholder="NF" className="bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
-          <input name="horse" placeholder="Horse" className="bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
-          <input name="horseNo" placeholder="Horse No." className="bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
-          <input name="imageUrl" placeholder="Image URL (optional)" className="col-span-2 sm:col-span-1 bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
+          <Input name="name" required placeholder="Rider name" className="col-span-2 sm:col-span-1 bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
+          <Input name="competitorNo" placeholder="No." className="bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
+          <Input name="nf" placeholder="NF" className="bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
+          <Input name="horse" placeholder="Horse" className="bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
+          <Input name="horseNo" placeholder="Horse No." className="bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
+          <Input name="imageUrl" placeholder="Image URL (optional)" className="col-span-2 sm:col-span-1 bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary" />
           <div className="col-span-2 sm:col-span-3">
             <button className="inline-flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors"><Plus className="h-3.5 w-3.5" /> Add rider</button>
           </div>

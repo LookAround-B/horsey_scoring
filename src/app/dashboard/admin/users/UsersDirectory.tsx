@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Users, Search } from "lucide-react";
 import { ROLE_LABELS, type UserRole, type ApprovalStatus } from "@/lib/roles";
 import { PaginationBar, PAGE_SIZE } from "@/components/PaginationBar";
+import { Input } from "@/components/ui/input";
 
 type Row = {
   id: string;
@@ -78,7 +79,7 @@ export function UsersDirectory({ users }: { users: Row[] }) {
       <div className="flex flex-wrap items-center gap-2 mb-4">
         <div className="relative flex-1 min-w-[200px] max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <input
+          <Input
             value={q}
             onChange={(e) => { setPage(0); setQ(e.target.value); }}
             placeholder="Search name or email…"

@@ -15,6 +15,7 @@ import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from "@/components/ui/select";
 import { useConfirm } from "@/components/ui/confirm-dialog";
+import { Input } from "@/components/ui/input";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -486,7 +487,7 @@ export function ShowJumpingSheet({
               ] as [keyof CourseInfo, string][]).map(([k, label]) => (
               <label key={k} className="block">
                 <span className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">{label}</span>
-                <input
+                <Input
                   value={courseInfo[k]}
                   onChange={e => setCourseInfo(c => ({ ...c, [k]: e.target.value }))}
                   className="w-full bg-transparent border-b border-border py-1.5 text-sm outline-none focus:border-primary"
@@ -568,7 +569,7 @@ export function ShowJumpingSheet({
                 <div className="flex items-center gap-3 flex-1 min-w-0 flex-wrap">
                   <div className="flex items-center gap-1.5">
                     <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Entry #</span>
-                    <input
+                    <Input
                       value={cur.entryNo}
                       onChange={e => patchRider({ entryNo: e.target.value })}
                       disabled={cur.approved}
@@ -578,7 +579,7 @@ export function ShowJumpingSheet({
                   </div>
                   <div className="flex items-center gap-1.5">
                     <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Sched. Time</span>
-                    <input
+                    <Input
                       value={cur.scheduledTime}
                       onChange={e => patchRider({ scheduledTime: e.target.value })}
                       disabled={cur.approved}
@@ -612,6 +613,57 @@ export function ShowJumpingSheet({
 
             {cur && (
               <>
+                {/* ── On-course hero (live running score) ── */}
+                {(() => {
+                  const showJO = hasJO && (cur.jo.time !== "" || Object.values(cur.jo.faults).some(Boolean));
+                  const rd  = showJO ? cur.jo : cur.fr;
+                  const jf  = calcJF(rd.faults);
+                  const tf  = calcTF(rd.time, showJO ? joTaSecs : taSecs, showJO ? joRate : frRate);
+                  const out = isRoundOut(rd);
+                  return (
+                    <div className="rounded-xl p-4 flex items-center justify-between gap-4 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground">
+                      <div className="min-w-0">
+                        <div className="text-[10px] uppercase tracking-[0.2em] opacity-70 flex items-center gap-1.5">
+                          <span className="h-1.5 w-1.5 rounded-full bg-green-400 animate-pulse" />
+                          On Course{showJO ? " · Jump-off" : ""}
+                        </div>
+                        <div className="font-display text-2xl font-bold truncate leading-tight mt-0.5">
+                          {cur.name || (cur.entryNo ? `#${cur.entryNo}` : "Rider")}
+                        </div>
+                        <div className="text-sm opacity-80 truncate">
+                          {cur.horse || "—"}{cur.category ? ` · ${cur.category}` : ""}
+                        </div>
+                      </div>
+                      <div className="flex items-stretch gap-4 shrink-0 text-center">
+                        <div className="flex flex-col justify-center">
+                          <div className="text-[9px] uppercase tracking-wider opacity-60">Jump</div>
+                          <div className="font-display text-xl font-bold tabular-nums">{out ? "—" : jf}</div>
+                        </div>
+                        <div className="flex flex-col justify-center">
+                          <div className="text-[9px] uppercase tracking-wider opacity-60">Time Pen</div>
+                          <div className="font-display text-xl font-bold tabular-nums">{out || !rd.time ? "—" : tf}</div>
+                        </div>
+                        <div className="w-px bg-primary-foreground/25" />
+                        <div className="flex flex-col justify-center">
+                          <div className="text-[9px] uppercase tracking-wider opacity-60">Penalties</div>
+                          <div className="font-display text-4xl font-bold tabular-nums leading-none">
+                            {out ? (rd.status || "E") : rd.time ? jf + tf : jf}
+                          </div>
+                        </div>
+                        {curPlac != null && (
+                          <>
+                            <div className="w-px bg-primary-foreground/25" />
+                            <div className="flex flex-col justify-center">
+                              <div className="text-[9px] uppercase tracking-wider opacity-60">Rank</div>
+                              <div className="font-display text-3xl font-bold tabular-nums leading-none text-amber-300">{curPlac}</div>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 {/* ── First Round Obstacles ── */}
                 <ObstacleGrid
                   label={hasJO ? "First Round" : undefined}
@@ -644,7 +696,7 @@ export function ShowJumpingSheet({
                   ] as [keyof RiderEntry, string][]).map(([k, label]) => (
                     <label key={k} className="block col-span-1">
                       <span className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">{label}</span>
-                      <input
+                      <Input
                         value={(cur[k] as string) ?? ""}
                         onChange={e => patchRider({ [k]: e.target.value })}
                         disabled={cur.approved}
@@ -706,7 +758,7 @@ export function ShowJumpingSheet({
                       {/* Entry note */}
                       <label className="block">
                         <span className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Entry Note / Remarks</span>
-                        <input
+                        <Input
                           value={cur.note}
                           onChange={e => patchRider({ note: e.target.value })}
                           disabled={cur.approved}
@@ -776,11 +828,15 @@ export function ShowJumpingSheet({
                             <RotateCcw className="h-3 w-3" />
                           </button>
                           {hasJO && (
-                            <select value={timerRound} onChange={e => setTimerRound(e.target.value as "fr" | "jo")}
-                              className="text-xs border border-border rounded-lg px-2 py-1.5 bg-background outline-none focus:border-primary">
-                              <option value="fr">→ FR time</option>
-                              <option value="jo">→ JO time</option>
-                            </select>
+                            <Select value={timerRound} onValueChange={v => setTimerRound(v as "fr" | "jo")}>
+                              <SelectTrigger className="h-8 text-xs rounded-lg px-2 bg-background w-auto gap-1">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="fr">→ FR time</SelectItem>
+                                <SelectItem value="jo">→ JO time</SelectItem>
+                              </SelectContent>
+                            </Select>
                           )}
                         </div>
                         {timer.splits.length > 0 && (
@@ -840,82 +896,139 @@ export function ShowJumpingSheet({
       )}
 
       {/* ══════════════════════ TAB: Standings ════════════════════════════ */}
-      {tab === "standings" && (
-        <div className="max-w-5xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-display text-2xl">Standings</h2>
-            <span className="text-xs text-muted-foreground">{riders.length} entries</span>
+      {tab === "standings" && (() => {
+        const ranked  = placed.filter(r => r.placing != null);
+        const pending = placed.filter(r => r.placing == null);
+        const leader  = ranked[0];
+        const lFaults = leader ? (leader.inJO ? leader.joTotal : leader.frTotal) : 0;
+        const lTime   = leader ? parseSecs(leader.inJO ? leader.jo.time : leader.fr.time) : 0;
+        const gridCls = hasJO
+          ? "grid-cols-[44px_1fr_56px_56px_84px_76px]"
+          : "grid-cols-[44px_1fr_64px_84px_76px]";
+
+        return (
+        <div className="max-w-4xl mx-auto px-4 py-6">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-3">
+              <h2 className="font-display text-2xl leading-none">Live Standings</h2>
+              <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-green-600">
+                <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" /> Live
+              </span>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              <b className="text-foreground tabular-nums">{ranked.length}</b> placed · {riders.length} entries
+            </div>
           </div>
 
-          <div className="bg-card border border-border rounded-xl overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="text-[10px] uppercase tracking-wider text-muted-foreground border-b border-border bg-muted/40">
-                  {["Pos","Entry","Rider","Horse","Category","FR Jump F","FR Time","FR Time F","FR Total","JO Jump F","JO Time","JO Time F","Status","MER"].map((h, i) => (
-                    <th key={i} className={`px-3 py-2.5 font-medium ${i > 4 ? "text-center" : "text-left"}`}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {placed.map((r, rowIdx) => {
-                  const frJF  = calcJF(r.fr.faults);
-                  const frTF  = calcTF(r.fr.time, taSecs, frRate);
-                  const frTot = frJF + frTF;
-                  const joJF  = calcJF(r.jo.faults);
-                  const joTF  = calcTF(r.jo.time, joTaSecs, joRate);
-                  const joTot = joJF + joTF;
+          {/* Column header */}
+          <div className={`hidden sm:grid ${gridCls} gap-2 px-3 pb-2 text-[10px] uppercase tracking-wider text-muted-foreground`}>
+            <span className="text-center">Rank</span>
+            <span>Rider / Horse</span>
+            <span className="text-center">{hasJO ? "R1" : "Pen"}</span>
+            {hasJO && <span className="text-center">JO</span>}
+            <span className="text-center">Time</span>
+            <span className="text-right">Gap</span>
+          </div>
+
+          {/* Leaderboard */}
+          <div className="space-y-1.5">
+            {ranked.map(r => {
+              const frOut  = isRoundOut(r.fr);
+              const joOut  = isRoundOut(r.jo);
+              const out    = r.inJO ? joOut : frOut;
+              const eff    = r.inJO ? r.joTotal : r.frTotal;
+              const effT   = parseSecs(r.inJO ? r.jo.time : r.fr.time);
+              const isLead = r.placing === 1;
+              const isCur  = r.id === cur?.id;
+              const decTime = r.inJO && r.jo.time ? r.jo.time : (r.fr.time || "—");
+              const gap = isLead ? "" : eff === lFaults ? `+${(effT - lTime).toFixed(2)}` : `+${eff - lFaults}`;
+              const clear = !out && (r.inJO ? r.joTotal === 0 : r.frTotal === 0);
+              const medal =
+                r.placing === 1 ? "bg-amber-400 text-amber-950 ring-2 ring-amber-300" :
+                r.placing === 2 ? "bg-zinc-300 text-zinc-800 ring-2 ring-zinc-200 dark:bg-zinc-400" :
+                r.placing === 3 ? "bg-orange-400 text-orange-950 ring-2 ring-orange-300" :
+                "bg-muted text-foreground";
+              return (
+                <button key={r.id}
+                  onClick={() => { setCurIdx(riders.findIndex(re => re.id === r.id)); setTab("scoring"); }}
+                  className={`w-full grid ${gridCls} gap-2 items-center rounded-xl border px-3 py-2.5 text-left transition-all ${
+                    isLead ? "border-amber-400/60 bg-amber-50/60 dark:bg-amber-950/10"
+                    : isCur ? "border-primary bg-primary/5"
+                    : "border-border bg-card hover:bg-muted/40"}`}>
+                  <div className="flex justify-center">
+                    <span className={`h-8 w-8 shrink-0 rounded-full grid place-items-center font-display font-bold text-sm tabular-nums ${medal}`}>{r.placing}</span>
+                  </div>
+                  <div className="min-w-0">
+                    <div className="font-semibold truncate flex items-center gap-2">
+                      <span className="truncate">{r.name || (r.entryNo ? `#${r.entryNo}` : "—")}</span>
+                      {out ? <Pill tone="red">{(r.inJO ? r.jo.status : r.fr.status) || "ELIM"}</Pill>
+                       : clear ? <Pill tone="green">CLEAR</Pill> : null}
+                    </div>
+                    <div className="text-xs text-muted-foreground truncate">
+                      {r.horse || "—"}{r.category ? ` · ${r.category}` : ""}
+                    </div>
+                  </div>
+                  <div className="text-center tabular-nums font-semibold">
+                    {frOut ? <span className="text-destructive text-xs">{r.fr.status || "E"}</span> : r.frTotal < Infinity ? r.frTotal : "—"}
+                  </div>
+                  {hasJO && (
+                    <div className="text-center tabular-nums font-semibold text-primary">
+                      {r.inJO && r.jo.time ? (joOut ? <span className="text-destructive text-xs">{r.jo.status || "E"}</span> : r.joTotal) : "—"}
+                    </div>
+                  )}
+                  <div className="text-center tabular-nums text-sm">{decTime}</div>
+                  <div className="text-right tabular-nums text-sm">
+                    {isLead ? <span className="text-[10px] font-bold uppercase tracking-wide text-amber-600">Leader</span>
+                            : <span className="text-muted-foreground">{gap}</span>}
+                  </div>
+                </button>
+              );
+            })}
+            {ranked.length === 0 && (
+              <div className="text-center text-sm text-muted-foreground py-10 border border-dashed border-border rounded-xl">
+                No completed rounds yet — standings update live as riders finish.
+              </div>
+            )}
+          </div>
+
+          {/* Pending / not yet completed */}
+          {pending.length > 0 && (
+            <>
+              <div className="mt-6 mb-2 px-3 text-[10px] uppercase tracking-wider text-muted-foreground">
+                Start list · yet to complete ({pending.length})
+              </div>
+              <div className="space-y-1">
+                {pending.map(r => {
                   const frOut = isRoundOut(r.fr);
-                  const joOut = isRoundOut(r.jo);
-                  const frDone = isRoundDone(r.fr);
-                  const joDone = isRoundDone(r.jo);
-                  const mer   = frDone && !frOut && frJF <= 8;
-                  const isCur = r.id === cur?.id;
                   return (
-                    <tr key={r.id}
+                    <button key={r.id}
                       onClick={() => { setCurIdx(riders.findIndex(re => re.id === r.id)); setTab("scoring"); }}
-                      className={`border-b border-border cursor-pointer transition-colors ${isCur ? "bg-primary/5" : rowIdx % 2 === 0 ? "bg-background" : "bg-muted/20"} hover:bg-accent/40`}>
-                      <td className="px-3 py-2.5 text-center font-display">
-                        {r.placing
-                          ? <span className="text-highlight font-bold tabular-nums">{r.placing}</span>
-                          : <span className="text-muted-foreground/40">—</span>}
-                      </td>
-                      <td className="px-3 py-2.5 font-mono text-xs">{r.entryNo || "—"}</td>
-                      <td className="px-3 py-2.5 font-medium">{r.name || "—"}</td>
-                      <td className="px-3 py-2.5 text-muted-foreground">{r.horse || "—"}</td>
-                      <td className="px-3 py-2.5 text-xs text-muted-foreground">{r.category || "—"}</td>
-                      <td className="px-3 py-2.5 text-center tabular-nums">
-                        {frDone ? (frOut ? <span className="text-destructive font-bold">{r.fr.status || "E"}</span> : frJF) : "—"}
-                      </td>
-                      <td className="px-3 py-2.5 text-center tabular-nums text-muted-foreground">{r.fr.time || "—"}</td>
-                      <td className="px-3 py-2.5 text-center tabular-nums">{frDone && !frOut ? frTF : "—"}</td>
-                      <td className="px-3 py-2.5 text-center tabular-nums font-semibold">
-                        {frDone ? (frOut ? <span className="text-destructive">{r.fr.status || "E"}</span> : frTot) : "—"}
-                      </td>
-                      <td className="px-3 py-2.5 text-center tabular-nums">
-                        {joDone ? (joOut ? <span className="text-destructive font-bold">{r.jo.status || "E"}</span> : joJF) : "—"}
-                      </td>
-                      <td className="px-3 py-2.5 text-center tabular-nums text-muted-foreground">{r.jo.time || "—"}</td>
-                      <td className="px-3 py-2.5 text-center tabular-nums">{joDone && !joOut ? joTF : "—"}</td>
-                      <td className="px-3 py-2.5 text-center text-xs text-muted-foreground">
-                        {r.fr.status || r.jo.status || "—"}
-                      </td>
-                      <td className="px-3 py-2.5 text-center">
-                        {mer
-                          ? <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-green-500/15 text-green-600 mx-auto"><Check className="h-3 w-3" /></span>
-                          : <span className="text-muted-foreground/30 text-xs">—</span>}
-                      </td>
-                    </tr>
+                      className="w-full flex items-center gap-3 rounded-lg border border-border/60 bg-card/50 px-3 py-2 text-left hover:bg-muted/40 transition-colors">
+                      <span className="h-6 w-6 shrink-0 rounded-full bg-muted grid place-items-center text-[10px] font-mono text-muted-foreground">
+                        {r.entryNo || r.orderOfGo}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-medium truncate">{r.name || "—"}</div>
+                        <div className="text-xs text-muted-foreground truncate">{r.horse || "—"}</div>
+                      </div>
+                      {frOut
+                        ? <Pill tone="red">{r.fr.status || "ELIM"}</Pill>
+                        : <span className="text-[10px] uppercase tracking-wide text-muted-foreground">To jump</span>}
+                    </button>
                   );
                 })}
-              </tbody>
-            </table>
-          </div>
+              </div>
+            </>
+          )}
 
-          <p className="text-[10px] text-muted-foreground mt-3">
-            MER = ≤ 8 jumping penalties in first round (excluding time penalties). Click any row to open in Live Scoring.
+          <p className="text-[10px] text-muted-foreground mt-5 px-3">
+            Ranking: fewest penalties, then fastest time{hasJO ? " · jump-off decides clear first rounds" : ""}.
+            Penalties — knockdown 4 · 1st refusal 4 · time {frRate}s rule (FR){hasJO ? ` / ${joRate}s (JO)` : ""}. Tap a row to score.
           </p>
         </div>
-      )}
+        );
+      })()}
 
       {/* ══════════════════════ TAB: Score Sheet ══════════════════════════ */}
       {tab === "sheet" && (
@@ -1240,7 +1353,7 @@ function ResultsPanel({
                 </span>
               </td>
               <td className="px-2 py-2">
-                <input
+                <Input
                   value={round.time}
                   onChange={e => onPatch({ time: e.target.value })}
                   disabled={disabled}
@@ -1302,7 +1415,6 @@ function ResultsPanel({
 // ─── Embassy International Riding School logo ───────────────────────────────────
 
 function EmbassyLogo({ className = "h-11 w-auto" }: { className?: string }) {
-  // eslint-disable-next-line @next/next/no-img-element
   return <img src="/embassy-logo.svg" alt="Embassy International Riding School" className={className} />;
 }
 
@@ -1320,5 +1432,18 @@ function Info({ label, value }: { label: string; value?: string }) {
       <span className="font-bold uppercase tracking-wide shrink-0">{label}:</span>
       <span className="text-neutral-700 truncate">{value || ""}</span>
     </div>
+  );
+}
+
+function Pill({ tone, children }: { tone: "green" | "red" | "amber"; children: React.ReactNode }) {
+  const cls = {
+    green: "bg-green-500/15 text-green-700 dark:text-green-400",
+    red:   "bg-destructive/15 text-destructive",
+    amber: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+  }[tone];
+  return (
+    <span className={`shrink-0 inline-flex items-center rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide ${cls}`}>
+      {children}
+    </span>
   );
 }

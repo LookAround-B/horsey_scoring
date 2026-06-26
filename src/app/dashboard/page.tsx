@@ -11,8 +11,10 @@ import {
 import {
   ExternalLink, Search, Calendar, Users, FileText,
   CheckCircle, Clock, FileEdit, ChevronRight, Trophy,
-  LayoutDashboard, Layers, Plus, X, Loader2, Pencil,
+  LayoutDashboard, Layers, Plus, Loader2, Pencil,
 } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 type Discipline = "dressage" | "showjumping";
 const DISCIPLINES: { id: Discipline; label: string }[] = [
@@ -506,7 +508,7 @@ export default function HubPage() {
           <div className="flex items-center gap-3 flex-wrap">
             <div className="relative flex-1 min-w-[200px] max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <input type="text" placeholder="Search by name, horse or number…" value={riderSearch}
+              <Input type="text" placeholder="Search by name, horse or number…" value={riderSearch}
                 onChange={(e) => setRiderSearch(e.target.value)}
                 className="w-full pl-9 pr-3 py-2 text-sm bg-card border border-border rounded-lg outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
               />
@@ -631,40 +633,36 @@ export default function HubPage() {
       )}
 
       {/* ADD RIDER MODAL */}
-      {showAddRider && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-card border border-border rounded-2xl shadow-xl">
+      <Dialog open={showAddRider} onOpenChange={(o) => { if (!o) { setShowAddRider(false); setRiderForm(EMPTY_RIDER_FORM); setRiderFormError(""); } }}>
+        <DialogContent className="max-w-md p-0 gap-0">
             <div className="flex items-center justify-between px-6 py-4 border-b border-border">
               <h2 className="font-display text-lg">Add New Rider</h2>
-              <button onClick={() => { setShowAddRider(false); setRiderForm(EMPTY_RIDER_FORM); setRiderFormError(""); }}
-                className="p-1.5 rounded-md hover:bg-muted transition-colors"><X className="h-4 w-4" />
-              </button>
             </div>
             <div className="px-6 py-5 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
                   <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">Rider Name <span className="text-destructive">*</span></label>
-                  <input type="text" value={riderForm.name} onChange={(e) => setRiderForm({ ...riderForm, name: e.target.value })} placeholder="Full name"
+                  <Input type="text" value={riderForm.name} onChange={(e) => setRiderForm({ ...riderForm, name: e.target.value })} placeholder="Full name"
                     className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" />
                 </div>
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">Competitor No. <span className="text-destructive">*</span></label>
-                  <input type="text" value={riderForm.competitorNo} onChange={(e) => setRiderForm({ ...riderForm, competitorNo: e.target.value })} placeholder="e.g. 109"
+                  <Input type="text" value={riderForm.competitorNo} onChange={(e) => setRiderForm({ ...riderForm, competitorNo: e.target.value })} placeholder="e.g. 109"
                     className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" />
                 </div>
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">NF / Country</label>
-                  <input type="text" value={riderForm.nf} onChange={(e) => setRiderForm({ ...riderForm, nf: e.target.value })} placeholder="e.g. IND"
+                  <Input type="text" value={riderForm.nf} onChange={(e) => setRiderForm({ ...riderForm, nf: e.target.value })} placeholder="e.g. IND"
                     className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" />
                 </div>
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">Horse Name</label>
-                  <input type="text" value={riderForm.horse} onChange={(e) => setRiderForm({ ...riderForm, horse: e.target.value })} placeholder="Horse name"
+                  <Input type="text" value={riderForm.horse} onChange={(e) => setRiderForm({ ...riderForm, horse: e.target.value })} placeholder="Horse name"
                     className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" />
                 </div>
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">Horse No.</label>
-                  <input type="text" value={riderForm.horseNo} onChange={(e) => setRiderForm({ ...riderForm, horseNo: e.target.value })} placeholder="e.g. H09"
+                  <Input type="text" value={riderForm.horseNo} onChange={(e) => setRiderForm({ ...riderForm, horseNo: e.target.value })} placeholder="e.g. H09"
                     className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" />
                 </div>
               </div>
@@ -679,9 +677,8 @@ export default function HubPage() {
                 Add Rider
               </button>
             </div>
-          </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
