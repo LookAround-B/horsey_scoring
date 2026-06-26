@@ -32,6 +32,8 @@ type RiderEntry = {
   horse: string;
   owner: string;
   nf: string;
+  category: string;
+  scheduledTime: string;
   orderOfGo: number;
   fr: RoundData;
   jo: RoundData;
@@ -56,7 +58,7 @@ type CourseInfo = {
 const FAULT_CYCLE: FaultCode[] = ["", "4", "4R", "8", "E"];
 
 const FAULT_LABEL: Record<FaultCode, string> = {
-  "": "—", "4": "4", "4R": "(4)R", "8": "8", "E": "E",
+  "": "✔️", "4": "4", "4R": "(4)R", "8": "8", "E": "E",
 };
 
 const FAULT_BTN_CLS: Record<FaultCode, string> = {
@@ -84,6 +86,7 @@ const uid = () => `r${++_uidCtr}${Date.now().toString(36)}`;
 const makeRound = (): RoundData => ({ faults: {}, time: "", status: "" });
 const makeRider = (n: number): RiderEntry => ({
   id: uid(), entryNo: "", name: "", horse: "", owner: "", nf: "",
+  category: "", scheduledTime: "",
   orderOfGo: n, fr: makeRound(), jo: makeRound(), note: "", approved: false,
 });
 
@@ -515,6 +518,16 @@ export function ShowJumpingSheet({
                       className="w-16 bg-transparent border-b border-border py-0.5 text-sm font-mono font-semibold outline-none focus:border-primary disabled:opacity-50"
                     />
                   </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Sched. Time</span>
+                    <input
+                      value={cur.scheduledTime}
+                      onChange={e => patchRider({ scheduledTime: e.target.value })}
+                      disabled={cur.approved}
+                      placeholder="To Follow"
+                      className="w-24 bg-transparent border-b border-border py-0.5 text-sm font-mono outline-none focus:border-primary disabled:opacity-50"
+                    />
+                  </div>
                   <span className="text-xs text-muted-foreground">Order: <b>{cur.orderOfGo}</b></span>
                   {curPlac != null && (
                     <span className="text-xs">Placing: <b className="font-display text-highlight">{curPlac}</b></span>
@@ -565,10 +578,11 @@ export function ShowJumpingSheet({
                 {/* ── Rider info ── */}
                 <div className="bg-card border border-border rounded-xl p-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {([
-                    ["name",  "Rider"  ],
-                    ["horse", "Horse"  ],
-                    ["owner", "Owner"  ],
-                    ["nf",    "NF/Club"],
+                    ["name",     "Rider"   ],
+                    ["horse",    "Horse"   ],
+                    ["category", "Category"],
+                    ["owner",    "Owner"   ],
+                    ["nf",       "Club"    ],
                   ] as [keyof RiderEntry, string][]).map(([k, label]) => (
                     <label key={k} className="block col-span-1">
                       <span className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">{label}</span>
@@ -740,8 +754,8 @@ export function ShowJumpingSheet({
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr className="text-[10px] uppercase tracking-wider text-muted-foreground border-b border-border bg-muted/40">
-                  {["Pos","Entry","Rider","Horse","FR Jump F","FR Time","FR Time F","FR Total","JO Jump F","JO Time","JO Time F","Status","MER"].map((h, i) => (
-                    <th key={i} className={`px-3 py-2.5 font-medium ${i > 3 ? "text-center" : "text-left"}`}>{h}</th>
+                  {["Pos","Entry","Rider","Horse","Category","FR Jump F","FR Time","FR Time F","FR Total","JO Jump F","JO Time","JO Time F","Status","MER"].map((h, i) => (
+                    <th key={i} className={`px-3 py-2.5 font-medium ${i > 4 ? "text-center" : "text-left"}`}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -771,6 +785,7 @@ export function ShowJumpingSheet({
                       <td className="px-3 py-2.5 font-mono text-xs">{r.entryNo || "—"}</td>
                       <td className="px-3 py-2.5 font-medium">{r.name || "—"}</td>
                       <td className="px-3 py-2.5 text-muted-foreground">{r.horse || "—"}</td>
+                      <td className="px-3 py-2.5 text-xs text-muted-foreground">{r.category || "—"}</td>
                       <td className="px-3 py-2.5 text-center tabular-nums">
                         {frDone ? (frOut ? <span className="text-destructive font-bold">{r.fr.status || "E"}</span> : frJF) : "—"}
                       </td>
@@ -843,6 +858,7 @@ export function ShowJumpingSheet({
                   <Th>Entry</Th>
                   <Th cls="text-left min-w-[90px]">Rider</Th>
                   <Th cls="text-left min-w-[80px]">Horse</Th>
+                  <Th cls="text-left min-w-[70px]">Category</Th>
                   {frObs.map(o => <Th key={o} cls="w-8">{o}</Th>)}
                   <Th cls="w-10">JF</Th>
                   <Th cls="w-18">Time</Th>
@@ -870,6 +886,7 @@ export function ShowJumpingSheet({
                       <td className="border border-border px-2 py-1.5 text-center font-mono">{r.entryNo || rowIdx + 1}</td>
                       <td className="border border-border px-2 py-1.5 font-medium">{r.name || "—"}</td>
                       <td className="border border-border px-2 py-1.5 text-muted-foreground">{r.horse || "—"}</td>
+                      <td className="border border-border px-2 py-1.5 text-muted-foreground">{r.category || "—"}</td>
                       {frObs.map(o => {
                         const f = r.fr.faults[o] || "";
                         return (
