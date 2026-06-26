@@ -10,6 +10,10 @@ import {
 import type { ShowJumpingConfig } from "@/lib/sheetTypes";
 import { useScoreStore } from "@/lib/useScoreStore";
 import { toast } from "sonner";
+import { SJ1_60_70_RIDERS } from "@/lib/startListRiders";
+import {
+  Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
+} from "@/components/ui/select";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -594,6 +598,36 @@ export function ShowJumpingSheet({
                       />
                     </label>
                   ))}
+
+                  {/* ── Start-list picker (EPL 2026 · 60-70cm · 67 riders) ── */}
+                  <div className="block col-span-1">
+                    <span className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Start List</span>
+                    <Select
+                      value={cur.entryNo || undefined}
+                      onValueChange={val => {
+                        const r = SJ1_60_70_RIDERS.find(x => String(x.sl) === val);
+                        if (r) patchRider({
+                          entryNo: String(r.sl),
+                          name: r.name,
+                          horse: r.horse,
+                          category: r.category,
+                          nf: r.club,
+                        });
+                      }}
+                      disabled={cur.approved}
+                    >
+                      <SelectTrigger className="w-full border-0 border-b border-border rounded-none bg-transparent px-0 py-1 h-auto text-sm focus:ring-0 focus:border-primary">
+                        <SelectValue placeholder="Select rider…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {SJ1_60_70_RIDERS.map(r => (
+                          <SelectItem key={r.sl} value={String(r.sl)}>
+                            {r.sl}. {r.name} — {r.horse}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 {/* ── Results summary ── */}
