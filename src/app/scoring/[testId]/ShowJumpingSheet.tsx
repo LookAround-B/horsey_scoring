@@ -45,6 +45,7 @@ type RiderEntry = {
   jo: RoundData;
   note: string;
   approved: boolean;
+  advancesToJO: boolean;   // admin decides who goes to the jump-off
 };
 
 type CourseInfo = {
@@ -118,6 +119,7 @@ const makeRider = (n: number): RiderEntry => ({
   id: uid(), entryNo: "", name: "", horse: "", owner: "", nf: "",
   category: "", scheduledTime: "",
   orderOfGo: n, fr: makeRound(), jo: makeRound(), note: "", approved: false,
+  advancesToJO: false,
 });
 
 function parseSecs(s: string): number {
@@ -177,7 +179,8 @@ type PlacedRider = RiderEntry & {
 function computePlacements(riders: RiderEntry[], taSecs: number, joTaSecs: number): PlacedRider[] {
   const mapped: PlacedRider[] = riders.map(r => {
     const joHasTime = r.jo.time !== "";
-    const joActive  = joHasTime || isElimStatus(r.jo.status) || isRetStatus(r.jo.status);
+    // Only riders the admin has advanced can enter the jump-off tier.
+    const joActive  = r.advancesToJO && (joHasTime || isElimStatus(r.jo.status) || isRetStatus(r.jo.status));
     return {
       ...r,
       placing: null,
@@ -237,10 +240,12 @@ export function ShowJumpingSheet({
   config,
   slug,
   eventId,
+  isAdmin = false,
 }: {
   config: ShowJumpingConfig;
   slug: string;
   eventId?: string | null;
+  isAdmin?: boolean;
 }) {
   const frObs: string[] = config.firstRoundObstacles
     ?? config.obstacles.map((o, i) => o.name || String(i + 1));
@@ -331,6 +336,7 @@ export function ShowJumpingSheet({
 
   const cycleFault = (round: "fr" | "jo", obs: string) => {
     if (!cur || cur.approved) return;
+    if (round === "jo" && !cur.advancesToJO) return;
     const current = cur[round].faults[obs] ?? "";
     const idx  = FAULT_CYCLE.indexOf(current as FaultCode);
     const next = FAULT_CYCLE[(idx + 1) % FAULT_CYCLE.length];
@@ -360,7 +366,10 @@ export function ShowJumpingSheet({
 
   const stopAndFill = () => {
     timer.stop();
-    if (timer.tenths > 0) patchRound(timerRound, { time: fmtTenths(timer.tenths) });
+    if (timer.tenths > 0) {
+      const round = timerRound === "jo" && cur?.advancesToJO ? "jo" : "fr";
+      patchRound(round, { time: fmtTenths(timer.tenths) });
+    }
   };
 
   const toggleApprove = () => {
@@ -370,6 +379,18 @@ export function ShowJumpingSheet({
     toast(next ? `${cur.name || "Rider"} approved & locked.` : "Unlocked for editing.", {
       icon: next ? "🔒" : "🔓",
     });
+  };
+
+  const toggleAdvance = () => {
+    if (!cur) return;
+    const next = !cur.advancesToJO;
+    patchRider({ advancesToJO: next });
+    toast(
+      next
+        ? `${cur.name || "Rider"} advanced to the jump-off.`
+        : `${cur.name || "Rider"} removed from the jump-off.`,
+      { icon: next ? "🏆" : "↩️" }
+    );
   };
 
   const savedLabel = useMemo(() => {
@@ -591,6 +612,11 @@ export function ShowJumpingSheet({
                   {curPlac != null && (
                     <span className="text-xs">Placing: <b className="font-display text-highlight">{curPlac}</b></span>
                   )}
+                  {hasJO && cur.advancesToJO && (
+                    <span className="inline-flex items-center gap-1 text-[10px] bg-primary/15 text-primary px-2 py-0.5 rounded-full">
+                      <Trophy className="h-2.5 w-2.5" /> Jump-off
+                    </span>
+                  )}
                   {cur.approved && (
                     <span className="inline-flex items-center gap-1 text-[10px] bg-green-500/15 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full">
                       <Lock className="h-2.5 w-2.5" /> Approved
@@ -615,7 +641,7 @@ export function ShowJumpingSheet({
               <>
                 {/* ── On-course hero (live running score) ── */}
                 {(() => {
-                  const showJO = hasJO && (cur.jo.time !== "" || Object.values(cur.jo.faults).some(Boolean));
+                  const showJO = hasJO && cur.advancesToJO && (cur.jo.time !== "" || Object.values(cur.jo.faults).some(Boolean));
                   const rd  = showJO ? cur.jo : cur.fr;
                   const jf  = calcJF(rd.faults);
                   const tf  = calcTF(rd.time, showJO ? joTaSecs : taSecs, showJO ? joRate : frRate);
@@ -680,8 +706,15 @@ export function ShowJumpingSheet({
                     obstacles={joObs}
                     faults={cur.jo.faults}
                     onCycle={obs => cycleFault("jo", obs)}
-                    disabled={cur.approved}
+                    disabled={cur.approved || !cur.advancesToJO}
                     variant="jo"
+                    lockedHint={
+                      !cur.advancesToJO
+                        ? isAdmin
+                          ? "Mark this rider as advancing to enable the jump-off."
+                          : "This rider is not in the jump-off."
+                        : undefined
+                    }
                   />
                 )}
 
@@ -746,6 +779,7 @@ export function ShowJumpingSheet({
                   frRate={frRate}
                   joRate={joRate}
                   hasJO={hasJO}
+                  joLocked={!cur.advancesToJO}
                   onPatchFR={p => patchRound("fr", p)}
                   onPatchJO={p => patchRound("jo", p)}
                   disabled={cur.approved}
@@ -801,6 +835,18 @@ export function ShowJumpingSheet({
                             : <><Lock className="h-3.5 w-3.5" /> Approve & Lock</>
                           }
                         </button>
+                        {isAdmin && hasJO && (
+                          <button
+                            onClick={toggleAdvance}
+                            className={`inline-flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg border transition-colors ${
+                              cur.advancesToJO
+                                ? "border-primary bg-primary/10 text-primary hover:bg-primary/20"
+                                : "border-border hover:bg-muted"
+                            }`}>
+                            <Trophy className="h-3.5 w-3.5" />
+                            {cur.advancesToJO ? "In Jump-off — remove" : "Advance to Jump-off"}
+                          </button>
+                        )}
                       </div>
 
                       {/* Timer controls */}
@@ -827,7 +873,7 @@ export function ShowJumpingSheet({
                             className="p-1.5 rounded-lg border border-border hover:bg-muted transition-colors" title="Reset timer">
                             <RotateCcw className="h-3 w-3" />
                           </button>
-                          {hasJO && (
+                          {hasJO && cur.advancesToJO && (
                             <Select value={timerRound} onValueChange={v => setTimerRound(v as "fr" | "jo")}>
                               <SelectTrigger className="h-8 text-xs rounded-lg px-2 bg-background w-auto gap-1">
                                 <SelectValue />
@@ -1250,6 +1296,7 @@ function ObstacleGrid({
   onCycle,
   disabled,
   variant = "fr",
+  lockedHint,
 }: {
   label?: string;
   obstacles: string[];
@@ -1257,12 +1304,15 @@ function ObstacleGrid({
   onCycle: (obs: string) => void;
   disabled: boolean;
   variant?: "fr" | "jo";
+  lockedHint?: string;
 }) {
+  const locked = !!lockedHint;
   return (
-    <div className={`bg-card border rounded-xl p-3 ${variant === "jo" ? "border-primary/30" : "border-border"}`}>
+    <div className={`bg-card border rounded-xl p-3 transition-opacity ${variant === "jo" ? "border-primary/30" : "border-border"} ${locked ? "opacity-60" : ""}`}>
       {label && (
-        <div className={`text-[10px] uppercase tracking-wider font-medium mb-2 ${variant === "jo" ? "text-primary" : "text-muted-foreground"}`}>
+        <div className={`text-[10px] uppercase tracking-wider font-medium mb-2 flex items-center gap-1.5 ${variant === "jo" ? "text-primary" : "text-muted-foreground"}`}>
           {label}
+          {locked && <Lock className="h-2.5 w-2.5 opacity-70" />}
         </div>
       )}
       <div className="flex flex-wrap gap-1.5">
@@ -1282,7 +1332,9 @@ function ObstacleGrid({
           );
         })}
       </div>
-      <p className="text-[9px] text-muted-foreground mt-2">Click obstacle to cycle: — → 4 → (4)R → 8 → E → —</p>
+      <p className="text-[9px] text-muted-foreground mt-2">
+        {locked ? lockedHint : "Click obstacle to cycle: — → 4 → (4)R → 8 → E → —"}
+      </p>
     </div>
   );
 }
@@ -1290,7 +1342,7 @@ function ObstacleGrid({
 // ─── Results Panel ────────────────────────────────────────────────────────────
 
 function ResultsPanel({
-  cur, frObs, taSecs, tlSecs, joTaSecs, frRate, joRate, hasJO,
+  cur, frObs, taSecs, tlSecs, joTaSecs, frRate, joRate, hasJO, joLocked,
   onPatchFR, onPatchJO, disabled,
 }: {
   cur: RiderEntry;
@@ -1301,6 +1353,7 @@ function ResultsPanel({
   frRate: number;
   joRate: number;
   hasJO: boolean;
+  joLocked: boolean;
   onPatchFR: (p: Partial<RoundData>) => void;
   onPatchJO: (p: Partial<RoundData>) => void;
   disabled: boolean;
@@ -1322,10 +1375,12 @@ function ResultsPanel({
     {
       label: "First Round", round: cur.fr, jf: frJF, tf: frTF, out: frOut,
       onPatch: onPatchFR, overTA: frOverTA, overLimit: frOverTL,
+      rowDisabled: disabled, locked: false,
     },
     ...(hasJO ? [{
       label: "Jump-off", round: cur.jo, jf: joJF, tf: joTF, out: joOut,
       onPatch: onPatchJO, overTA: joOverTA, overLimit: false,
+      rowDisabled: disabled || joLocked, locked: joLocked,
     }] : []),
   ];
 
@@ -1344,9 +1399,12 @@ function ResultsPanel({
           </tr>
         </thead>
         <tbody>
-          {rows.map(({ label, round, jf, tf, out, onPatch, overTA, overLimit }) => (
-            <tr key={label} className="border-t border-border">
-              <td className="px-3 py-2.5 font-medium text-xs">{label}</td>
+          {rows.map(({ label, round, jf, tf, out, onPatch, overTA, overLimit, rowDisabled, locked }) => (
+            <tr key={label} className={`border-t border-border transition-opacity ${locked ? "opacity-50" : ""}`}>
+              <td className="px-3 py-2.5 font-medium text-xs">
+                {label}
+                {locked && <span className="block text-[9px] font-normal text-muted-foreground normal-case">not advancing</span>}
+              </td>
               <td className="px-2 py-2 text-center">
                 <span className={`font-display tabular-nums text-base ${out ? "text-destructive" : jf > 0 ? "text-orange-600 dark:text-orange-400" : "text-muted-foreground"}`}>
                   {out ? (round.status || "E") : jf || "—"}
@@ -1356,7 +1414,7 @@ function ResultsPanel({
                 <Input
                   value={round.time}
                   onChange={e => onPatch({ time: e.target.value })}
-                  disabled={disabled}
+                  disabled={rowDisabled}
                   placeholder="ss.x"
                   className={`w-full bg-transparent border-b py-0.5 text-center tabular-nums text-sm font-mono outline-none focus:border-primary disabled:opacity-50 transition-colors ${
                     overLimit ? "border-destructive text-destructive" :
@@ -1386,7 +1444,7 @@ function ResultsPanel({
                     <button
                       key={key}
                       onClick={() => onPatch({ status: round.status === key ? "" : key })}
-                      disabled={disabled}
+                      disabled={rowDisabled}
                       title={flagLabel}
                       className={`text-[10px] px-1.5 py-0.5 rounded border transition-colors disabled:opacity-40 ${
                         round.status === key

@@ -37,6 +37,7 @@ const POSITION_OPTIONS = Array.from({ length: 10 }, (_, i) => String(i + 1));
 export default function ScoringPage() {
   const params = useParams();
   const search = useSearchParams();
+  const { user } = useAuth();
   const eventId = search.get("event");
   const riderId = search.get("rider");
   const testId = (params?.testId as string) ?? "young-rider";
@@ -87,7 +88,7 @@ export default function ScoringPage() {
     );
   }
   if (isShowJumping(resolved)) {
-    return <ShowJumpingSheet config={resolved} slug={testId} eventId={eventId} />;
+    return <ShowJumpingSheet config={resolved} slug={testId} eventId={eventId} isAdmin={user?.role === "super_admin"} />;
   }
   if (isQuality(resolved)) {
     return <QualityScoringSheet config={resolved} slug={testId} eventId={eventId} riderId={riderId} />;
