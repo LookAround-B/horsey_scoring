@@ -14,6 +14,7 @@ import { SJ1_60_70_RIDERS } from "@/lib/startListRiders";
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from "@/components/ui/select";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -55,6 +56,16 @@ type CourseInfo = {
   timeAllowed: string;   // seconds — FR
   timeLimit: string;     // seconds — FR
   joTimeAllowed: string; // seconds — JO
+  organiser: string;     // host club / school
+  location: string;      // city, country
+  dayLabel: string;      // e.g. "Saturday"
+  scoring: string;       // FEI table / article, e.g. "Table A — Art. 238.2.2"
+  courseDesigner: string;
+  table: string;         // scoring table, e.g. "A"
+  height: string;        // fence height, e.g. "60 - 70 CM"
+  efforts: string;       // jumping efforts count
+  courseWalk: string;    // course walk time
+  startTime: string;     // class start time
 };
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -64,6 +75,20 @@ const FAULT_CYCLE: FaultCode[] = ["", "4", "4R", "8", "E"];
 const FAULT_LABEL: Record<FaultCode, string> = {
   "": "✔️", "4": "4", "4R": "(4)R", "8": "8", "E": "E",
 };
+
+// Plain-ink labels for the printed score sheet (mirrors the handwritten sheet)
+const SHEET_FAULT_LABEL: Record<FaultCode, string> = {
+  "": "✓", "4": "4", "4R": "R1", "8": "R2", "E": "E",
+};
+
+// Word written across the obstacle row when a round ends early
+function statusWord(r: RoundData): string {
+  if (r.status === "R") return "RETIRED";
+  if (r.status === "W") return "WITHDRAWN";
+  if (r.status === "F") return "ELIMINATED";
+  if (r.status === "E" || hasElimFault(r.faults)) return "ELIMINATED";
+  return "";
+}
 
 const FAULT_BTN_CLS: Record<FaultCode, string> = {
   "":   "bg-muted/60 text-muted-foreground border-border",
@@ -225,6 +250,7 @@ export function ShowJumpingSheet({
 
   const STORAGE_KEY = `sj-live-v1:${slug}`;
   const store = useScoreStore({ slug, eventId, riderId: null, localKey: STORAGE_KEY });
+  const { confirm, dialog: confirmDialog } = useConfirm();
 
   const [courseInfo, setCourseInfo] = useState<CourseInfo>({
     eventTitle: "",
@@ -236,6 +262,16 @@ export function ShowJumpingSheet({
     timeAllowed:   config.defaultTimeAllowed    != null ? String(config.defaultTimeAllowed)   : "",
     timeLimit:     config.defaultTimeLimit      != null ? String(config.defaultTimeLimit)     : "",
     joTimeAllowed: config.defaultJoTimeAllowed  != null ? String(config.defaultJoTimeAllowed) : "",
+    organiser:      "",
+    location:       "",
+    dayLabel:       "",
+    scoring:        "",
+    courseDesigner: "",
+    table:          "A",
+    height:         "",
+    efforts:        "",
+    courseWalk:     "",
+    startTime:      "",
   });
 
   const [riders,    setRiders]    = useState<RiderEntry[]>([makeRider(1)]);
@@ -308,8 +344,15 @@ export function ShowJumpingSheet({
     setCurIdx(riders.length);
   };
 
-  const removeRider = () => {
-    if (riders.length <= 1 || !confirm("Remove this rider?")) return;
+  const removeRider = async () => {
+    if (riders.length <= 1) return;
+    const ok = await confirm({
+      title: "Remove this rider?",
+      description: "This entry and its scores will be removed from the sheet.",
+      confirmText: "Remove",
+      destructive: true,
+    });
+    if (!ok) return;
     setRiders(rs => rs.filter((_, i) => i !== curIdx));
     setCurIdx(i => Math.max(0, i - 1));
   };
@@ -352,6 +395,7 @@ export function ShowJumpingSheet({
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-background text-foreground print:bg-white">
+      {confirmDialog}
 
       {/* ── Sticky header ── */}
       <header className="sticky top-0 z-30 border-b border-border bg-primary text-primary-foreground print:hidden">
@@ -420,10 +464,20 @@ export function ShowJumpingSheet({
           <h2 className="font-display text-2xl">Course Information</h2>
 
           <div className="bg-card border border-border rounded-xl p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {([ ["eventTitle",   "Event Title"               ],
+            {([ ["organiser",    "Organiser / Host"          ],
+                ["eventTitle",   "Event Title"               ],
+                ["location",     "Location (City, Country)"  ],
                 ["className",    "Class / Category"          ],
+                ["table",        "Table (e.g. A)"            ],
+                ["height",       "Height (e.g. 60 - 70 CM)"  ],
+                ["scoring",      "Scoring (FEI Table / Art.)"],
+                ["efforts",      "Jumping Efforts"           ],
                 ["date",         "Date"                      ],
-                ["judge",        "Judge"                     ],
+                ["dayLabel",     "Day (e.g. Saturday)"       ],
+                ["startTime",    "Start Time"                ],
+                ["courseWalk",   "Course Walk"               ],
+                ["judge",        "Judge / Ground Jury"       ],
+                ["courseDesigner","Course Designer"          ],
                 ["speed",        "Speed (m/min)"             ],
                 ["courseLength", "Course Length (m)"         ],
                 ["timeAllowed",  "Time Allowed — FR (sec)"   ],
@@ -669,7 +723,16 @@ export function ShowJumpingSheet({
                           <Save className="h-3.5 w-3.5" /> Record / Save
                         </button>
                         <button
-                          onClick={() => { if (!cur.approved && confirm("Clear this rider's scores?")) { patchRider({ fr: makeRound(), jo: makeRound(), note: "" }); timer.reset(); } }}
+                          onClick={async () => {
+                            if (cur.approved) return;
+                            const ok = await confirm({
+                              title: "Clear this rider's scores?",
+                              description: "Faults, times and notes for this entry will be reset.",
+                              confirmText: "Clear",
+                              destructive: true,
+                            });
+                            if (ok) { patchRider({ fr: makeRound(), jo: makeRound(), note: "" }); timer.reset(); toast.success("Rider scores cleared."); }
+                          }}
                           disabled={cur.approved}
                           className="inline-flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors disabled:opacity-40">
                           <RotateCcw className="h-3.5 w-3.5" /> Clear
@@ -856,7 +919,7 @@ export function ShowJumpingSheet({
 
       {/* ══════════════════════ TAB: Score Sheet ══════════════════════════ */}
       {tab === "sheet" && (
-        <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="sj-sheet max-w-7xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between mb-4 print:hidden">
             <h2 className="font-display text-2xl">Score Sheet</h2>
             <button onClick={() => window.print()}
@@ -865,42 +928,98 @@ export function ShowJumpingSheet({
             </button>
           </div>
 
-          {/* Print header */}
-          <div className="bg-primary text-primary-foreground rounded-xl p-4 mb-4 text-center print:rounded-none">
-            <div className="font-display text-xl font-bold">
-              {courseInfo.eventTitle || config.label}
+          {/* Print rules: landscape, fit-to-page, exact colours */}
+          <style>{`
+            @media print {
+              @page { size: A4 landscape; margin: 8mm; }
+              html, body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: #fff; }
+              .sj-sheet { max-width: none !important; padding: 0 !important; }
+              .sj-table-wrap { overflow: visible !important; }
+              .sj-table { min-width: 0 !important; width: 100% !important; table-layout: fixed; font-size: 7.5px !important; }
+              .sj-table td, .sj-table th { padding: 1.5px 2px !important; }
+              .sj-banner { break-inside: avoid; }
+              .sj-sign { break-inside: avoid; }
+              tr { break-inside: avoid; }
+            }
+          `}</style>
+
+          {/* ── Event banner (matches official EPL sheet) ── */}
+          <div className="sj-banner border-[1.5px] border-neutral-900 overflow-hidden mb-3 bg-white text-neutral-900 print:rounded-none">
+            {/* Masthead: logo box + green title band */}
+            <div className="flex items-stretch border-b-[1.5px] border-neutral-900">
+              <div className="border-r-[1.5px] border-neutral-900 px-3 py-2 flex items-center justify-center min-w-[150px] bg-white">
+                <EmbassyLogo className="h-9 w-auto" />
+              </div>
+              <div className="flex-1 bg-[#8cb63c] flex items-center justify-center px-4 py-2.5">
+                <div className="font-display font-bold uppercase text-neutral-900 text-center leading-tight text-lg md:text-2xl tracking-tight">
+                  {`${courseInfo.eventTitle || "Equestrian Premier League"}${courseInfo.dayLabel ? "  " + courseInfo.dayLabel : ""}${courseInfo.date ? " , " + courseInfo.date : ""}`}
+                </div>
+              </div>
             </div>
-            <div className="text-sm opacity-80 mt-0.5">
-              {courseInfo.className}
-              {courseInfo.date && ` · ${courseInfo.date}`}
-              {courseInfo.judge && ` · Judge: ${courseInfo.judge}`}
+
+            {/* Info block */}
+            <div className="grid grid-cols-2 md:grid-cols-4 text-[11px] divide-x divide-neutral-300">
+              <div className="px-3 py-2 space-y-0.5">
+                <Info label="Table" value={courseInfo.table} />
+                <Info label="Height" value={courseInfo.height} />
+                <Info label="Obstacles" value={String(frObs.length)} />
+                <Info label="Efforts" value={courseInfo.efforts} />
+              </div>
+              <div className="px-3 py-2 space-y-0.5">
+                <Info label="Date" value={courseInfo.date} />
+                <Info label="Judge" value={courseInfo.judge} />
+                <Info label="Course Designer" value={courseInfo.courseDesigner} />
+              </div>
+              <div className="px-3 py-2 space-y-0.5">
+                <Info label="Speed" value={courseInfo.speed ? `${courseInfo.speed} m/min` : ""} />
+                <Info label="Length" value={courseInfo.courseLength ? `${courseInfo.courseLength} m` : ""} />
+                <Info label="Time Allowed" value={taSecs > 0 ? `${taSecs}s` : ""} />
+                <Info label="Time Limit" value={tlSecs > 0 ? `${tlSecs}s` : ""} />
+              </div>
+              <div className="px-3 py-2 space-y-0.5">
+                <Info label="Course Walk" value={courseInfo.courseWalk} />
+                <Info label="Start Time" value={courseInfo.startTime} />
+                {hasJO && <Info label="JO Time Allowed" value={joTaSecs > 0 ? `${joTaSecs}s` : ""} />}
+              </div>
             </div>
-            {(taSecs > 0 || courseInfo.speed) && (
-              <div className="text-xs opacity-60 mt-0.5">
-                TA: {courseInfo.timeAllowed}s · TL: {courseInfo.timeLimit || (taSecs * 2) + ""}s
-                {courseInfo.speed && ` · Speed: ${courseInfo.speed} m/min`}
-                {courseInfo.courseLength && ` · Length: ${courseInfo.courseLength} m`}
+
+            {hasJO && (
+              <div className="px-3 py-1 border-t border-neutral-300 text-[10px] flex items-center gap-2">
+                <span className="font-bold uppercase tracking-wide">Jump-off:</span>
+                <span className="text-neutral-600 font-mono">{joObs.join(" · ")}</span>
               </div>
             )}
           </div>
 
-          <div className="bg-card border border-border rounded-xl overflow-x-auto print:border-none print:rounded-none">
-            <table className="w-full text-xs border-collapse" style={{ minWidth: "800px" }}>
+          <div className="sj-table-wrap bg-card border border-border rounded-xl overflow-x-auto print:border-none print:rounded-none">
+            <table className="sj-table w-full text-xs border-collapse" style={{ minWidth: "800px" }}>
+              {/* Fixed widths for narrow cols; Rider/Horse absorb the leftover space */}
+              <colgroup>
+                <col style={{ width: "26px" }} />
+                <col style={{ width: "16%" }} />
+                <col style={{ width: "13%" }} />
+                {frObs.map((o, i) => <col key={`c-${o}-${i}`} style={{ width: "20px" }} />)}
+                <col style={{ width: "34px" }} />
+                <col style={{ width: "42px" }} />
+                <col style={{ width: "34px" }} />
+                <col style={{ width: "40px" }} />
+                {hasJO && joObs.map((o, i) => <col key={`cjo-${o}-${i}`} style={{ width: "20px" }} />)}
+                {hasJO && <><col style={{ width: "34px" }} /><col style={{ width: "42px" }} /><col style={{ width: "34px" }} /><col style={{ width: "40px" }} /></>}
+                <col style={{ width: "30px" }} />
+              </colgroup>
               <thead>
-                <tr className="text-[9px] uppercase tracking-wider text-muted-foreground bg-muted/40">
-                  <Th>Pos</Th>
-                  <Th>Entry</Th>
-                  <Th cls="text-left min-w-[90px]">Rider</Th>
-                  <Th cls="text-left min-w-[80px]">Horse</Th>
-                  <Th cls="text-left min-w-[70px]">Category</Th>
-                  {frObs.map(o => <Th key={o} cls="w-8">{o}</Th>)}
-                  <Th cls="w-10">JF</Th>
-                  <Th cls="w-18">Time</Th>
-                  <Th cls="w-8">TF</Th>
-                  <Th cls="w-12 font-bold">Total</Th>
-                  {hasJO && joObs.map(o => <Th key={`jo-${o}`} cls="w-8 bg-primary/5">JO {o}</Th>)}
-                  {hasJO && <><Th cls="w-10 bg-primary/5">JO JF</Th><Th cls="w-18 bg-primary/5">JO Time</Th><Th cls="w-8 bg-primary/5">JO TF</Th><Th cls="w-12 bg-primary/5">JO Tot</Th></>}
-                  <Th cls="w-20">Note</Th>
+                <tr className="text-[9px] uppercase tracking-wider text-neutral-700 bg-neutral-100">
+                  <Th cls="w-10">No.</Th>
+                  <Th cls="text-left min-w-[120px]">Rider Name</Th>
+                  <Th cls="text-left min-w-[100px]">Horse</Th>
+                  {frObs.map(o => <Th key={o} cls="w-7">{o}</Th>)}
+                  <Th cls="w-12">Jump Pen</Th>
+                  <Th cls="w-16">Time</Th>
+                  <Th cls="w-12">Time Pen</Th>
+                  <Th cls="w-14 font-bold">Total Pen</Th>
+                  {hasJO && joObs.map(o => <Th key={`jo-${o}`} cls="w-7 bg-primary/5">JO {o}</Th>)}
+                  {hasJO && <><Th cls="w-12 bg-primary/5">JO Jump Pen</Th><Th cls="w-16 bg-primary/5">JO Time</Th><Th cls="w-12 bg-primary/5">JO Time Pen</Th><Th cls="w-14 bg-primary/5">JO Total Pen</Th></>}
+                  <Th cls="w-12 font-bold">Place</Th>
                 </tr>
               </thead>
               <tbody>
@@ -914,50 +1033,66 @@ export function ShowJumpingSheet({
                   const frOut = isRoundOut(r.fr);
                   const joOut = isRoundOut(r.jo);
                   const frDone = isRoundDone(r.fr);
+                  // A round only shows marks once the rider has actually gone.
+                  const frHasMarks = Object.values(r.fr.faults).some(Boolean);
+                  const frStarted  = frDone || frHasMarks;
+                  const joHasMarks = Object.values(r.jo.faults).some(Boolean);
+                  const joStarted  = r.jo.time !== "" || joOut || joHasMarks;
+                  const frWord = statusWord(r.fr);
+                  const joWord = statusWord(r.jo);
+                  const cell = "border border-neutral-400 px-1 py-1.5 text-center";
                   return (
-                    <tr key={r.id} className={rowIdx % 2 === 0 ? "bg-background" : "bg-muted/20"}>
-                      <td className="border border-border px-2 py-1.5 text-center font-display font-bold text-highlight">{r.placing ?? "—"}</td>
-                      <td className="border border-border px-2 py-1.5 text-center font-mono">{r.entryNo || rowIdx + 1}</td>
-                      <td className="border border-border px-2 py-1.5 font-medium">{r.name || "—"}</td>
-                      <td className="border border-border px-2 py-1.5 text-muted-foreground">{r.horse || "—"}</td>
-                      <td className="border border-border px-2 py-1.5 text-muted-foreground">{r.category || "—"}</td>
-                      {frObs.map(o => {
-                        const f = r.fr.faults[o] || "";
-                        return (
-                          <td key={o} className={`border border-border px-0.5 py-1.5 text-center font-mono ${FAULT_BTN_CLS[f as FaultCode]}`}>
-                            {FAULT_LABEL[f as FaultCode] ?? "—"}
-                          </td>
-                        );
-                      })}
-                      <td className="border border-border px-2 py-1.5 text-center font-semibold tabular-nums bg-muted/40">
-                        {frDone ? (frOut ? r.fr.status || "E" : frJF) : "—"}
-                      </td>
-                      <td className="border border-border px-2 py-1.5 text-center tabular-nums">{r.fr.time || "—"}</td>
-                      <td className="border border-border px-2 py-1.5 text-center tabular-nums">{frDone && !frOut ? frTF : "—"}</td>
-                      <td className="border border-border px-2 py-1.5 text-center font-bold tabular-nums bg-highlight/10 text-highlight">
-                        {frDone ? (frOut ? r.fr.status || "E" : frTot) : "—"}
-                      </td>
-                      {hasJO && joObs.map(o => {
-                        const f = r.jo.faults[o] || "";
-                        return (
-                          <td key={`jo-${o}`} className={`border border-border px-0.5 py-1.5 text-center font-mono bg-primary/5 ${FAULT_BTN_CLS[f as FaultCode]}`}>
-                            {FAULT_LABEL[f as FaultCode] ?? "—"}
-                          </td>
-                        );
-                      })}
+                    <tr key={r.id} className="bg-white text-neutral-900">
+                      <td className={`${cell} font-mono`}>{r.entryNo || rowIdx + 1}</td>
+                      <td className={`${cell} !text-left px-2 font-medium`}>{r.name || ""}</td>
+                      <td className={`${cell} !text-left px-2`}>{r.horse || ""}</td>
+
+                      {/* First-round obstacles — blank until the rider goes; "ELIMINATED" spans on a DQ */}
+                      {frStarted && frWord ? (
+                        <td className={`${cell} font-display font-bold uppercase tracking-widest text-destructive`} colSpan={frObs.length}>
+                          {frWord}
+                        </td>
+                      ) : (
+                        frObs.map(o => {
+                          const f = (r.fr.faults[o] || "") as FaultCode;
+                          return (
+                            <td key={o} className={`${cell} font-mono ${f === "4R" || f === "8" ? "font-semibold" : ""}`}>
+                              {frStarted ? SHEET_FAULT_LABEL[f] : ""}
+                            </td>
+                          );
+                        })
+                      )}
+
+                      <td className={`${cell} font-semibold tabular-nums`}>{frStarted && !frOut ? frJF : ""}</td>
+                      <td className={`${cell} tabular-nums`}>{r.fr.time || ""}</td>
+                      <td className={`${cell} tabular-nums`}>{frStarted && !frOut ? frTF : ""}</td>
+                      <td className={`${cell} font-bold tabular-nums`}>{frStarted ? (frOut ? "" : frTot) : ""}</td>
+
+                      {/* Jump-off */}
+                      {hasJO && (joStarted && joWord ? (
+                        <td className={`${cell} font-display font-bold uppercase tracking-widest text-destructive bg-primary/5`} colSpan={joObs.length}>
+                          {joWord}
+                        </td>
+                      ) : (
+                        joObs.map(o => {
+                          const f = (r.jo.faults[o] || "") as FaultCode;
+                          return (
+                            <td key={`jo-${o}`} className={`${cell} font-mono bg-primary/5 ${f === "4R" || f === "8" ? "font-semibold" : ""}`}>
+                              {joStarted ? SHEET_FAULT_LABEL[f] : ""}
+                            </td>
+                          );
+                        })
+                      ))}
                       {hasJO && (
                         <>
-                          <td className="border border-border px-2 py-1.5 text-center tabular-nums bg-primary/5 font-semibold">
-                            {r.jo.time ? (joOut ? r.jo.status || "E" : joJF) : "—"}
-                          </td>
-                          <td className="border border-border px-2 py-1.5 text-center tabular-nums bg-primary/5">{r.jo.time || "—"}</td>
-                          <td className="border border-border px-2 py-1.5 text-center tabular-nums bg-primary/5">{r.jo.time && !joOut ? joTF : "—"}</td>
-                          <td className="border border-border px-2 py-1.5 text-center font-bold tabular-nums bg-primary/10 text-primary">
-                            {r.jo.time ? (joOut ? r.jo.status || "E" : joTot) : "—"}
-                          </td>
+                          <td className={`${cell} tabular-nums bg-primary/5 font-semibold`}>{joStarted && !joOut ? joJF : ""}</td>
+                          <td className={`${cell} tabular-nums bg-primary/5`}>{r.jo.time || ""}</td>
+                          <td className={`${cell} tabular-nums bg-primary/5`}>{joStarted && !joOut ? joTF : ""}</td>
+                          <td className={`${cell} font-bold tabular-nums bg-primary/5`}>{joStarted ? (joOut ? "" : joTot) : ""}</td>
                         </>
                       )}
-                      <td className="border border-border px-2 py-1.5 text-muted-foreground max-w-[80px] truncate">{r.note || ""}</td>
+
+                      <td className={`${cell} font-display font-bold text-highlight`}>{r.placing ?? ""}</td>
                     </tr>
                   );
                 })}
@@ -965,23 +1100,28 @@ export function ShowJumpingSheet({
             </table>
           </div>
 
-          {/* Signature line */}
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-card border border-border rounded-xl p-4">
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-3">Judge's Signature</div>
-              <div className="border-b border-dashed border-border h-8" />
-              <div className="text-xs text-muted-foreground mt-2">{courseInfo.judge || "—"}</div>
+          {/* Signature block */}
+          <div className="sj-sign mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="border border-neutral-300 rounded-lg p-4 bg-white text-neutral-900">
+              <div className="text-[9px] uppercase tracking-[0.18em] text-neutral-400 mb-6">Judge / President of Ground Jury</div>
+              <div className="border-t border-neutral-400 pt-1.5 text-xs font-medium">{courseInfo.judge || " "}</div>
             </div>
-            <div className="bg-card border border-border rounded-xl p-4">
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">Date</div>
-              <div className="text-sm">{courseInfo.date || "—"}</div>
+            <div className="border border-neutral-300 rounded-lg p-4 bg-white text-neutral-900">
+              <div className="text-[9px] uppercase tracking-[0.18em] text-neutral-400 mb-6">Course Designer</div>
+              <div className="border-t border-neutral-400 pt-1.5 text-xs font-medium">{courseInfo.courseDesigner || " "}</div>
+            </div>
+            <div className="border border-neutral-300 rounded-lg p-4 bg-white text-neutral-900">
+              <div className="text-[9px] uppercase tracking-[0.18em] text-neutral-400 mb-1">Date</div>
+              <div className="text-sm font-medium">{courseInfo.date || "—"}</div>
+              <div className="text-[9px] uppercase tracking-[0.18em] text-neutral-400 mt-3 mb-1">Status</div>
+              <div className="text-xs text-neutral-600">Provisional — unofficial until signed</div>
             </div>
           </div>
 
-          <p className="text-[10px] text-muted-foreground mt-4 text-center print:block">
-            Results compiled by Horsey · Equestrian Scoring Platform · All results are unofficial until signed by the judge.
-            EL=Eliminated, RT=Retired, FL=Fall, WD=Withdrew.
-          </p>
+          <div className="mt-4 flex items-center justify-between text-[9px] text-neutral-400 border-t border-neutral-200 pt-2">
+            <span>✓ = Clear · 4 = Knockdown · R1 = 1st Refusal · R2 = 2nd Refusal · E / ELIMINATED · RETIRED · WITHDRAWN</span>
+            <span className="uppercase tracking-[0.18em]">Compiled by Horsey · Equestrian Scoring Platform</span>
+          </div>
         </div>
       )}
     </div>
@@ -1159,10 +1299,26 @@ function ResultsPanel({
   );
 }
 
+// ─── Embassy International Riding School logo ───────────────────────────────────
+
+function EmbassyLogo({ className = "h-11 w-auto" }: { className?: string }) {
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src="/embassy-logo.svg" alt="Embassy International Riding School" className={className} />;
+}
+
 // ─── Small helper ─────────────────────────────────────────────────────────────
 
 function Th({ children, cls = "" }: { children: React.ReactNode; cls?: string }) {
   return (
     <th className={`px-2 py-2 font-medium text-center ${cls}`}>{children}</th>
+  );
+}
+
+function Info({ label, value }: { label: string; value?: string }) {
+  return (
+    <div className="flex gap-1 leading-tight">
+      <span className="font-bold uppercase tracking-wide shrink-0">{label}:</span>
+      <span className="text-neutral-700 truncate">{value || ""}</span>
+    </div>
   );
 }

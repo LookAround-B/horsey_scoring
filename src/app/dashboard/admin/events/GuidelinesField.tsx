@@ -4,6 +4,10 @@ import { useState, useTransition } from "react";
 import { BookmarkPlus, Check } from "lucide-react";
 import { saveGuidelineTemplateAction } from "./actions";
 import type { GuidelineTemplate } from "@/lib/events";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 export function GuidelinesField({
   initial,
@@ -38,29 +42,31 @@ export function GuidelinesField({
       <div className="flex items-center justify-between mb-1">
         <label className="text-[10px] uppercase tracking-wider text-muted-foreground">Guidelines</label>
         {templates.length > 0 && (
-          <select
-            defaultValue=""
-            onChange={(e) => {
-              const t = templates.find((x) => x.id === e.target.value);
+          <Select
+            value=""
+            onValueChange={(v) => {
+              const t = templates.find((x) => x.id === v);
               if (t) setText(t.body);
-              e.currentTarget.value = "";
             }}
-            className="text-xs bg-background border border-border rounded-md px-2 py-1 outline-none focus:border-primary"
           >
-            <option value="">Load saved guideline…</option>
-            {templates.map((t) => (
-              <option key={t.id} value={t.id}>{t.title}</option>
-            ))}
-          </select>
+            <SelectTrigger className="h-7 text-xs bg-background border-border rounded-md px-2 w-auto gap-1">
+              <SelectValue placeholder="Load saved guideline…" />
+            </SelectTrigger>
+            <SelectContent>
+              {templates.map((t) => (
+                <SelectItem key={t.id} value={t.id}>{t.title}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         )}
       </div>
-      <textarea
+      <Textarea
         name="guidelines"
         value={text}
         onChange={(e) => setText(e.target.value)}
         rows={5}
         placeholder="Event guidelines, rules, schedule notes…"
-        className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary resize-y"
+        className="resize-y"
       />
 
       <div className="mt-2">

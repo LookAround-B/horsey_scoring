@@ -5,6 +5,9 @@ import { Check, X } from "lucide-react";
 import { PaginationBar, PAGE_SIZE } from "@/components/PaginationBar";
 import { approveAction, rejectAction } from "./actions";
 import { ASSIGNABLE_ROLES, ROLE_LABELS, type ApprovalStatus } from "@/lib/roles";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 
 type UserRow = {
   id: string;
@@ -27,6 +30,50 @@ function StatusBadge({ s }: { s: ApprovalStatus }) {
   );
 }
 
+function ApprovalRow({ u }: { u: UserRow }) {
+  const [role, setRole] = useState(u.role ?? "");
+
+  return (
+    <form className="flex flex-col gap-3 bg-card border border-border rounded-xl p-4">
+      <input type="hidden" name="userId" value={u.id} />
+      <input type="hidden" name="role" value={role} />
+      <div className="flex items-center gap-2 min-w-0">
+        <div className="min-w-0 flex-1">
+          <div className="font-medium truncate">{u.name ?? "Unnamed user"}</div>
+          <div className="text-xs text-muted-foreground truncate">{u.email}</div>
+        </div>
+        <StatusBadge s={u.status} />
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <Select value={role} onValueChange={setRole} required>
+          <SelectTrigger className="flex-1 min-w-[140px] bg-background border-border text-sm h-9 rounded-lg">
+            <SelectValue placeholder="Assign role…" />
+          </SelectTrigger>
+          <SelectContent>
+            {ASSIGNABLE_ROLES.map((r) => (
+              <SelectItem key={r} value={r}>{ROLE_LABELS[r]}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <div className="flex gap-2">
+          <button
+            formAction={approveAction}
+            className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground rounded-lg px-3 py-2 text-sm font-medium hover:opacity-90 transition-opacity"
+          >
+            <Check className="h-4 w-4" /> Approve
+          </button>
+          <button
+            formAction={rejectAction}
+            className="inline-flex items-center gap-1.5 border border-border rounded-lg px-3 py-2 text-sm font-medium hover:border-destructive hover:text-destructive transition-colors"
+          >
+            <X className="h-4 w-4" /> Reject
+          </button>
+        </div>
+      </div>
+    </form>
+  );
+}
+
 export function ActionableList({ users }: { users: UserRow[] }) {
   const [page, setPage] = useState(0);
   const pageItems = users.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
@@ -35,46 +82,7 @@ export function ActionableList({ users }: { users: UserRow[] }) {
     <div>
       <div className="space-y-3">
         {pageItems.map((u) => (
-          <form
-            key={u.id}
-            className="flex flex-col gap-3 bg-card border border-border rounded-xl p-4"
-          >
-            <input type="hidden" name="userId" value={u.id} />
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="min-w-0 flex-1">
-                <div className="font-medium truncate">{u.name ?? "Unnamed user"}</div>
-                <div className="text-xs text-muted-foreground truncate">{u.email}</div>
-              </div>
-              <StatusBadge s={u.status} />
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <select
-                name="role"
-                defaultValue={u.role ?? ""}
-                required
-                className="flex-1 min-w-[140px] bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary"
-              >
-                <option value="" disabled>Assign role…</option>
-                {ASSIGNABLE_ROLES.map((r) => (
-                  <option key={r} value={r}>{ROLE_LABELS[r]}</option>
-                ))}
-              </select>
-              <div className="flex gap-2">
-                <button
-                  formAction={approveAction}
-                  className="inline-flex items-center gap-1.5 bg-primary text-primary-foreground rounded-lg px-3 py-2 text-sm font-medium hover:opacity-90 transition-opacity"
-                >
-                  <Check className="h-4 w-4" /> Approve
-                </button>
-                <button
-                  formAction={rejectAction}
-                  className="inline-flex items-center gap-1.5 border border-border rounded-lg px-3 py-2 text-sm font-medium hover:border-destructive hover:text-destructive transition-colors"
-                >
-                  <X className="h-4 w-4" /> Reject
-                </button>
-              </div>
-            </div>
-          </form>
+          <ApprovalRow key={u.id} u={u} />
         ))}
       </div>
       <PaginationBar page={page} total={users.length} onPageChange={setPage} />

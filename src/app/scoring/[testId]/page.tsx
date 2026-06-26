@@ -16,6 +16,8 @@ import { EventTimer } from "@/components/EventTimer";
 import { format, parse } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useConfirm } from "@/components/ui/confirm-dialog";
+import { toast } from "sonner";
 
 /* ---------- dummy option lists for the sheet header dropdowns ---------- */
 const JUDGE_OPTIONS = [
@@ -110,6 +112,7 @@ function ScoringSheet({
   const OTHER_ERROR_PENALTY = config.otherErrorPenalty ?? 2;
   const STORAGE_KEY = `scoring-draft-v1:${testId}`;
   const store = useScoreStore({ slug: testId, eventId, riderId, localKey: STORAGE_KEY });
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const EFFECTIVE_COURSE_ERRORS = config.courseErrors ?? COURSE_ERRORS;
 
   const ARTISTIC_MOVEMENTS = config.artisticMovements ?? [];
@@ -241,8 +244,14 @@ function ScoringSheet({
     setCorrections((s) => ({ ...s, [no]: val }));
   };
 
-  const reset = () => {
-    if (!confirm("Reset all scores and entries?")) return;
+  const reset = async () => {
+    const ok = await confirm({
+      title: "Reset all scores and entries?",
+      description: "Every score, correction and remark on this sheet will be cleared. This cannot be undone.",
+      confirmText: "Reset",
+      destructive: true,
+    });
+    if (!ok) return;
     setScores({});
     setCorrections({});
     setCoefficients({});
@@ -258,6 +267,7 @@ function ScoringSheet({
     try { localStorage.removeItem(STORAGE_KEY); } catch {}
     setHasDraft(false);
     setSavedAt(null);
+    toast.success("Scores reset.");
   };
 
   const totalMovementCount = MOVEMENTS.length + ARTISTIC_MOVEMENTS.length;
@@ -463,6 +473,7 @@ function ScoringSheet({
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {confirmDialog}
       {/* Top nav */}
       <header className="sticky top-0 z-30 border-b border-border bg-background/80 backdrop-blur-md print:hidden">
         <div className="mx-auto max-w-[1200px] px-4 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-3">

@@ -10,12 +10,12 @@ import { TimerConfigForm } from "../TimerConfigForm";
 import { SaveSheetsForm } from "../SaveSheetsForm";
 import { RidersListClient } from "./RidersListClient";
 import { OfficialsListClient } from "./OfficialsListClient";
+import { AddOfficialForm } from "./AddOfficialForm";
 import { TEST_CARDS } from "@/lib/dummy-data";
-import { ROLE_LABELS, type UserRole } from "@/lib/roles";
+import { type UserRole } from "@/lib/roles";
 import {
   regenerateCodeAction,
   addRiderAction,
-  addParticipantAction,
   deleteEventAction,
 } from "../actions";
 import { ArrowLeft, KeyRound, Plus, Trash2 } from "lucide-react";
@@ -148,25 +148,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
 
       {/* Officials / participants */}
       <Section title={`Officials (${ev.participants.length})`}>
-        <form action={addParticipantAction} className="flex flex-wrap items-end gap-2 mb-4">
-          <input type="hidden" name="eventId" value={id} />
-          <div className="flex-1 min-w-[160px]">
-            <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Person</label>
-            <select name="userId" required className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary">
-              <option value="">Select…</option>
-              {invitable.map((u) => (
-                <option key={u.id} value={u.id}>{u.name ?? u.email} {u.role ? `(${ROLE_LABELS[u.role]})` : ""}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Role at event</label>
-            <select name="roleAtEvent" className="bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary">
-              {OFFICIAL_ROLES.map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
-            </select>
-          </div>
-          <button className="inline-flex items-center gap-1.5 text-xs px-3 py-2 rounded-lg border border-border hover:bg-muted transition-colors"><Plus className="h-3.5 w-3.5" /> Invite</button>
-        </form>
+        <AddOfficialForm eventId={id} invitable={invitable} roles={OFFICIAL_ROLES} />
         <OfficialsListClient officials={ev.participants} eventId={id} />
       </Section>
 

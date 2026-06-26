@@ -5,6 +5,11 @@ import Link from "next/link";
 import { ArrowLeft, RotateCcw, Save, Printer } from "lucide-react";
 import type { QualityConfig } from "@/lib/sheetTypes";
 import { useScoreStore } from "@/lib/useScoreStore";
+import { useConfirm } from "@/components/ui/confirm-dialog";
+import { toast } from "sonner";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 
 type Header = { efiRegNo: string; name: string; horse: string; organisers: string; signature: string };
 
@@ -37,6 +42,7 @@ export function QualityScoringSheet({
   const n = criteria.length || 1;
   const STORAGE_KEY = `quality-scoring-v1:${slug}`;
   const store = useScoreStore({ slug, eventId, riderId, localKey: STORAGE_KEY });
+  const { confirm, dialog: confirmDialog } = useConfirm();
 
   const [header, setHeader] = useState<Header>(emptyHeader());
   const [marks, setMarks] = useState<Record<number, string>>({});
@@ -101,13 +107,20 @@ export function QualityScoringSheet({
     return isNaN(d.getTime()) ? "" : d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   }, [savedAt]);
 
-  const reset = () => {
-    if (!confirm("Clear this sheet?")) return;
+  const reset = async () => {
+    const ok = await confirm({
+      title: "Clear this sheet?",
+      description: "All marks, comments and penalties on this sheet will be reset.",
+      confirmText: "Clear",
+      destructive: true,
+    });
+    if (!ok) return;
     setHeader(emptyHeader());
     setMarks({});
     setComments({});
     setTechnical("");
     setPenalty(0);
+    toast.success("Sheet cleared.");
   };
 
   const setH = (patch: Partial<Header>) => setHeader((h) => ({ ...h, ...patch }));
@@ -124,6 +137,7 @@ export function QualityScoringSheet({
 
   return (
     <div className="min-h-screen bg-background text-foreground print:bg-white">
+      {confirmDialog}
       <header className="sticky top-0 z-20 flex items-center gap-3 px-4 py-3 border-b border-border bg-card/90 backdrop-blur print:hidden">
         <Link href="/dashboard" className="p-1.5 rounded-md hover:bg-muted transition-colors">
           <ArrowLeft className="h-4 w-4" />
@@ -272,17 +286,21 @@ export function QualityScoringSheet({
           <div className="bg-card border border-border rounded-xl divide-y divide-border overflow-hidden">
             <div className="px-4 py-2.5">
               <div className="text-sm text-muted-foreground mb-1.5">To be deducted / penalty points</div>
-              <select
-                value={penalty}
-                onChange={(e) => setPenalty(parseFloat(e.target.value))}
-                className="w-full bg-background border border-border rounded-md px-2 py-1.5 text-sm outline-none focus:border-primary"
+              <Select
+                value={String(penalty)}
+                onValueChange={(v) => setPenalty(parseFloat(v))}
               >
-                {PENALTIES.map((p) => (
-                  <option key={p.label} value={p.value}>
-                    {p.label}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full bg-background border-border text-sm h-9 rounded-md">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PENALTIES.map((p) => (
+                    <SelectItem key={p.label} value={String(p.value)}>
+                      {p.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             {summaryRow(
               "FINAL SCORE in %",
