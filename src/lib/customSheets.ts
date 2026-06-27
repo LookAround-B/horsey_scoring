@@ -11,6 +11,11 @@ export type SheetMovementInput = {
   test: string;
   directive: string;
   coefficient: number;
+  maxMarks?: number;
+  mark?: string;
+  correction?: string;
+  finalMark?: string;
+  remarks?: string;
 };
 
 export type CreateSheetInput = {
@@ -99,11 +104,11 @@ export type QualityInput = {
 function buildQualityConfig(input: QualityInput): QualityConfig {
   return {
     kind: "quality",
-    label: input.label.trim(),
-    subtitle: input.subtitle.trim(),
-    criteria: input.criteria
-      .filter((c) => c.title.trim())
-      .map((c) => ({ title: c.title.trim(), description: c.description.trim() })),
+    label: (input.label ?? "").trim(),
+    subtitle: (input.subtitle ?? "").trim(),
+    criteria: (input.criteria ?? [])
+      .filter((c) => (c.title ?? "").trim())
+      .map((c) => ({ title: (c.title ?? "").trim(), description: (c.description ?? "").trim() })),
   };
 }
 
@@ -145,6 +150,11 @@ export async function createCustomSheet(input: CreateSheetInput, createdBy: stri
     test: m.test,
     directive: m.directive,
     coefficient: Number.isFinite(m.coefficient) && m.coefficient > 0 ? m.coefficient : 1,
+    maxMarks: Number.isFinite(m.maxMarks) && (m.maxMarks ?? 0) > 0 ? m.maxMarks : 10,
+    mark: m.mark ?? "",
+    correction: m.correction ?? "",
+    finalMark: m.finalMark ?? "",
+    remarks: m.remarks ?? "",
   }));
 
   const config: StoredConfig = {
@@ -155,8 +165,8 @@ export async function createCustomSheet(input: CreateSheetInput, createdBy: stri
     movements,
   };
 
-  // movements (10 × coef each) + the default single collective (coef 2 → 20).
-  const maxScore = movements.reduce((s, m) => s + 10 * m.coefficient, 0) + 20;
+  // movements (maxMarks × coef each) + the default single collective (coef 2 → 20).
+  const maxScore = movements.reduce((s, m) => s + (m.maxMarks || 10) * m.coefficient, 0) + 20;
 
   await query(
     `insert into custom_sheets (slug, label, appendix, subtitle, abbr, discipline, config, max_score, created_by)
@@ -371,7 +381,7 @@ export async function getEditableConfig(
 }
 
 function maxScoreFor(config: TestConfig): number {
-  const mv = (config.movements ?? []).reduce((s, m) => s + 10 * (m.coefficient || 1), 0);
+  const mv = (config.movements ?? []).reduce((s, m) => s + (m.maxMarks === undefined ? 10 : m.maxMarks) * (m.coefficient || 1), 0);
   const art = (config.artisticMovements ?? []).reduce((s, m) => s + 10 * (m.coefficient || 1), 0);
   const collFromCfg = config.collectives
     ? config.collectives.reduce((s, c) => s + 10 * (c.coefficient || 0), 0)

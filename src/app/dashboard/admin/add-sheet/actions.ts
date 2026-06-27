@@ -183,6 +183,11 @@ export async function updateSheetAction(
     test: m.test,
     directive: m.directive ?? "",
     coefficient: Number.isFinite(m.coefficient) && m.coefficient > 0 ? m.coefficient : 1,
+    maxMarks: Number.isFinite(m.maxMarks) && (m.maxMarks ?? 0) > 0 ? m.maxMarks : 10,
+    mark: m.mark ?? "",
+    correction: m.correction ?? "",
+    finalMark: m.finalMark ?? "",
+    remarks: m.remarks ?? "",
   }));
 
   const merged: TestConfig = {

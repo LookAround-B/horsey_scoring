@@ -120,7 +120,11 @@ function ScoringSheet({
   const { user } = useAuth();
   const info = config;
   const MOVEMENTS = config.movements;
-  const TOTAL_MAX = MOVEMENTS.reduce((sum, m) => sum + 10 * m.coefficient, 0);
+  // Undefined → default 10. Explicit 0 marks a non-scored instruction row (e.g. "leave arena").
+  const maxOf = (m: Movement) => (m.maxMarks === undefined ? 10 : m.maxMarks);
+  const MAX_BY_NO: Record<string, number> = {};
+  MOVEMENTS.forEach((m) => { MAX_BY_NO[m.no] = maxOf(m); });
+  const TOTAL_MAX = MOVEMENTS.reduce((sum, m) => sum + maxOf(m) * m.coefficient, 0);
   const COLLECTIVES: CollectiveCriteria[] = config.collectives ?? [
     { no: "1", label: "Rider's position and seat; correctness and effect of the aids", coefficient: 2 },
   ];
@@ -148,10 +152,19 @@ function ScoringSheet({
     hno: "",
   });
 
-  const [scores, setScores] = useState<Record<string, string>>({});
-  const [corrections, setCorrections] = useState<Record<string, string>>({});
+  // Seed scorer fields from any prefixed (fixed) values authored on the sheet.
+  const seedFrom = (key: "mark" | "correction" | "remarks") => {
+    const out: Record<string, string> = {};
+    MOVEMENTS.forEach((m) => {
+      const v = m[key];
+      if (v != null && String(v).trim() !== "") out[m.no] = String(v);
+    });
+    return out;
+  };
+  const [scores, setScores] = useState<Record<string, string>>(() => seedFrom("mark"));
+  const [corrections, setCorrections] = useState<Record<string, string>>(() => seedFrom("correction"));
   const [coefficients, setCoefficients] = useState<Record<string, string>>({});
-  const [remarks, setRemarks] = useState<Record<string, string>>({});
+  const [remarks, setRemarks] = useState<Record<string, string>>(() => seedFrom("remarks"));
   const [collectiveScores, setCollectiveScores] = useState<Record<string, string>>({});
   const [collectiveCorrections, setCollectiveCorrections] = useState<Record<string, string>>({});
   const [collectiveRemarksMap, setCollectiveRemarksMap] = useState<Record<string, string>>({});
@@ -253,11 +266,13 @@ function ScoringSheet({
   }, [qualityPct, courseError, otherErrors, eliminated, technicalScore, config.technicalCombined, isFreestyle, movementsTotal, artisticTotal, TOTAL_MAX, ARTISTIC_MAX]);
 
   const handleScore = (no: string, val: string) => {
-    if (val !== "" && (parseFloat(val) < 0 || parseFloat(val) > 10)) return;
+    const cap = MAX_BY_NO[no] ?? 10;
+    if (val !== "" && (parseFloat(val) < 0 || parseFloat(val) > cap)) return;
     setScores((s) => ({ ...s, [no]: val }));
   };
   const handleCorrection = (no: string, val: string) => {
-    if (val !== "" && (parseFloat(val) < 0 || parseFloat(val) > 10)) return;
+    const cap = MAX_BY_NO[no] ?? 10;
+    if (val !== "" && (parseFloat(val) < 0 || parseFloat(val) > cap)) return;
     setCorrections((s) => ({ ...s, [no]: val }));
   };
 
@@ -670,11 +685,12 @@ function ScoringSheet({
                     <Th className="w-12 text-center">No.</Th>
                     <Th className="w-20 text-center">Letters</Th>
                     <Th className="w-auto">Test</Th>
+                    <Th className="w-16 text-center">Marks</Th>
                     <Th className="w-20 text-center">Mark</Th>
                     <Th className="w-20 text-center">Correction</Th>
-                    <Th className="w-16 text-center">Coeff.</Th>
-                    <Th className="w-20 text-center">Final</Th>
-                    <Th className="w-[26%]">Directive Ideas</Th>
+                    <Th className="w-16 text-center">Coefficient</Th>
+                    <Th className="w-20 text-center">Final mark</Th>
+                    <Th className="w-[26%]">Directive ideas</Th>
                     <Th className="w-44">Remarks</Th>
                   </tr>
                 </thead>
@@ -682,6 +698,7 @@ function ScoringSheet({
                   {MOVEMENTS.map((m, i) => {
                     const final = finalMarks[m.no];
                     const hasValue = final > 0;
+                    const unscored = maxOf(m) === 0;
                     return (
                       <tr
                         key={m.no}
@@ -690,60 +707,71 @@ function ScoringSheet({
                         } hover:bg-accent/40 focus-within:bg-accent/60`}
                       >
                         <td className="px-3 py-3 text-center">
-                          <span className="inline-grid place-items-center h-7 w-7 rounded-full border border-border font-display text-xs tabular-nums">
-                            {m.no}
-                          </span>
+                          {m.no && (
+                            <span className="inline-grid place-items-center h-7 w-7 rounded-full border border-border font-display text-xs tabular-nums">
+                              {m.no}
+                            </span>
+                          )}
                         </td>
                         <td className="px-3 py-3 text-center font-mono text-xs whitespace-pre-line text-muted-foreground">
                           {m.letters}
                         </td>
                         <td className="px-3 py-3 whitespace-pre-line leading-snug">{m.test}</td>
-                        <td className="px-1 py-2">
-                          <NumInput
-                            value={scores[m.no] || ""}
-                            onChange={(v) => handleScore(m.no, v)}
-                            placeholder="—"
-                            accent
-                            data-grid="1"
-                            data-row={i}
-                            data-col={0}
-                            onKeyDown={handleGridKey}
-                          />
+                        <td className="px-3 py-3 text-center font-display tabular-nums text-sm text-muted-foreground">
+                          {unscored ? "—" : maxOf(m)}
                         </td>
-                        <td className="px-1 py-2">
-                          <NumInput
-                            value={corrections[m.no] || ""}
-                            onChange={(v) => handleCorrection(m.no, v)}
-                            placeholder="—"
-                            bordered
-                            data-grid="1"
-                            data-row={i}
-                            data-col={1}
-                            onKeyDown={handleGridKey}
-                          />
-                        </td>
-                        <td className="px-1 py-2">
-                          <NumInput
-                            value={coefficients[m.no] ?? ""}
-                            onChange={(v) => {
-                              if (v !== "" && (parseFloat(v) < 1 || parseFloat(v) > 10)) return;
-                              setCoefficients((c) => ({ ...c, [m.no]: v }));
-                            }}
-                            placeholder="—"
-                            bordered
-                            min={1}
-                            step={1}
-                          />
-                        </td>
-                        <td className="px-3 py-3 text-center">
-                          <span
-                            className={`font-display tabular-nums text-base ${
-                              hasValue ? "text-highlight" : "text-muted-foreground/40"
-                            }`}
-                          >
-                            {hasValue ? final.toFixed(1) : "—"}
-                          </span>
-                        </td>
+                        {unscored ? (
+                          <td colSpan={4} className="px-3 py-3 text-center text-xs text-muted-foreground/60">—</td>
+                        ) : (
+                          <>
+                            <td className="px-1 py-2">
+                              <NumInput
+                                value={scores[m.no] || ""}
+                                onChange={(v) => handleScore(m.no, v)}
+                                placeholder="—"
+                                accent
+                                data-grid="1"
+                                data-row={i}
+                                data-col={0}
+                                onKeyDown={handleGridKey}
+                              />
+                            </td>
+                            <td className="px-1 py-2">
+                              <NumInput
+                                value={corrections[m.no] || ""}
+                                onChange={(v) => handleCorrection(m.no, v)}
+                                placeholder="—"
+                                bordered
+                                data-grid="1"
+                                data-row={i}
+                                data-col={1}
+                                onKeyDown={handleGridKey}
+                              />
+                            </td>
+                            <td className="px-1 py-2">
+                              <NumInput
+                                value={coefficients[m.no] ?? ""}
+                                onChange={(v) => {
+                                  if (v !== "" && (parseFloat(v) < 1 || parseFloat(v) > 10)) return;
+                                  setCoefficients((c) => ({ ...c, [m.no]: v }));
+                                }}
+                                placeholder="—"
+                                bordered
+                                min={1}
+                                step={1}
+                              />
+                            </td>
+                            <td className="px-3 py-3 text-center">
+                              <span
+                                className={`font-display tabular-nums text-base ${
+                                  hasValue || (m.finalMark ?? "").trim() ? "text-highlight" : "text-muted-foreground/40"
+                                }`}
+                              >
+                                {hasValue ? final.toFixed(1) : (m.finalMark ?? "").trim() || "—"}
+                              </span>
+                            </td>
+                          </>
+                        )}
                         <td className="px-3 py-3 text-xs leading-snug text-muted-foreground">
                           {m.directive}
                         </td>
@@ -758,7 +786,7 @@ function ScoringSheet({
                     );
                   })}
                   <tr className="border-t-2 border-foreground/20 bg-muted/40">
-                    <td colSpan={3} className="px-3 py-3 font-display text-sm uppercase tracking-wider">
+                    <td colSpan={4} className="px-3 py-3 font-display text-sm uppercase tracking-wider">
                       Subtotal
                     </td>
                     <td colSpan={3}></td>
@@ -778,6 +806,7 @@ function ScoringSheet({
             {MOVEMENTS.map((m, i) => {
               const final = finalMarks[m.no];
               const hasValue = final > 0;
+              const unscored = maxOf(m) === 0;
               return (
                 <div
                   key={m.no}
@@ -785,9 +814,11 @@ function ScoringSheet({
                 >
                   <div className="flex items-start justify-between gap-3 mb-3">
                     <div className="flex items-center gap-3 min-w-0">
-                      <span className="inline-grid place-items-center h-8 w-8 shrink-0 rounded-full border border-border font-display text-xs tabular-nums">
-                        {m.no}
-                      </span>
+                      {m.no && (
+                        <span className="inline-grid place-items-center h-8 w-8 shrink-0 rounded-full border border-border font-display text-xs tabular-nums">
+                          {m.no}
+                        </span>
+                      )}
                       <div className="min-w-0">
                         <div className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground whitespace-pre-line">
                           {m.letters || "—"}
@@ -795,17 +826,19 @@ function ScoringSheet({
                         <div className="text-sm leading-snug whitespace-pre-line mt-0.5">{m.test}</div>
                       </div>
                     </div>
-                    <div className="text-right shrink-0">
-                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Final</div>
-                      <div className={`font-display tabular-nums text-lg ${hasValue ? "text-highlight" : "text-muted-foreground/40"}`}>
-                        {hasValue ? final.toFixed(1) : "—"}
+                    {!unscored && (
+                      <div className="text-right shrink-0">
+                        <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Final</div>
+                        <div className={`font-display tabular-nums text-lg ${hasValue || (m.finalMark ?? "").trim() ? "text-highlight" : "text-muted-foreground/40"}`}>
+                          {hasValue ? final.toFixed(1) : (m.finalMark ?? "").trim() || "—"}
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 mb-2">
+                  {!unscored && <div className="grid grid-cols-3 gap-2 mb-2">
                     <label className="block">
-                      <span className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Mark</span>
+                      <span className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Mark / {maxOf(m)}</span>
                       <NumInput
                         value={scores[m.no] || ""}
                         onChange={(v) => handleScore(m.no, v)}
@@ -836,7 +869,7 @@ function ScoringSheet({
                         step={1}
                       />
                     </label>
-                  </div>
+                  </div>}
 
                   <details className="group">
                     <summary className="cursor-pointer text-[11px] uppercase tracking-wider text-muted-foreground list-none flex items-center gap-1 select-none">

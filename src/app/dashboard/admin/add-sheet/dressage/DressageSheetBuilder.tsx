@@ -8,9 +8,36 @@ import { createDressageSheetAction, updateSheetAction, deleteSheetAction } from 
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-export type Row = { no: string; letters: string; test: string; directive: string; coefficient: string };
+// Column order matches the official physical scoring sheet exactly:
+// No · Letters · Test · Marks · Mark · Correction · Coefficient · Final mark · Directive ideas · Remarks · (delete)
+const ROW_GRID =
+  "grid grid-cols-[36px_56px_minmax(150px,1.5fr)_64px_64px_72px_72px_72px_minmax(150px,1.5fr)_minmax(130px,1fr)_32px]";
 
-const emptyRow = (): Row => ({ no: "", letters: "", test: "", directive: "", coefficient: "1" });
+export type Row = {
+  no: string;
+  letters: string;
+  test: string;
+  directive: string;
+  coefficient: string;
+  marks: string;
+  mark: string;
+  correction: string;
+  finalMark: string;
+  remarks: string;
+};
+
+const emptyRow = (): Row => ({
+  no: "",
+  letters: "",
+  test: "",
+  directive: "",
+  coefficient: "1",
+  marks: "10",
+  mark: "",
+  correction: "",
+  finalMark: "",
+  remarks: "",
+});
 
 export function DressageSheetBuilder({
   editSlug,
@@ -72,6 +99,11 @@ export function DressageSheetBuilder({
         test: r.test,
         directive: r.directive,
         coefficient: parseFloat(r.coefficient) || 1,
+        maxMarks: parseFloat(r.marks) || 10,
+        mark: r.mark,
+        correction: r.correction,
+        finalMark: r.finalMark,
+        remarks: r.remarks,
       })),
     };
 
@@ -119,7 +151,7 @@ export function DressageSheetBuilder({
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="p-6 max-w-6xl mx-auto">
       <Link
         href="/dashboard/admin/add-sheet"
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-5"
@@ -187,71 +219,111 @@ export function DressageSheetBuilder({
         </button>
       </div>
 
-      <div className="border border-border rounded-xl overflow-hidden">
-        {/* header */}
-        <div className="hidden md:grid grid-cols-[40px_70px_1fr_1fr_70px_36px] gap-2 px-3 py-2 bg-muted text-[10px] uppercase tracking-wider text-muted-foreground">
-          <div>No.</div>
-          <div>Letters</div>
-          <div>Movement</div>
-          <div>Directive ideas</div>
-          <div>Coef.</div>
-          <div />
-        </div>
-        <div className="divide-y divide-border">
-          {rows.map((r, i) => (
-            <div
-              key={i}
-              className="grid grid-cols-2 md:grid-cols-[40px_70px_1fr_1fr_70px_36px] gap-2 px-3 py-2 items-start"
-            >
-              <Input
-                value={r.no}
-                onChange={(e) => setRow(i, { no: e.target.value })}
-                placeholder={String(i + 1)}
-                className="bg-background border border-border rounded-md px-2 py-1.5 text-sm outline-none focus:border-primary"
-              />
-              <Input
-                value={r.letters}
-                onChange={(e) => setRow(i, { letters: e.target.value })}
-                placeholder="A X"
-                className="bg-background border border-border rounded-md px-2 py-1.5 text-sm outline-none focus:border-primary"
-              />
-              <Textarea
-                value={r.test}
-                onChange={(e) => setRow(i, { test: e.target.value })}
-                placeholder="Movement description"
-                rows={2}
-                className="col-span-2 md:col-span-1 bg-background border border-border rounded-md px-2 py-1.5 text-sm outline-none focus:border-primary resize-y"
-              />
-              <Textarea
-                value={r.directive}
-                onChange={(e) => setRow(i, { directive: e.target.value })}
-                placeholder="Directive ideas"
-                rows={2}
-                className="col-span-2 md:col-span-1 bg-background border border-border rounded-md px-2 py-1.5 text-sm outline-none focus:border-primary resize-y"
-              />
-              <Input
-                type="number"
-                min="1"
-                step="1"
-                value={r.coefficient}
-                onChange={(e) => setRow(i, { coefficient: e.target.value })}
-                className="bg-background border border-border rounded-md px-2 py-1.5 text-sm outline-none focus:border-primary"
-              />
-              <button
-                onClick={() => removeRow(i)}
-                title="Remove row"
-                className="grid place-items-center h-8 w-8 rounded-md text-muted-foreground hover:text-destructive hover:bg-muted transition-colors"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </div>
-          ))}
+      <div className="border border-border rounded-xl overflow-x-auto">
+        <div className="min-w-[1180px]">
+          {/* header — matches the official scoring sheet template */}
+          <div className={`${ROW_GRID} gap-2 px-3 py-2 bg-muted text-[10px] uppercase tracking-wider text-muted-foreground`}>
+            <div>No.</div>
+            <div>Letters</div>
+            <div>Test</div>
+            <div className="text-center">Marks</div>
+            <div className="text-center">Mark</div>
+            <div className="text-center">Correction</div>
+            <div className="text-center">Coefficient</div>
+            <div className="text-center">Final mark</div>
+            <div>Directive ideas</div>
+            <div>Remarks</div>
+            <div />
+          </div>
+          <div className="divide-y divide-border">
+            {rows.map((r, i) => (
+              <div key={i} className={`${ROW_GRID} gap-2 px-3 py-2 items-start`}>
+                <Input
+                  value={r.no}
+                  onChange={(e) => setRow(i, { no: e.target.value })}
+                  placeholder={String(i + 1)}
+                  className="bg-background border border-border rounded-md px-2 py-1.5 text-sm outline-none focus:border-primary"
+                />
+                <Input
+                  value={r.letters}
+                  onChange={(e) => setRow(i, { letters: e.target.value })}
+                  placeholder="A X"
+                  className="bg-background border border-border rounded-md px-2 py-1.5 text-sm outline-none focus:border-primary"
+                />
+                <Textarea
+                  value={r.test}
+                  onChange={(e) => setRow(i, { test: e.target.value })}
+                  placeholder="Movement description"
+                  rows={2}
+                  className="bg-background border border-border rounded-md px-2 py-1.5 text-sm outline-none focus:border-primary resize-y"
+                />
+                <Input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={r.marks}
+                  onChange={(e) => setRow(i, { marks: e.target.value })}
+                  placeholder="10"
+                  className="text-center bg-background border border-border rounded-md px-2 py-1.5 text-sm outline-none focus:border-primary"
+                />
+                <Input
+                  value={r.mark}
+                  onChange={(e) => setRow(i, { mark: e.target.value })}
+                  placeholder="—"
+                  className="text-center bg-background border border-border rounded-md px-2 py-1.5 text-sm outline-none focus:border-primary"
+                />
+                <Input
+                  value={r.correction}
+                  onChange={(e) => setRow(i, { correction: e.target.value })}
+                  placeholder="—"
+                  className="text-center bg-background border border-border rounded-md px-2 py-1.5 text-sm outline-none focus:border-primary"
+                />
+                <Input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={r.coefficient}
+                  onChange={(e) => setRow(i, { coefficient: e.target.value })}
+                  className="text-center bg-background border border-border rounded-md px-2 py-1.5 text-sm outline-none focus:border-primary"
+                />
+                <Input
+                  value={r.finalMark}
+                  onChange={(e) => setRow(i, { finalMark: e.target.value })}
+                  placeholder="—"
+                  className="text-center bg-background border border-border rounded-md px-2 py-1.5 text-sm outline-none focus:border-primary"
+                />
+                <Textarea
+                  value={r.directive}
+                  onChange={(e) => setRow(i, { directive: e.target.value })}
+                  placeholder="Directive ideas"
+                  rows={2}
+                  className="bg-background border border-border rounded-md px-2 py-1.5 text-sm outline-none focus:border-primary resize-y"
+                />
+                <Textarea
+                  value={r.remarks}
+                  onChange={(e) => setRow(i, { remarks: e.target.value })}
+                  placeholder="Remarks"
+                  rows={2}
+                  className="bg-background border border-border rounded-md px-2 py-1.5 text-sm outline-none focus:border-primary resize-y"
+                />
+                <button
+                  onClick={() => removeRow(i)}
+                  title="Remove row"
+                  className="grid place-items-center h-8 w-8 rounded-md text-muted-foreground hover:text-destructive hover:bg-muted transition-colors"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
       <p className="text-[11px] text-muted-foreground mt-2 flex items-center gap-1.5">
-        <GripVertical className="h-3 w-3" /> Marks, corrections, final score and collective marks are
-        added automatically on the scoring page.
+        <GripVertical className="h-3 w-3" /> <span><strong>Marks</strong> is the out-of (max) value per
+        movement. <strong>Mark</strong>, <strong>Correction</strong> and <strong>Final Mark</strong> are
+        normally filled by the judge on the scoring page — set them here only for sheets with fixed
+        (prefixed) values. Collective marks are added automatically.</span>
       </p>
 
       {error && (

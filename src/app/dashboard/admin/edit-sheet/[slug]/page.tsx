@@ -72,6 +72,11 @@ export default async function EditSheetPage({ params }: { params: Promise<{ slug
       test: m.test ?? "",
       directive: m.directive ?? "",
       coefficient: String(m.coefficient ?? 1),
+      marks: String(m.maxMarks ?? 10),
+      mark: m.mark ?? "",
+      correction: m.correction ?? "",
+      finalMark: m.finalMark ?? "",
+      remarks: m.remarks ?? "",
     })),
   };
 

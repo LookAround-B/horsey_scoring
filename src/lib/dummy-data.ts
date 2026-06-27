@@ -285,7 +285,7 @@ export type TestCard = {
 
 export const TEST_CARDS: TestCard[] = [
   { slug: "young-rider",  category: "Young Rider",  appendix: "Appendix A", description: "Time 6′30″ · Min age of horse: 6 years", maxScore: 280 },
-  { slug: "junior",       category: "Junior",       appendix: "Appendix C", description: "Time 3′55″ · Min age of horse: 6 years", maxScore: 220 },
+  { slug: "junior",       category: "Junior",       appendix: "Appendix C", description: "Time 3′55″ · Min age of horse: 6 years", maxScore: 250 },
   { slug: "children-i",         category: "Children I",          appendix: "Appendix D", description: "Time 5 min · Min age horse: 8 yrs (ch) / 5 (adults)", maxScore: 280 },
   { slug: "children-i-quality", category: "Children I – Quality", appendix: "Appendix D", description: "Quality Marking Sheet · Combined with Technical score", maxScore: 40 },
   { slug: "children-ii",         category: "Children II",          appendix: "Appendix E", description: "Time 4 min · Min age horse: 6 yrs (ch) / 5 (adults)", maxScore: 210 },

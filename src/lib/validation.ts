@@ -217,6 +217,11 @@ const movementSchema = z.object({
   test: z.string().min(1).max(1000),
   directive: z.string().max(500).optional().default(""),
   coefficient: z.number().positive().optional().default(1),
+  maxMarks: z.number().positive().max(1000).optional().default(10),
+  mark: z.string().max(20).optional().default(""),
+  correction: z.string().max(20).optional().default(""),
+  finalMark: z.string().max(20).optional().default(""),
+  remarks: z.string().max(500).optional().default(""),
 });
 
 const obstacleSchema = z.object({
@@ -226,6 +231,7 @@ const obstacleSchema = z.object({
 
 const criterionSchema = z.object({
   title: z.string().min(1).max(200),
+  description: z.string().max(2000).optional().default(""),
   max: z.number().positive().optional(),
 });
 
@@ -253,6 +259,7 @@ export const showJumpingSheetSchema = z.object({
 
 export const qualitySheetSchema = z.object({
   label: z.string().trim().min(1, "Sheet name is required.").max(200),
+  subtitle: z.string().max(200).optional().default(""),
   criteria: z
     .array(criterionSchema)
     .min(1, "Add at least one assessment row.")

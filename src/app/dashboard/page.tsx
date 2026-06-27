@@ -431,33 +431,40 @@ export default function HubPage() {
             })}
           </div>
 
-          {/* Discipline toggle */}
-          <div className="inline-flex items-center gap-1 p-1 rounded-lg bg-muted">
-            {DISCIPLINES.map((d) => {
-              const count = allCards.filter((t) => disciplineOf(t) === d.id && inEvent(t.slug)).length;
-              const active = sheetDiscipline === d.id;
-              return (
-                <button key={d.id} onClick={() => setSheetDiscipline(d.id)}
-                  className={`flex items-center gap-2 text-sm px-4 py-1.5 rounded-md transition-colors ${
-                    active ? "bg-card text-foreground shadow-soft font-medium" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {d.label}
-                  <span className={`text-[11px] tabular-nums px-1.5 rounded-full ${active ? "bg-primary/10 text-primary" : "bg-foreground/5 text-muted-foreground"}`}>{count}</span>
-                </button>
-              );
-            })}
-          </div>
+          {/* Controls row: Discipline toggle + Dressage Quality + Search */}
+          <div className="flex items-center gap-3 flex-wrap justify-between">
+            {/* Left: Discipline toggle */}
+            <div className="inline-flex items-center gap-1 p-1 rounded-lg bg-muted">
+              {DISCIPLINES.map((d) => {
+                const count = allCards.filter((t) => disciplineOf(t) === d.id && inEvent(t.slug)).length;
+                const active = sheetDiscipline === d.id;
+                return (
+                  <button key={d.id} onClick={() => setSheetDiscipline(d.id)}
+                    className={`flex items-center gap-2 text-sm px-4 py-1.5 rounded-md transition-colors ${
+                      active ? "bg-card text-foreground shadow-soft font-medium" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {d.label}
+                    <span className={`text-[11px] tabular-nums px-1.5 rounded-full ${active ? "bg-primary/10 text-primary" : "bg-foreground/5 text-muted-foreground"}`}>{count}</span>
+                  </button>
+                );
+              })}
+            </div>
 
-          <div className="flex items-center gap-3 flex-wrap">
-            <div className="relative flex-1 min-w-[200px] max-w-sm">
+            {/* Middle: Dressage Quality tab (placeholder for future feature) */}
+            <div className="text-xs text-muted-foreground">
+              Quality marking available
+            </div>
+
+            {/* Right: Search bar */}
+            <div className="relative flex-1 min-w-[200px] max-w-sm ml-auto">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input type="text" placeholder="Search sheets by name, appendix…" value={sheetSearch}
                 onChange={(e) => setSheetSearch(e.target.value)}
                 className="w-full pl-9 pr-3 py-2 text-sm bg-card border border-border rounded-lg outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
               />
             </div>
-            <span className="text-xs text-muted-foreground">{sheetCards.length} sheet{sheetCards.length !== 1 ? "s" : ""}</span>
+            <span className="text-xs text-muted-foreground whitespace-nowrap">{sheetCards.length} sheet{sheetCards.length !== 1 ? "s" : ""}</span>
           </div>
 
           <p className="text-sm text-muted-foreground">Open any scoring sheet to start scoring. Scores auto-save as you go.</p>

@@ -4,6 +4,13 @@ export type Movement = {
   test: string;
   coefficient: number;
   directive: string;
+  /** "Marks" column — the out-of (max) value for this movement. Defaults to 10. */
+  maxMarks?: number;
+  /** Prefixed/fixed scorer values authored on the sheet. Empty = scorer fills it in. */
+  mark?: string;
+  correction?: string;
+  finalMark?: string;
+  remarks?: string;
 };
 
 export type CollectiveCriteria = {
