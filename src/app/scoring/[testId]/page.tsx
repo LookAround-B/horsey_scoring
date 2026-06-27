@@ -25,6 +25,16 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
+/* Shape returned by GET /api/sheet-riders (event_riders rows). */
+type EventRiderApi = {
+  id: string;
+  name: string;
+  nf: string | null;
+  competitor_no: string | null;
+  horse: string | null;
+  horse_no: string | null;
+};
+
 /* ---------- dummy option lists for the sheet header dropdowns ---------- */
 const JUDGE_OPTIONS = [
   "Dr. Sarah Chen", "Mark Johnson", "Elena Petrova",
@@ -295,9 +305,31 @@ function ScoringSheet({
       if (raw) setHasDraft(true);
     } catch {}
     hydrated.current = true;
-    setAllRidersList(DUMMY_RIDERS);
     setMounted(true);
-  }, []);
+    // In event context, load only the riders selected for this sheet; otherwise
+    // fall back to the dummy start list for standalone use.
+    if (eventId) {
+      const qs = new URLSearchParams({ event: eventId, slug: testId });
+      fetch(`/api/sheet-riders?${qs.toString()}`)
+        .then((r) => (r.ok ? r.json() : []))
+        .then((rows: EventRiderApi[]) =>
+          setAllRidersList(
+            rows.map((r) => ({
+              id: r.id,
+              name: r.name,
+              nf: r.nf ?? "",
+              competitorNo: r.competitor_no ?? "",
+              horse: r.horse ?? "",
+              horseNo: r.horse_no ?? "",
+            }))
+          )
+        )
+        .catch(() => setAllRidersList([]));
+    } else {
+      setAllRidersList(DUMMY_RIDERS);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventId, testId]);
 
   useEffect(() => {
     if (!hydrated.current) return;

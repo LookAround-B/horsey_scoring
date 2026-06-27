@@ -413,3 +413,63 @@ export async function setEventSheets(eventId: string, slugs: string[]) {
     client.release();
   }
 }
+
+// ---- Sheet riders (which riders participate in each sheet of an event) ----
+
+/** event id -> { test slug -> [rider id, …] } — used by the admin picker. */
+export async function listSheetRiders(
+  eventId: string
+): Promise<Record<string, string[]>> {
+  const rows = await query<{ test_slug: string; rider_id: string }>(
+    `select test_slug, rider_id from sheet_riders where event_id = $1`,
+    [eventId]
+  );
+  const map: Record<string, string[]> = {};
+  for (const r of rows) (map[r.test_slug] ??= []).push(r.rider_id);
+  return map;
+}
+
+/** Replace the rider set selected for one sheet within an event. */
+export async function saveSheetRiders(
+  eventId: string,
+  testSlug: string,
+  riderIds: string[]
+) {
+  const client = await pool.connect();
+  try {
+    await client.query("begin");
+    await client.query(
+      `delete from sheet_riders where event_id = $1 and test_slug = $2`,
+      [eventId, testSlug]
+    );
+    for (const rid of riderIds) {
+      await client.query(
+        `insert into sheet_riders (event_id, test_slug, rider_id)
+              values ($1, $2, $3) on conflict do nothing`,
+        [eventId, testSlug, rid]
+      );
+    }
+    await client.query("commit");
+  } catch (e) {
+    await client.query("rollback");
+    throw e;
+  } finally {
+    client.release();
+  }
+}
+
+/** Riders selected for one sheet within an event, ordered for the scoring page. */
+export async function listRidersForSheet(
+  eventId: string,
+  testSlug: string
+): Promise<EventRider[]> {
+  return query<EventRider>(
+    `select r.*
+       from sheet_riders sr
+       join event_riders r on r.id = sr.rider_id
+      where sr.event_id = $1 and sr.test_slug = $2
+      order by nullif(regexp_replace(r.competitor_no, '\\D', '', 'g'), '')::int nulls last,
+               r.competitor_no, r.name`,
+    [eventId, testSlug]
+  );
+}

@@ -160,6 +160,15 @@ create table if not exists event_riders (
   updated_at    timestamptz not null default now()
 );
 
+-- Which riders participate in a given sheet within an event (many-to-many).
+-- A rider may be on multiple sheets; deleting a rider cascades out of every sheet.
+create table if not exists sheet_riders (
+  event_id  uuid not null references events(id) on delete cascade,
+  test_slug text not null,
+  rider_id  uuid not null references event_riders(id) on delete cascade,
+  primary key (event_id, test_slug, rider_id)
+);
+
 -- Profile extras.
 alter table users add column if not exists image_url text;
 alter table users add column if not exists phone     text;

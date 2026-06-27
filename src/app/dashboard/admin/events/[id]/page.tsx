@@ -1,6 +1,6 @@
 import { redirect, notFound } from "next/navigation";
 import { auth } from "@/auth";
-import { getEventById, listSheetsByEvent, listGuidelineTemplates } from "@/lib/events";
+import { getEventById, listSheetsByEvent, listSheetRiders, listGuidelineTemplates } from "@/lib/events";
 import { listUsers } from "@/lib/users";
 import { listCustomSheetCards } from "@/lib/customSheets";
 import { BulkRiderImport } from "../BulkRiderImport";
@@ -8,6 +8,7 @@ import { DetailsForm } from "../DetailsForm";
 import { PermissionsForm } from "../PermissionsForm";
 import { TimerConfigForm } from "../TimerConfigForm";
 import { SaveSheetsForm } from "../SaveSheetsForm";
+import { SheetRidersForm } from "../SheetRidersForm";
 import { RidersListClient } from "./RidersListClient";
 import { OfficialsListClient } from "./OfficialsListClient";
 import { AddOfficialForm } from "./AddOfficialForm";
@@ -46,10 +47,11 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
   const isOwner = ev.secretary_id === user.id;
   if (!isAdmin && !isOwner) redirect("/dashboard");
 
-  const [allUsers, customCards, sheetsByEvent, templates] = await Promise.all([
+  const [allUsers, customCards, sheetsByEvent, sheetRiders, templates] = await Promise.all([
     listUsers(),
     listCustomSheetCards(),
     listSheetsByEvent(),
+    listSheetRiders(id),
     listGuidelineTemplates(),
   ]);
   const assignedSlugs = new Set(sheetsByEvent[id] ?? []);
@@ -156,6 +158,27 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
       {/* Sheets */}
       <Section title="Scoring sheets in this event">
         <SaveSheetsForm eventId={id} sheets={sheets} assignedSlugs={assignedSlugs} />
+        {assignedSlugs.size > 0 && (
+          <div className="mt-5 pt-4 border-t border-border space-y-2">
+            <p className="text-xs text-muted-foreground">
+              Choose which riders participate in each sheet. A rider can be on multiple sheets.
+            </p>
+            {sheets
+              .filter((t) => assignedSlugs.has(t.slug))
+              .map((t) => (
+                <div key={t.slug} className="flex items-center justify-between gap-3 text-sm">
+                  <span className="truncate">{t.category}</span>
+                  <SheetRidersForm
+                    eventId={id}
+                    testSlug={t.slug}
+                    label={t.category}
+                    riders={ev.riders}
+                    selectedIds={new Set(sheetRiders[t.slug] ?? [])}
+                  />
+                </div>
+              ))}
+          </div>
+        )}
       </Section>
 
       {/* Danger */}

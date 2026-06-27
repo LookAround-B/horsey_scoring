@@ -10,7 +10,7 @@ import {
 import type { ShowJumpingConfig } from "@/lib/sheetTypes";
 import { useScoreStore } from "@/lib/useScoreStore";
 import { toast } from "sonner";
-import { SJ1_60_70_RIDERS } from "@/lib/startListRiders";
+import { SJ1_60_70_RIDERS, type StartListRider } from "@/lib/startListRiders";
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from "@/components/ui/select";
@@ -286,6 +286,29 @@ export function ShowJumpingSheet({
   const [timerRound, setTimerRound] = useState<"fr" | "jo">("fr");
   const [loaded,    setLoaded]    = useState(false);
   const [savedAt,   setSavedAt]   = useState("");
+
+  // Start-list source for the rider picker: in event context, the riders selected
+  // for this sheet; standalone, the bundled EPL start list.
+  const [startList, setStartList] = useState<StartListRider[]>(eventId ? [] : SJ1_60_70_RIDERS);
+  useEffect(() => {
+    if (!eventId) { setStartList(SJ1_60_70_RIDERS); return; }
+    let live = true;
+    const qs = new URLSearchParams({ event: eventId, slug });
+    fetch(`/api/sheet-riders?${qs.toString()}`)
+      .then(r => (r.ok ? r.json() : []))
+      .then((rows: { id: string; name: string; nf: string | null; competitor_no: string | null; horse: string | null }[]) => {
+        if (!live) return;
+        setStartList(rows.map((r, i) => ({
+          sl: Number(r.competitor_no) || i + 1,
+          name: r.name,
+          horse: r.horse ?? "",
+          category: "",
+          club: r.nf ?? "",
+        })));
+      })
+      .catch(() => { if (live) setStartList([]); });
+    return () => { live = false; };
+  }, [eventId, slug]);
 
   const timer = useTimer();
 
@@ -744,7 +767,7 @@ export function ShowJumpingSheet({
                     <Select
                       value={cur.entryNo || undefined}
                       onValueChange={val => {
-                        const r = SJ1_60_70_RIDERS.find(x => String(x.sl) === val);
+                        const r = startList.find(x => String(x.sl) === val);
                         if (r) patchRider({
                           entryNo: String(r.sl),
                           name: r.name,
@@ -759,8 +782,11 @@ export function ShowJumpingSheet({
                         <SelectValue placeholder="Select rider…" />
                       </SelectTrigger>
                       <SelectContent>
-                        {SJ1_60_70_RIDERS.map(r => (
-                          <SelectItem key={r.sl} value={String(r.sl)}>
+                        {startList.length === 0 && (
+                          <div className="px-2 py-1.5 text-xs text-muted-foreground">No riders selected for this sheet.</div>
+                        )}
+                        {startList.map((r, i) => (
+                          <SelectItem key={`${r.sl}-${i}`} value={String(r.sl)}>
                             {r.sl}. {r.name} — {r.horse}
                           </SelectItem>
                         ))}

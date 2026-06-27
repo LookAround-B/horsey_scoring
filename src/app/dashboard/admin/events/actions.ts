@@ -16,6 +16,7 @@ import {
   addParticipant,
   removeParticipant,
   setEventSheets,
+  saveSheetRiders,
   deleteEvent,
   getEventById,
   createGuidelineTemplate,
@@ -256,6 +257,22 @@ export async function saveEventSheetsAction(
     return { ok: true };
   } catch {
     return { error: "Failed to save sheets." };
+  }
+}
+
+export async function saveSheetRidersAction(
+  formData: FormData
+): Promise<{ ok?: boolean; error?: string }> {
+  try {
+    const id = String(formData.get("eventId") ?? "");
+    const slug = String(formData.get("testSlug") ?? "");
+    if (!id || !slug) return { error: "Missing event or sheet." };
+    await requireEventManager(id);
+    await saveSheetRiders(id, slug, formData.getAll("riderId").map(String));
+    revalidatePath(`/dashboard/admin/events/${id}`);
+    return { ok: true };
+  } catch {
+    return { error: "Failed to save riders." };
   }
 }
 
