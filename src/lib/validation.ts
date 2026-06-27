@@ -212,8 +212,8 @@ export const rejectSchema = z.object({
 });
 
 const movementSchema = z.object({
-  no: z.string().max(20).optional().default(""),
-  letters: z.string().max(20).optional().default(""),
+  no: z.string().max(50).optional().default(""),
+  letters: z.string().max(200).optional().default(""),
   test: z.string().min(1).max(1000),
   directive: z.string().max(500).optional().default(""),
   coefficient: z.number().positive().optional().default(1),
