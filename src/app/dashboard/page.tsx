@@ -39,7 +39,7 @@ function SessionStatusIcon({ status }: { status: ScoringSession["status"] }) {
   return <FileEdit className="h-3.5 w-3.5 text-muted-foreground/40" />;
 }
 
-const EMPTY_RIDER_FORM = { name: "", nf: "", competitorNo: "", horse: "", horseNo: "" };
+const EMPTY_RIDER_FORM = { name: "", club: "", competitorNo: "", horse: "", category: "" };
 
 /** A score sheet saved from the scoring page into localStorage["saved-sessions"]. */
 type SavedSession = {
@@ -91,6 +91,7 @@ export default function HubPage() {
 
   const [tab, setTab] = useState<Tab>("overview");
   const [sheetDiscipline, setSheetDiscipline] = useState<Discipline>("dressage");
+  const [sheetSearch, setSheetSearch] = useState("");
   const [riderSearch, setRiderSearch] = useState("");
   const [sessionFilter, setSessionFilter] = useState<"all" | ScoringSession["status"]>("all");
   const [allRiders, setAllRiders] = useState<Rider[]>(DUMMY_RIDERS);
@@ -152,7 +153,7 @@ export default function HubPage() {
         riderName: s.riderName || rider?.name || "Unnamed rider",
         competitorNo: s.competitorNo || rider?.competitorNo || "",
         horse: s.horse || rider?.horse || "—",
-        nf: s.nf || rider?.nf || "",
+        nf: s.nf || rider?.club || "",
         eventName: s.event || "",
         percentage: s.percentage,
         eliminated: !!s.eliminated,
@@ -171,7 +172,7 @@ export default function HubPage() {
         riderName: rider?.name || "—",
         competitorNo: rider?.competitorNo || "",
         horse: rider?.horse || "—",
-        nf: rider?.nf || "",
+        nf: rider?.club || "",
         eventName: event?.name || "",
         percentage: s.percentage,
         eliminated: false,
@@ -197,8 +198,15 @@ export default function HubPage() {
     selectedEvent === "all"
       ? true
       : (membership[slug]?.includes(selectedEvent) ?? false);
+  const sheetQuery = sheetSearch.trim().toLowerCase();
   const sheetCards = allCards.filter(
-    (t) => disciplineOf(t) === sheetDiscipline && inEvent(t.slug)
+    (t) =>
+      disciplineOf(t) === sheetDiscipline &&
+      inEvent(t.slug) &&
+      (sheetQuery === "" ||
+        t.category.toLowerCase().includes(sheetQuery) ||
+        (t.appendix?.toLowerCase().includes(sheetQuery) ?? false) ||
+        (t.description?.toLowerCase().includes(sheetQuery) ?? false))
   );
 
   if (!user) return null;
@@ -211,6 +219,7 @@ export default function HubPage() {
     (r) =>
       r.name.toLowerCase().includes(riderSearch.toLowerCase()) ||
       r.horse.toLowerCase().includes(riderSearch.toLowerCase()) ||
+      r.club.toLowerCase().includes(riderSearch.toLowerCase()) ||
       r.competitorNo.includes(riderSearch)
   );
 
@@ -239,10 +248,10 @@ export default function HubPage() {
       const newRider: Rider = {
         id: `r${Date.now()}`,
         name: riderForm.name.trim(),
-        nf: riderForm.nf.trim(),
+        club: riderForm.club.trim(),
         competitorNo: riderForm.competitorNo.trim(),
         horse: riderForm.horse.trim(),
-        horseNo: riderForm.horseNo.trim(),
+        category: riderForm.category.trim(),
       };
       setAllRiders((prev) => [...prev, newRider]);
       setRiderForm(EMPTY_RIDER_FORM);
@@ -376,7 +385,7 @@ export default function HubPage() {
                   <tr>
                     <th className="text-left px-5 py-2.5">No.</th>
                     <th className="text-left px-5 py-2.5">Rider</th>
-                    <th className="text-left px-5 py-2.5">NF</th>
+                    <th className="text-left px-5 py-2.5">Club</th>
                     <th className="text-left px-5 py-2.5">Horse</th>
                     <th className="text-center px-5 py-2.5">Sessions</th>
                   </tr>
@@ -386,7 +395,7 @@ export default function HubPage() {
                     <tr key={r.id} className="hover:bg-muted/30">
                       <td className="px-5 py-2.5 font-mono text-xs text-muted-foreground">{r.competitorNo}</td>
                       <td className="px-5 py-2.5 font-medium">{r.name}</td>
-                      <td className="px-5 py-2.5 text-muted-foreground">{r.nf}</td>
+                      <td className="px-5 py-2.5 text-muted-foreground">{r.club}</td>
                       <td className="px-5 py-2.5">{r.horse}</td>
                       <td className="px-5 py-2.5 text-center font-display tabular-nums text-sm">{allSessions.filter((s) => s.riderId === r.id).length}</td>
                     </tr>
@@ -440,20 +449,40 @@ export default function HubPage() {
             })}
           </div>
 
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="relative flex-1 min-w-[200px] max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input type="text" placeholder="Search sheets by name, appendix…" value={sheetSearch}
+                onChange={(e) => setSheetSearch(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 text-sm bg-card border border-border rounded-lg outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+              />
+            </div>
+            <span className="text-xs text-muted-foreground">{sheetCards.length} sheet{sheetCards.length !== 1 ? "s" : ""}</span>
+          </div>
+
           <p className="text-sm text-muted-foreground">Open any scoring sheet to start scoring. Scores auto-save as you go.</p>
 
           {sheetCards.length === 0 ? (
             <div className="bg-card border border-border rounded-xl shadow-soft py-16 text-center">
               <Layers className="h-7 w-7 mx-auto mb-3 text-muted-foreground/40" />
-              <p className="text-sm text-muted-foreground">
-                No {sheetDiscipline === "showjumping" ? "show jumping" : "dressage"} sheets
-                {selectedEvent !== "all" && " in this event"}.
-              </p>
-              <p className="text-xs text-muted-foreground/70 mt-1">
-                {selectedEvent !== "all"
-                  ? "Assign sheets to this event under Admin → Events."
-                  : "Sheets for this discipline will appear here once they’re added."}
-              </p>
+              {sheetQuery !== "" ? (
+                <>
+                  <p className="text-sm text-muted-foreground">No sheets match “{sheetSearch.trim()}”.</p>
+                  <p className="text-xs text-muted-foreground/70 mt-1">Try a different name or appendix.</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm text-muted-foreground">
+                    No {sheetDiscipline === "showjumping" ? "show jumping" : "dressage"} sheets
+                    {selectedEvent !== "all" && " in this event"}.
+                  </p>
+                  <p className="text-xs text-muted-foreground/70 mt-1">
+                    {selectedEvent !== "all"
+                      ? "Assign sheets to this event under Admin → Events."
+                      : "Sheets for this discipline will appear here once they’re added."}
+                  </p>
+                </>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -525,9 +554,9 @@ export default function HubPage() {
                 <tr>
                   <th className="text-left px-5 py-3">No.</th>
                   <th className="text-left px-5 py-3">Rider</th>
-                  <th className="text-left px-5 py-3">NF</th>
+                  <th className="text-left px-5 py-3">Club</th>
                   <th className="text-left px-5 py-3">Horse</th>
-                  <th className="text-left px-5 py-3">H.No</th>
+                  <th className="text-left px-5 py-3">Category</th>
                   <th className="text-center px-5 py-3">Sessions</th>
                 </tr>
               </thead>
@@ -538,9 +567,9 @@ export default function HubPage() {
                     <tr key={r.id} className="hover:bg-muted/30 transition-colors">
                       <td className="px-5 py-3 font-mono text-xs text-muted-foreground">{r.competitorNo}</td>
                       <td className="px-5 py-3 font-medium">{r.name}</td>
-                      <td className="px-5 py-3 text-muted-foreground">{r.nf}</td>
+                      <td className="px-5 py-3 text-muted-foreground">{r.club}</td>
                       <td className="px-5 py-3">{r.horse}</td>
-                      <td className="px-5 py-3 font-mono text-xs text-muted-foreground">{r.horseNo}</td>
+                      <td className="px-5 py-3 text-xs text-muted-foreground">{r.category}</td>
                       <td className="px-5 py-3 text-center font-display tabular-nums">{sessions.length}</td>
                     </tr>
                   );
@@ -649,8 +678,8 @@ export default function HubPage() {
                     className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" />
                 </div>
                 <div>
-                  <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">NF / Country</label>
-                  <Input type="text" value={riderForm.nf} onChange={(e) => setRiderForm({ ...riderForm, nf: e.target.value })} placeholder="e.g. IND"
+                  <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">Club</label>
+                  <Input type="text" value={riderForm.club} onChange={(e) => setRiderForm({ ...riderForm, club: e.target.value })} placeholder="e.g. EIRS"
                     className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" />
                 </div>
                 <div>
@@ -659,8 +688,8 @@ export default function HubPage() {
                     className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" />
                 </div>
                 <div>
-                  <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">Horse No.</label>
-                  <Input type="text" value={riderForm.horseNo} onChange={(e) => setRiderForm({ ...riderForm, horseNo: e.target.value })} placeholder="e.g. H09"
+                  <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">Category</label>
+                  <Input type="text" value={riderForm.category} onChange={(e) => setRiderForm({ ...riderForm, category: e.target.value })} placeholder="e.g. Open to All"
                     className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" />
                 </div>
               </div>

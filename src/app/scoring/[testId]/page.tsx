@@ -321,6 +321,8 @@ function ScoringSheet({
               competitorNo: r.competitor_no ?? "",
               horse: r.horse ?? "",
               horseNo: r.horse_no ?? "",
+              club: "",
+              category: "",
             }))
           )
         )
@@ -473,7 +475,7 @@ function ScoringSheet({
       riderName: rider ? rider.name : (meta.name || ""),
       competitorNo: rider ? rider.competitorNo : (meta.competitorNo || ""),
       horse: rider ? rider.horse : (meta.horse || ""),
-      nf: rider ? rider.nf : (meta.nf || ""),
+      nf: rider ? (rider.nf || rider.club || "") : (meta.nf || ""),
       event: meta.event || "",
       eventDate: meta.date || "",
       scores,
