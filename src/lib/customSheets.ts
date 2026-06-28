@@ -63,7 +63,8 @@ export async function listCustomSheetCards(): Promise<TestCard[]> {
     subtitle: string | null;
     discipline: Discipline;
     max_score: number;
-  }>(`select slug, label, appendix, subtitle, discipline, max_score from custom_sheets order by created_at desc`);
+    kind: string | null;
+  }>(`select slug, label, appendix, subtitle, discipline, max_score, config->>'kind' as kind from custom_sheets order by created_at desc`);
 
   return rows.map((r) => ({
     slug: r.slug,
@@ -72,7 +73,18 @@ export async function listCustomSheetCards(): Promise<TestCard[]> {
     description: r.subtitle ?? "Custom scoring sheet",
     maxScore: r.max_score,
     discipline: r.discipline,
+    hidden: r.kind === "hidden",
   }));
+}
+
+/** Insert or update a tombstone so a built-in sheet is hidden from the dashboard. */
+export async function upsertTombstone(slug: string) {
+  await query(
+    `insert into custom_sheets (slug, label, appendix, subtitle, abbr, discipline, config, max_score, created_by)
+     values ($1, $1, '', '', '', 'dressage', '{"kind":"hidden"}', 0, 'system')
+     on conflict (slug) do update set config = '{"kind":"hidden"}'`,
+    [slug]
+  );
 }
 
 /** Full config for the scoring page (null when the slug isn't a custom sheet). */

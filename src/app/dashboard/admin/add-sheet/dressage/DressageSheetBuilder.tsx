@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Plus, Trash2, GripVertical, Check, ExternalLink, RotateCcw } from "lucide-react";
 import { createDressageSheetAction, updateSheetAction, deleteSheetAction } from "../../add-sheet/actions";
+import { useUnsavedGuard } from "@/hooks/use-unsaved-guard";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -116,6 +117,12 @@ export function DressageSheetBuilder({
     });
   };
 
+  const snapshot = JSON.stringify({ label, appendix, subtitle, rows });
+  const initialSnapshot = useRef(snapshot);
+  const dirty = !createdSlug && snapshot !== initialSnapshot.current;
+  const guard = useUnsavedGuard({ dirty, onSave: submit });
+  const cancelHref = isEdit ? "/dashboard" : "/dashboard/admin/add-sheet";
+
   if (createdSlug) {
     return (
       <div className="p-6 max-w-xl mx-auto">
@@ -154,6 +161,7 @@ export function DressageSheetBuilder({
     <div className="p-6 max-w-6xl mx-auto">
       <Link
         href="/dashboard/admin/add-sheet"
+        onClick={guard.intercept("/dashboard/admin/add-sheet")}
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-5"
       >
         <ArrowLeft className="h-4 w-4" /> Back
@@ -244,11 +252,12 @@ export function DressageSheetBuilder({
                   placeholder={String(i + 1)}
                   className="bg-background border border-border rounded-md px-2 py-1.5 text-sm outline-none focus:border-primary"
                 />
-                <Input
+                <Textarea
                   value={r.letters}
                   onChange={(e) => setRow(i, { letters: e.target.value })}
-                  placeholder="A X"
-                  className="bg-background border border-border rounded-md px-2 py-1.5 text-sm outline-none focus:border-primary"
+                  placeholder={"A\nX"}
+                  rows={2}
+                  className="bg-background border border-border rounded-md px-2 py-1.5 text-sm outline-none focus:border-primary resize-y"
                 />
                 <Textarea
                   value={r.test}
@@ -339,7 +348,8 @@ export function DressageSheetBuilder({
           {pending ? (isEdit ? "Saving…" : "Creating…") : isEdit ? "Save changes" : "Create sheet"}
         </button>
         <Link
-          href={isEdit ? "/dashboard" : "/dashboard/admin/add-sheet"}
+          href={cancelHref}
+          onClick={guard.intercept(cancelHref)}
           className="text-sm px-4 py-2.5 rounded-lg border border-border hover:bg-muted transition-colors"
         >
           Cancel
@@ -370,6 +380,8 @@ export function DressageSheetBuilder({
             : "This permanently deletes the sheet."}
         </p>
       )}
+
+      {guard.dialog}
     </div>
   );
 }

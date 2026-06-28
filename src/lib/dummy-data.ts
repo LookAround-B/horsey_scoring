@@ -281,6 +281,8 @@ export type TestCard = {
   maxScore: number;
   /** Discipline this sheet belongs to. Defaults to "dressage" when omitted. */
   discipline?: "dressage" | "showjumping";
+  /** Tombstoned built-in sheet — hide from the dashboard but keep slug to suppress the built-in entry. */
+  hidden?: boolean;
 };
 
 export const TEST_CARDS: TestCard[] = [

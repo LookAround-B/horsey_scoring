@@ -1,33 +1,63 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, RotateCcw, Save, Printer } from "lucide-react";
+import { ArrowLeft, RotateCcw, Save, Printer, ChevronDown, Check } from "lucide-react";
 import type { QualityConfig } from "@/lib/sheetTypes";
 import { useScoreStore } from "@/lib/useScoreStore";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { toast } from "sonner";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { DUMMY_RIDERS, type Rider } from "@/lib/dummy-data";
 
-type Header = { efiRegNo: string; name: string; horse: string; organisers: string; signature: string };
+type EventRiderApi = {
+  id: string;
+  name: string;
+  nf: string | null;
+  competitor_no: string | null;
+  horse: string | null;
+  horse_no: string | null;
+};
 
-const emptyHeader = (): Header => ({ efiRegNo: "", name: "", horse: "", organisers: "", signature: "" });
+type Header = {
+  competitorNo: string;
+  name: string;
+  zone: string;
+  horse: string;
+  judge: string;
+  organisers: string;
+  signature: string;
+};
 
-const PENALTIES = [
-  { label: "No course error", value: 0 },
-  { label: "1st error · −0.5%", value: 0.5 },
-  { label: "2nd error · −1.0%", value: 1 },
-  { label: "3rd error · Elimination", value: -1 },
+const emptyHeader = (): Header => ({
+  competitorNo: "",
+  name: "",
+  zone: "",
+  horse: "",
+  judge: "",
+  organisers: "",
+  signature: "",
+});
+
+const JUDGE_OPTIONS = [
+  "Dr. Sarah Chen", "Mark Johnson", "Elena Petrova",
+  "Hiroshi Tanaka", "Maria Gonzalez", "David Thompson", "Anneke Visser",
+];
+
+/* Penalty levels — matches physical doc rows */
+const PENALTY_ROWS = [
+  { label: "1st error of course : 0.5 percentage point", value: 0.5 },
+  { label: "2nd error of course : 1.0 percentage point", value: 1 },
+  { label: "3rd error of course : Elimination", value: -1 },
 ];
 
 const num = (s: string) => {
   const v = parseFloat(s);
   return isNaN(v) ? 0 : v;
 };
+
+const pct = (v: number) => (isFinite(v) ? `${v.toFixed(2)}%` : "—");
 
 export function QualityScoringSheet({
   config,
@@ -50,10 +80,39 @@ export function QualityScoringSheet({
   const [marks, setMarks] = useState<Record<number, string>>({});
   const [comments, setComments] = useState<Record<number, string>>({});
   const [technical, setTechnical] = useState("");
-  const [penalty, setPenalty] = useState(0);
+  /* null = no error selected, -1 = eliminated, 0.5/1 = deductions */
+  const [penaltyValue, setPenaltyValue] = useState<number | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [savedAt, setSavedAt] = useState("");
+  const [allRidersList, setAllRidersList] = useState<Rider[]>([]);
 
+  /* Load riders */
+  useEffect(() => {
+    if (eventId) {
+      const qs = new URLSearchParams({ event: eventId, slug });
+      fetch(`/api/sheet-riders?${qs.toString()}`)
+        .then((r) => (r.ok ? r.json() : []))
+        .then((rows: EventRiderApi[]) =>
+          setAllRidersList(
+            rows.map((r) => ({
+              id: r.id,
+              name: r.name,
+              nf: r.nf ?? "",
+              competitorNo: r.competitor_no ?? "",
+              horse: r.horse ?? "",
+              horseNo: r.horse_no ?? "",
+              club: "",
+              category: "",
+            }))
+          )
+        )
+        .catch(() => setAllRidersList([]));
+    } else {
+      setAllRidersList(DUMMY_RIDERS);
+    }
+  }, [eventId, slug]);
+
+  /* Restore saved state */
   useEffect(() => {
     let live = true;
     store.load().then((d) => {
@@ -62,17 +121,17 @@ export function QualityScoringSheet({
         if (d.marks) setMarks(d.marks as Record<number, string>);
         if (d.comments) setComments(d.comments as Record<number, string>);
         if (typeof d.technical === "string") setTechnical(d.technical);
-        if (typeof d.penalty === "number") setPenalty(d.penalty);
+        if (typeof d.penaltyValue === "number") setPenaltyValue(d.penaltyValue);
+        if (d.penaltyValue === null) setPenaltyValue(null);
         if (typeof d.savedAt === "string") setSavedAt(d.savedAt);
       }
       if (live) setLoaded(true);
     });
-    return () => {
-      live = false;
-    };
+    return () => { live = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug, eventId, riderId]);
 
+  /* Autosave */
   useEffect(() => {
     if (!loaded) return;
     const t = setTimeout(() => {
@@ -80,28 +139,37 @@ export function QualityScoringSheet({
       const total = criteria.reduce((s, _, i) => s + num(marks[i] || ""), 0);
       const qPct = (total / (n * 10)) * 100;
       const tPct = num(technical);
-      const result = penalty < 0 ? -1 : Math.max(0, (tPct + qPct) / 2 - penalty);
+      const combined = (tPct + qPct) / 2;
+      const result =
+        penaltyValue === -1 ? -1
+        : penaltyValue === null ? combined
+        : Math.max(0, combined - penaltyValue);
       store.save(
-        { header, marks, comments, technical, penalty, savedAt: stamp },
+        { header, marks, comments, technical, penaltyValue, savedAt: stamp },
         { result, signature: header.signature }
       );
       setSavedAt(stamp);
     }, 700);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [header, marks, comments, technical, penalty, loaded]);
+  }, [header, marks, comments, technical, penaltyValue, loaded]);
 
+  /* Derived scores */
   const totalMarks = useMemo(
     () => criteria.reduce((s, _, i) => s + num(marks[i] || ""), 0),
     [criteria, marks]
   );
   const maxMarks = n * 10;
-  const qualityScore = totalMarks / n; // 0–10 average
+  const qualityScore = totalMarks / n;
   const qualityPct = (totalMarks / maxMarks) * 100;
   const technicalPct = num(technical);
   const totalPct = (technicalPct + qualityPct) / 2;
-  const eliminated = penalty < 0;
-  const finalPct = eliminated ? 0 : Math.max(0, totalPct - penalty);
+  const eliminated = penaltyValue === -1;
+  const finalPct = eliminated
+    ? null
+    : penaltyValue === null
+    ? totalPct
+    : Math.max(0, totalPct - penaltyValue);
 
   const savedLabel = useMemo(() => {
     if (!savedAt) return "";
@@ -112,7 +180,7 @@ export function QualityScoringSheet({
   const reset = async () => {
     const ok = await confirm({
       title: "Clear this sheet?",
-      description: "All marks, comments and penalties on this sheet will be reset.",
+      description: "All marks, comments and penalties will be reset.",
       confirmText: "Clear",
       destructive: true,
     });
@@ -121,25 +189,29 @@ export function QualityScoringSheet({
     setMarks({});
     setComments({});
     setTechnical("");
-    setPenalty(0);
+    setPenaltyValue(null);
     toast.success("Sheet cleared.");
   };
 
   const setH = (patch: Partial<Header>) => setHeader((h) => ({ ...h, ...patch }));
-  const pct = (v: number) => (isFinite(v) ? `${v.toFixed(2)}%` : "—");
 
-  const summaryRow = (labelText: string, value: string, strong = false) => (
-    <div className={`flex items-center justify-between px-4 py-2.5 ${strong ? "bg-highlight/10" : ""}`}>
-      <span className={`text-sm ${strong ? "font-semibold" : "text-muted-foreground"}`}>{labelText}</span>
-      <span className={`tabular-nums ${strong ? "font-display text-lg text-highlight" : "font-medium"}`}>
-        {value}
-      </span>
-    </div>
-  );
+  const handleRiderSelect = (name: string) => {
+    const rider = allRidersList.find((r) => r.name === name);
+    if (rider) {
+      setH({ name: rider.name, horse: rider.horse, competitorNo: rider.competitorNo });
+    } else {
+      setH({ name });
+    }
+  };
+
+  const riderNames = allRidersList.map((r) => r.name);
+  const horseNames = allRidersList.map((r) => r.horse).filter(Boolean);
 
   return (
     <div className="min-h-screen bg-background text-foreground print:bg-white">
       {confirmDialog}
+
+      {/* Top nav */}
       <header className="sticky top-0 z-20 flex items-center gap-3 px-4 py-3 border-b border-border bg-card/90 backdrop-blur print:hidden">
         <Link href="/dashboard" className="p-1.5 rounded-md hover:bg-muted transition-colors">
           <ArrowLeft className="h-4 w-4" />
@@ -167,8 +239,8 @@ export function QualityScoringSheet({
             onClick={() => {
               const stamp = new Date().toISOString();
               store.save(
-                { header, marks, comments, technical, penalty, savedAt: stamp },
-                { result: eliminated ? -1 : finalPct, signature: header.signature, status: "submitted" }
+                { header, marks, comments, technical, penaltyValue, savedAt: stamp },
+                { result: eliminated ? -1 : (finalPct ?? 0), signature: header.signature, status: "submitted" }
               );
               setSavedAt(stamp);
             }}
@@ -180,24 +252,61 @@ export function QualityScoringSheet({
       </header>
 
       <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
+        {/* Title */}
         <div>
           <h1 className="font-display text-3xl md:text-4xl tracking-tight">{config.label}</h1>
-          <p className="text-sm text-muted-foreground mt-1">{config.subtitle}</p>
+          <p className="text-sm text-muted-foreground mt-1 font-semibold uppercase tracking-wider">{config.subtitle}</p>
         </div>
 
-        {/* Header fields */}
-        <div className="bg-card border border-border rounded-xl p-5 grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-4">
-          <div className="sm:col-span-1">
-            <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">EFI Registration No</label>
-            <Input value={header.efiRegNo} onChange={(e) => setH({ efiRegNo: e.target.value })} className="w-full bg-transparent border-b border-border py-1 text-sm outline-none focus:border-primary" />
+        {/* Header — matches physical doc layout */}
+        <div className="bg-card border border-border rounded-xl p-5 space-y-4">
+          {/* Row 1: Competitor No | Name | Zone | Horse */}
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-x-6 gap-y-4">
+            <div>
+              <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Competitor No</label>
+              <Input
+                value={header.competitorNo}
+                onChange={(e) => setH({ competitorNo: e.target.value })}
+                className="w-full bg-transparent border-b border-border py-1 text-sm outline-none focus:border-primary rounded-none"
+              />
+            </div>
+            <div>
+              <QSelectField
+                label="Name"
+                value={header.name}
+                onChange={handleRiderSelect}
+                options={riderNames}
+                placeholder="Select rider"
+              />
+            </div>
+            <div>
+              <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Zone</label>
+              <Input
+                value={header.zone}
+                onChange={(e) => setH({ zone: e.target.value })}
+                className="w-full bg-transparent border-b border-border py-1 text-sm outline-none focus:border-primary rounded-none"
+              />
+            </div>
+            <div>
+              <QSelectField
+                label="Horse"
+                value={header.horse}
+                onChange={(v) => setH({ horse: v })}
+                options={horseNames}
+                placeholder="Select horse"
+              />
+            </div>
           </div>
+
+          {/* Row 2: Judge (full width) */}
           <div>
-            <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Name</label>
-            <Input value={header.name} onChange={(e) => setH({ name: e.target.value })} className="w-full bg-transparent border-b border-border py-1 text-sm outline-none focus:border-primary" />
-          </div>
-          <div>
-            <label className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Horse</label>
-            <Input value={header.horse} onChange={(e) => setH({ horse: e.target.value })} className="w-full bg-transparent border-b border-border py-1 text-sm outline-none focus:border-primary" />
+            <QSelectField
+              label="Judge"
+              value={header.judge}
+              onChange={(v) => setH({ judge: v })}
+              options={JUDGE_OPTIONS}
+              placeholder="Select judge"
+            />
           </div>
         </div>
 
@@ -215,7 +324,7 @@ export function QualityScoringSheet({
               {criteria.map((c, i) => (
                 <tr key={i} className="align-top">
                   <td className="border border-border px-3 py-2">
-                    <div className="font-medium">{c.title}</div>
+                    <div className="font-semibold">{c.title}</div>
                     {c.description && (
                       <div className="text-xs text-muted-foreground mt-0.5 whitespace-pre-line leading-snug">
                         {c.description}
@@ -226,7 +335,7 @@ export function QualityScoringSheet({
                     <Textarea
                       value={comments[i] ?? ""}
                       onChange={(e) => setComments((m) => ({ ...m, [i]: e.target.value }))}
-                      rows={2}
+                      rows={3}
                       className="w-full bg-transparent text-sm outline-none focus:bg-primary/5 rounded px-2 py-1 resize-y"
                     />
                   </td>
@@ -240,6 +349,8 @@ export function QualityScoringSheet({
                   </td>
                 </tr>
               ))}
+
+              {/* Total marks */}
               <tr>
                 <td className="border border-border px-3 py-2 font-medium" colSpan={2}>
                   Total marks (max {maxMarks})
@@ -248,6 +359,8 @@ export function QualityScoringSheet({
                   {totalMarks || "—"}
                 </td>
               </tr>
+
+              {/* Divided by n */}
               <tr>
                 <td className="border border-border px-3 py-2 font-medium" colSpan={2}>
                   Divided by {n} = Total Quality Score
@@ -256,6 +369,8 @@ export function QualityScoringSheet({
                   {totalMarks ? qualityScore.toFixed(2) : "—"}
                 </td>
               </tr>
+
+              {/* Quality % */}
               <tr>
                 <td className="border border-border px-3 py-2 font-medium" colSpan={2}>
                   Quality Score in %
@@ -268,71 +383,196 @@ export function QualityScoringSheet({
           </table>
         </div>
 
-        {/* Combination + penalties + final */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <div className="bg-card border border-border rounded-xl divide-y divide-border overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-2.5">
-              <span className="text-sm text-muted-foreground">Technical score in %</span>
-              <Input
-                inputMode="decimal"
-                value={technical}
-                onChange={(e) => setTechnical(e.target.value)}
-                placeholder="0.00"
-                className="w-24 bg-background border border-border rounded-md px-2 py-1 text-sm text-right outline-none focus:border-primary"
-              />
-            </div>
-            {summaryRow("Quality score in %", totalMarks ? pct(qualityPct) : "—")}
-            {summaryRow("TOTAL score in % (Tech + Quality ÷ 2)", pct(totalPct))}
-          </div>
+        {/* Summary + Penalty table — matches physical doc */}
+        <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <table className="w-full border-collapse text-sm">
+            <tbody>
+              {/* Technical score */}
+              <tr>
+                <td className="border border-border px-3 py-2 text-muted-foreground">Technical score in %:</td>
+                <td className="border border-border px-1 py-1 w-40">
+                  <Input
+                    inputMode="decimal"
+                    value={technical}
+                    onChange={(e) => setTechnical(e.target.value)}
+                    placeholder="0.00"
+                    className="w-full bg-transparent text-center text-sm outline-none focus:bg-primary/5 rounded px-1 py-1 tabular-nums"
+                  />
+                </td>
+              </tr>
 
-          <div className="bg-card border border-border rounded-xl divide-y divide-border overflow-hidden">
-            <div className="px-4 py-2.5">
-              <div className="text-sm text-muted-foreground mb-1.5">To be deducted / penalty points</div>
-              <Select
-                value={String(penalty)}
-                onValueChange={(v) => setPenalty(parseFloat(v))}
-              >
-                <SelectTrigger className="w-full bg-background border-border text-sm h-9 rounded-md">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PENALTIES.map((p) => (
-                    <SelectItem key={p.label} value={String(p.value)}>
-                      {p.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {summaryRow(
-              "FINAL SCORE in %",
-              eliminated ? "Eliminated" : pct(finalPct),
-              true
-            )}
-          </div>
+              {/* Quality score */}
+              <tr>
+                <td className="border border-border px-3 py-2 text-muted-foreground">Quality score in %:</td>
+                <td className="border border-border px-3 py-2 text-center tabular-nums font-medium">
+                  {totalMarks ? pct(qualityPct) : "—"}
+                </td>
+              </tr>
+
+              {/* Total score */}
+              <tr>
+                <td className="border border-border px-3 py-2 text-muted-foreground">
+                  TOTAL score in %:<br />
+                  <span className="text-xs">(Technical plus Quality divided by two)</span>
+                </td>
+                <td className="border border-border px-3 py-2 text-center tabular-nums font-medium">
+                  {pct(totalPct)}
+                </td>
+              </tr>
+
+              {/* Penalty header */}
+              <tr className="bg-muted/60">
+                <td className="border border-border px-3 py-2 font-semibold" colSpan={2}>
+                  To be deducted / penalty points
+                </td>
+              </tr>
+
+              {/* Penalty rows — radio-style, matches physical doc lines */}
+              {PENALTY_ROWS.map((p) => {
+                const isSelected = penaltyValue === p.value;
+                return (
+                  <tr
+                    key={p.value}
+                    onClick={() => setPenaltyValue(isSelected ? null : p.value)}
+                    className={`cursor-pointer transition-colors ${
+                      isSelected
+                        ? p.value === -1
+                          ? "bg-destructive/10"
+                          : "bg-primary/10"
+                        : "hover:bg-muted/40"
+                    }`}
+                  >
+                    <td className="border border-border px-3 py-2 text-muted-foreground">{p.label}</td>
+                    <td className="border border-border px-3 py-2 text-center">
+                      {isSelected && (
+                        <span className={`inline-block h-2.5 w-2.5 rounded-full ${p.value === -1 ? "bg-destructive" : "bg-primary"}`} />
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+
+              {/* Final score */}
+              <tr className={`font-semibold ${eliminated ? "bg-destructive/10" : "bg-highlight/10"}`}>
+                <td className="border border-border px-3 py-3 uppercase tracking-wide">FINAL SCORE in % :</td>
+                <td className={`border border-border px-3 py-3 text-center tabular-nums text-base ${eliminated ? "text-destructive" : "text-highlight"}`}>
+                  {eliminated
+                    ? "Eliminated"
+                    : finalPct !== null
+                    ? pct(finalPct)
+                    : "—"}
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
-        {/* Footer */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* Footer: Organisers + Signature — matches physical doc */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-12">
           <div className="bg-card border border-border rounded-xl p-5">
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">Organisers (exact address)</div>
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">
+              Organisers :<br />(exact address)
+            </div>
             <Textarea
               value={header.organisers}
               onChange={(e) => setH({ organisers: e.target.value })}
-              rows={2}
+              rows={3}
               className="w-full bg-transparent text-sm outline-none resize-y"
             />
           </div>
-          <div className="bg-card border border-border rounded-xl p-5">
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">Signature of Judge</div>
-            <Input
-              value={header.signature}
-              onChange={(e) => setH({ signature: e.target.value })}
-              className="w-full bg-transparent border-b border-dashed border-border py-1 text-sm outline-none focus:border-primary"
-            />
+          <div className="bg-card border border-border rounded-xl p-5 flex flex-col justify-between">
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">Signature of Judge</div>
+              <Input
+                value={header.signature}
+                onChange={(e) => setH({ signature: e.target.value })}
+                className="w-full bg-transparent border-b border-dashed border-border py-1 text-sm outline-none focus:border-primary font-display italic"
+              />
+            </div>
+            <div className="text-xs text-muted-foreground mt-4 italic">{header.judge || "—"}</div>
           </div>
         </div>
       </div>
     </div>
   );
 }
+
+/* ---------- QSelectField ---------- */
+
+const QSelectField = ({
+  label,
+  value,
+  onChange,
+  options,
+  placeholder = "Select…",
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+  placeholder?: string;
+}) => {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointer = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  const select = (v: string) => { onChange(v); setOpen(false); };
+
+  return (
+    <div ref={ref}>
+      <span className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">{label}</span>
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          className={`w-full flex items-center justify-between gap-2 bg-transparent border-b py-1 pr-0.5 text-sm text-left outline-none transition-colors ${
+            open ? "border-primary" : "border-border hover:border-foreground/40"
+          } ${value ? "text-foreground" : "text-muted-foreground"}`}
+        >
+          <span className="truncate">{value || placeholder}</span>
+          <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+        </button>
+        {open && (
+          <div className="absolute left-0 right-0 z-40 mt-1.5 max-h-56 overflow-auto rounded-xl border border-border bg-card py-1 shadow-lg ring-1 ring-black/5">
+            <button
+              type="button"
+              onClick={() => select("")}
+              className="flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-sm text-muted-foreground transition-colors hover:bg-muted"
+            >
+              <span className="truncate">{placeholder}</span>
+              {!value && <Check className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+            </button>
+            {options.map((o) => (
+              <button
+                key={o}
+                type="button"
+                onClick={() => select(o)}
+                className={`flex w-full items-center justify-between gap-2 px-3 py-1.5 text-left text-sm transition-colors hover:bg-muted ${
+                  o === value ? "bg-highlight/5 font-medium text-highlight" : "text-foreground"
+                }`}
+              >
+                <span className="truncate">{o}</span>
+                {o === value && <Check className="h-3.5 w-3.5 shrink-0" />}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};

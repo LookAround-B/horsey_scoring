@@ -3,9 +3,13 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { DUMMY_USERS, DUMMY_EVENTS, DUMMY_SESSIONS, DUMMY_RIDERS, ROLE_LABELS, TEST_NAMES } from "@/lib/dummy-data";
-import { Users, Calendar, FileText, Shield } from "lucide-react";
+import { Users, Calendar, FileText, Shield, Pencil, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import type { UserRole } from "@/lib/roles";
 
 function Stat({ label, value, sub, icon: Icon }: { label: string; value: string | number; sub?: string; icon: React.ElementType }) {
   return (
@@ -33,11 +37,37 @@ export default function AdminDashboard() {
   const { user } = useAuth();
   const [showNewEvent, setShowNewEvent] = useState(false);
   const [newEvent, setNewEvent] = useState({ name: "", date: "", location: "" });
+  const [editingUser, setEditingUser] = useState<typeof DUMMY_USERS[number] | null>(null);
+  const [userFormData, setUserFormData] = useState({ name: "", email: "", role: "" as UserRole | "", phone: "" });
+  const [saving, setSaving] = useState(false);
+  const [dummyUsers, setDummyUsers] = useState(DUMMY_USERS);
 
   if (!user || user.role !== "super_admin") return null;
 
   const verified  = DUMMY_SESSIONS.filter((s) => s.status === "verified").length;
   const submitted = DUMMY_SESSIONS.filter((s) => s.status === "submitted").length;
+
+  const handleEditUser = (u: typeof DUMMY_USERS[number]) => {
+    setEditingUser(u);
+    setUserFormData({ name: u.name, email: u.email, role: u.role, phone: "" });
+  };
+
+  const handleSaveUser = async () => {
+    if (!editingUser || !userFormData.name || !userFormData.email) return;
+    setSaving(true);
+    try {
+      setDummyUsers((prev) =>
+        prev.map((u) =>
+          u.id === editingUser.id
+            ? { ...u, name: userFormData.name, email: userFormData.email, role: userFormData.role as UserRole }
+            : u
+        )
+      );
+      setEditingUser(null);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="p-6 md:p-8 max-w-6xl mx-auto space-y-8">
@@ -50,7 +80,7 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Stat label="Total Users"  value={DUMMY_USERS.length}    sub="across all roles"  icon={Users} />
+        <Stat label="Total Users"  value={dummyUsers.length}    sub="across all roles"  icon={Users} />
         <Stat label="Total Events" value={DUMMY_EVENTS.length}   sub={`${DUMMY_EVENTS.filter((e) => e.status === "active").length} active`} icon={Calendar} />
         <Stat label="Total Riders" value={DUMMY_RIDERS.length}   sub="registered"        icon={Shield} />
         <Stat label="Sessions"     value={DUMMY_SESSIONS.length} sub={`${verified} verified · ${submitted} pending`} icon={FileText} />
@@ -85,10 +115,10 @@ export default function AdminDashboard() {
         <div className="bg-card border border-border rounded-xl shadow-soft overflow-hidden">
           <div className="px-5 py-4 border-b border-border flex items-center justify-between">
             <h2 className="font-display text-lg">Users</h2>
-            <span className="text-xs text-muted-foreground">{DUMMY_USERS.length} registered</span>
+            <span className="text-xs text-muted-foreground">{dummyUsers.length} registered</span>
           </div>
           <div className="divide-y divide-border">
-            {DUMMY_USERS.map((u) => (
+            {dummyUsers.map((u) => (
               <div key={u.id} className="px-5 py-3 flex items-center gap-3">
                 <div className="h-7 w-7 shrink-0 rounded-full bg-muted grid place-items-center font-display text-xs font-semibold">
                   {u.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
@@ -100,6 +130,9 @@ export default function AdminDashboard() {
                 <span className="shrink-0 text-[10px] uppercase tracking-wider text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
                   {ROLE_LABELS[u.role].split(" ").pop()}
                 </span>
+                <button onClick={() => handleEditUser(u)} className="shrink-0 p-1.5 rounded-md hover:bg-muted transition-colors">
+                  <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                </button>
               </div>
             ))}
           </div>
@@ -127,7 +160,7 @@ export default function AdminDashboard() {
               {DUMMY_SESSIONS.map((s) => {
                 const rider = DUMMY_RIDERS.find((r) => r.id === s.riderId);
                 const event = DUMMY_EVENTS.find((e) => e.id === s.eventId);
-                const judge = DUMMY_USERS.find((u) => u.id === s.judgeId);
+                const judge = dummyUsers.find((u) => u.id === s.judgeId);
                 return (
                   <tr key={s.id} className="hover:bg-muted/30 transition-colors">
                     <td className="px-5 py-3">{rider?.name ?? "—"}<div className="text-xs text-muted-foreground">{rider?.horse}</div></td>
@@ -149,6 +182,59 @@ export default function AdminDashboard() {
           </table>
         </div>
       </div>
+
+      {/* Edit User Modal */}
+      <Dialog open={!!editingUser} onOpenChange={(o) => { if (!o) setEditingUser(null); }}>
+        <DialogContent className="max-w-md p-0 gap-0">
+          <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+            <h2 className="font-display text-lg">Edit User</h2>
+          </div>
+          <div className="px-6 py-5 space-y-4">
+            <div>
+              <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">Name</label>
+              <Input type="text" value={userFormData.name} onChange={(e) => setUserFormData({ ...userFormData, name: e.target.value })} placeholder="Full name"
+                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" />
+            </div>
+            <div>
+              <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">Email</label>
+              <Input type="email" value={userFormData.email} onChange={(e) => setUserFormData({ ...userFormData, email: e.target.value })} placeholder="user@example.com"
+                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" />
+            </div>
+            <div>
+              <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">Role</label>
+              <Select value={userFormData.role} onValueChange={(val) => setUserFormData({ ...userFormData, role: val as UserRole })}>
+                <SelectTrigger className="w-full bg-background border border-border rounded-lg text-sm">
+                  <SelectValue placeholder="Select a role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="super_admin">Super Admin</SelectItem>
+                  <SelectItem value="dressage_judge">Dressage Judge</SelectItem>
+                  <SelectItem value="showjumping_judge">Show Jumping Judge</SelectItem>
+                  <SelectItem value="dressage_writer">Dressage Writer</SelectItem>
+                  <SelectItem value="showjumping_writer">Show Jumping Writer</SelectItem>
+                  <SelectItem value="show_secretary">Show Secretary</SelectItem>
+                  <SelectItem value="club">Club</SelectItem>
+                  <SelectItem value="rider">Rider</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="block text-xs uppercase tracking-wider text-muted-foreground mb-1.5">Phone</label>
+              <Input type="tel" value={userFormData.phone} onChange={(e) => setUserFormData({ ...userFormData, phone: e.target.value })} placeholder="+1 (555) 123-4567"
+                className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all" />
+            </div>
+          </div>
+          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-border">
+            <button onClick={() => setEditingUser(null)}
+              className="text-sm px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors">Cancel</button>
+            <button onClick={handleSaveUser} disabled={saving}
+              className="text-sm px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center gap-2">
+              {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              Save Changes
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* New Event Modal (UI only) */}
       <Dialog open={showNewEvent} onOpenChange={setShowNewEvent}>

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { listEvents, listMembershipBySlug } from "@/lib/events";
+import { listAllEvents, listMembershipBySlug } from "@/lib/events";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +10,6 @@ export async function GET() {
   if (!session?.user) {
     return NextResponse.json({ events: [], membership: {} }, { status: 401 });
   }
-  const [events, membership] = await Promise.all([listEvents(), listMembershipBySlug()]);
+  const [events, membership] = await Promise.all([listAllEvents(), listMembershipBySlug()]);
   return NextResponse.json({ events, membership });
 }

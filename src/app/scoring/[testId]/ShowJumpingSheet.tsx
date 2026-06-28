@@ -10,12 +10,18 @@ import {
 import type { ShowJumpingConfig } from "@/lib/sheetTypes";
 import { useScoreStore } from "@/lib/useScoreStore";
 import { toast } from "sonner";
-import { SJ1_60_70_RIDERS, type StartListRider } from "@/lib/startListRiders";
+import { ALL_EPL_RIDERS, type StartListRider } from "@/lib/startListRiders";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command, CommandInput, CommandList, CommandEmpty, CommandItem,
+} from "@/components/ui/command";
+import { ChevronsUpDown } from "lucide-react";
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from "@/components/ui/select";
 import { useConfirm } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -286,12 +292,13 @@ export function ShowJumpingSheet({
   const [timerRound, setTimerRound] = useState<"fr" | "jo">("fr");
   const [loaded,    setLoaded]    = useState(false);
   const [savedAt,   setSavedAt]   = useState("");
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   // Start-list source for the rider picker: in event context, the riders selected
   // for this sheet; standalone, the bundled EPL start list.
-  const [startList, setStartList] = useState<StartListRider[]>(eventId ? [] : SJ1_60_70_RIDERS);
+  const [startList, setStartList] = useState<StartListRider[]>(eventId ? [] : ALL_EPL_RIDERS);
   useEffect(() => {
-    if (!eventId) { setStartList(SJ1_60_70_RIDERS); return; }
+    if (!eventId) { setStartList(ALL_EPL_RIDERS); return; }
     let live = true;
     const qs = new URLSearchParams({ event: eventId, slug });
     fetch(`/api/sheet-riders?${qs.toString()}`)
@@ -761,37 +768,57 @@ export function ShowJumpingSheet({
                     </label>
                   ))}
 
-                  {/* ── Start-list picker (EPL 2026 · 60-70cm · 67 riders) ── */}
+                  {/* ── Start-list picker (searchable · all EPL riders) ── */}
                   <div className="block col-span-1">
                     <span className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Start List</span>
-                    <Select
-                      value={cur.entryNo || undefined}
-                      onValueChange={val => {
-                        const r = startList.find(x => String(x.sl) === val);
-                        if (r) patchRider({
-                          entryNo: String(r.sl),
-                          name: r.name,
-                          horse: r.horse,
-                          category: r.category,
-                          nf: r.club,
-                        });
-                      }}
-                      disabled={cur.approved}
-                    >
-                      <SelectTrigger className="w-full border-0 border-b border-border rounded-none bg-transparent px-0 py-1 h-auto text-sm focus:ring-0 focus:border-primary">
-                        <SelectValue placeholder="Select rider…" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {startList.length === 0 && (
-                          <div className="px-2 py-1.5 text-xs text-muted-foreground">No riders selected for this sheet.</div>
-                        )}
-                        {startList.map((r, i) => (
-                          <SelectItem key={`${r.sl}-${i}`} value={String(r.sl)}>
-                            {r.sl}. {r.name} — {r.horse}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+                      <PopoverTrigger asChild disabled={cur.approved}>
+                        <button
+                          type="button"
+                          className="w-full flex items-center justify-between gap-2 border-0 border-b border-border bg-transparent px-0 py-1 text-sm text-left focus:outline-none focus:border-primary disabled:opacity-50"
+                        >
+                          <span className={cur.entryNo ? "truncate" : "truncate text-muted-foreground"}>
+                            {(() => {
+                              const r = startList.find(x => String(x.sl) === cur.entryNo);
+                              return r ? `${r.sl}. ${r.name} — ${r.horse}` : "Select rider…";
+                            })()}
+                          </span>
+                          <ChevronsUpDown className="h-3.5 w-3.5 shrink-0 opacity-50" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                        <Command
+                          filter={(value, search) =>
+                            value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0
+                          }
+                        >
+                          <CommandInput placeholder="Search rider, horse, club, no.…" />
+                          <CommandList>
+                            <CommandEmpty>No riders found.</CommandEmpty>
+                            {startList.map((r, i) => (
+                              <CommandItem
+                                key={`${r.sl}-${i}`}
+                                value={`${r.sl} ${r.name} ${r.horse} ${r.club}`}
+                                onSelect={() => {
+                                  patchRider({
+                                    entryNo: String(r.sl),
+                                    name: r.name,
+                                    horse: r.horse,
+                                    category: r.category,
+                                    nf: r.club,
+                                  });
+                                  setPickerOpen(false);
+                                }}
+                              >
+                                <Check className={cn("mr-2 h-3.5 w-3.5", cur.entryNo === String(r.sl) ? "opacity-100" : "opacity-0")} />
+                                <span className="truncate">{r.sl}. {r.name} — {r.horse}</span>
+                                <span className="ml-auto pl-2 text-xs text-muted-foreground shrink-0">{r.club}</span>
+                              </CommandItem>
+                            ))}
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </div>
 

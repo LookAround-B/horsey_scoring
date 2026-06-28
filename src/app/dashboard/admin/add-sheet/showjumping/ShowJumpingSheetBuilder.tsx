@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Check, ExternalLink, Trash2, RotateCcw, Eye } from "lucide-react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { useUnsavedGuard } from "@/hooks/use-unsaved-guard";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -154,6 +155,12 @@ export function ShowJumpingSheetBuilder({
     });
   };
 
+  const snapshot = JSON.stringify({ label, subtitle, obstacles, defaultRows, live });
+  const initialSnapshot = useRef(snapshot);
+  const dirty = !createdSlug && snapshot !== initialSnapshot.current;
+  const guard = useUnsavedGuard({ dirty, onSave: submit });
+  const cancelHref = isEdit ? "/dashboard" : "/dashboard/admin/add-sheet";
+
   if (createdSlug) {
     return (
       <div className="p-6 max-w-xl mx-auto animate-fade-in">
@@ -261,6 +268,7 @@ export function ShowJumpingSheetBuilder({
     <div className="p-6 max-w-2xl mx-auto">
       <Link
         href="/dashboard/admin/add-sheet"
+        onClick={guard.intercept("/dashboard/admin/add-sheet")}
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-5"
       >
         <ArrowLeft className="h-4 w-4" /> Back
@@ -459,7 +467,8 @@ export function ShowJumpingSheetBuilder({
           <Eye className="h-4 w-4" /> Preview
         </button>
         <Link
-          href={isEdit ? "/dashboard" : "/dashboard/admin/add-sheet"}
+          href={cancelHref}
+          onClick={guard.intercept(cancelHref)}
           className="text-sm px-4 py-2.5 rounded-lg border border-border hover:bg-muted transition-colors"
         >
           Cancel
@@ -482,6 +491,8 @@ export function ShowJumpingSheetBuilder({
           </button>
         )}
       </div>
+
+      {guard.dialog}
     </div>
   );
 }

@@ -23,6 +23,7 @@ const NAV: Record<UserRole, NavItem[]> = {
     { label: "Add Sheet",      href: "/dashboard/admin/add-sheet",    icon: FilePlus2 },
     { label: "Sheet Placement",href: "/dashboard/admin/sheets",       icon: Layers },
     { label: "Events",         href: "/dashboard/admin/events",       icon: Calendar },
+    { label: "Riders",         href: "/dashboard/admin/riders",       icon: Users },
     { label: "Users",          href: "/dashboard/admin/users",        icon: Users },
     { label: "Profile Fields", href: "/dashboard/admin/profile-fields", icon: Settings },
   ],

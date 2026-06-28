@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Plus, Trash2, Check, ExternalLink, RotateCcw } from "lucide-react";
@@ -9,6 +9,7 @@ import {
   updateQualitySheetAction,
   deleteSheetAction,
 } from "../actions";
+import { useUnsavedGuard } from "@/hooks/use-unsaved-guard";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -85,6 +86,12 @@ export function QualityMarkingSheetBuilder({
     });
   };
 
+  const snapshot = JSON.stringify({ label, subtitle, rows });
+  const initialSnapshot = useRef(snapshot);
+  const dirty = !createdSlug && snapshot !== initialSnapshot.current;
+  const guard = useUnsavedGuard({ dirty, onSave: submit });
+  const cancelHref = isEdit ? "/dashboard" : "/dashboard/admin/add-sheet";
+
   if (createdSlug) {
     return (
       <div className="p-6 max-w-xl mx-auto">
@@ -122,6 +129,7 @@ export function QualityMarkingSheetBuilder({
     <div className="p-6 max-w-3xl mx-auto">
       <Link
         href="/dashboard/admin/add-sheet"
+        onClick={guard.intercept("/dashboard/admin/add-sheet")}
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground mb-5"
       >
         <ArrowLeft className="h-4 w-4" /> Back
@@ -227,7 +235,8 @@ export function QualityMarkingSheetBuilder({
           {pending ? (isEdit ? "Saving…" : "Creating…") : isEdit ? "Save changes" : "Create sheet"}
         </button>
         <Link
-          href={isEdit ? "/dashboard" : "/dashboard/admin/add-sheet"}
+          href={cancelHref}
+          onClick={guard.intercept(cancelHref)}
           className="text-sm px-4 py-2.5 rounded-lg border border-border hover:bg-muted transition-colors"
         >
           Cancel
@@ -250,6 +259,8 @@ export function QualityMarkingSheetBuilder({
           </button>
         )}
       </div>
+
+      {guard.dialog}
     </div>
   );
 }
