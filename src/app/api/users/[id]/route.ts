@@ -5,7 +5,7 @@ import type { UserRole } from "@/lib/roles";
 
 export const dynamic = "force-dynamic";
 
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: any) {
   const session = await auth();
   if (!session?.user || session.user.role !== "super_admin") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
