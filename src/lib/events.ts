@@ -72,9 +72,8 @@ export type EventSummary = {
 
 export type GuidelineTemplate = { id: string; title: string; body: string };
 
-export type EventRider = {
+export type Rider = {
   id: string;
-  event_id: string;
   name: string;
   nf: string | null;
   competitor_no: string | null;
@@ -83,6 +82,8 @@ export type EventRider = {
   image_url: string | null;
   created_at: string;
 };
+
+export type EventRider = Rider;
 
 export type EventParticipant = {
   id: string;
@@ -286,7 +287,10 @@ export async function getEventById(id: string): Promise<EventFull | null> {
     [id]
   );
   const riders = await query<EventRider>(
-    `select * from event_riders where event_id = $1 order by created_at`,
+    `select r.* from riders r
+      join event_riders er on er.rider_id = r.id
+      where er.event_id = $1
+      order by r.created_at`,
     [id]
   );
   const participants = await query<EventParticipant>(
@@ -309,7 +313,26 @@ export async function getEventById(id: string): Promise<EventFull | null> {
   };
 }
 
-// ---- Riders ----
+// ---- Riders (global pool) ----
+
+/** List all riders in global pool. */
+export async function listAllRiders(): Promise<Rider[]> {
+  return query<Rider>(
+    `select * from riders order by name, competitor_no`
+  );
+}
+
+/** List riders assigned to an event. */
+export async function listRidersForEvent(eventId: string): Promise<Rider[]> {
+  return query<Rider>(
+    `select r.* from riders r
+      join event_riders er on er.rider_id = r.id
+      where er.event_id = $1
+      order by r.name, r.competitor_no`,
+    [eventId]
+  );
+}
+
 export type RiderInput = {
   name: string;
   nf?: string;
@@ -319,25 +342,34 @@ export type RiderInput = {
   imageUrl?: string;
 };
 
-export async function addRider(eventId: string, r: RiderInput) {
-  await query(
-    `insert into event_riders (event_id, name, nf, competitor_no, horse, horse_no, image_url)
-          values ($1,$2,$3,$4,$5,$6,$7)`,
-    [eventId, r.name.trim(), r.nf || null, r.competitorNo || null, r.horse || null, r.horseNo || null, r.imageUrl || null]
+/** Create new rider in global pool and assign to event. */
+export async function addRider(eventId: string, r: RiderInput): Promise<string> {
+  const rows = await query<{ id: string }>(
+    `insert into riders (name, nf, competitor_no, horse, horse_no, image_url)
+          values ($1,$2,$3,$4,$5,$6)
+       returning id`,
+    [r.name.trim(), r.nf || null, r.competitorNo || null, r.horse || null, r.horseNo || null, r.imageUrl || null]
   );
+  const riderId = rows[0].id;
+  await query(
+    `insert into event_riders (event_id, rider_id) values ($1, $2)
+      on conflict do nothing`,
+    [eventId, riderId]
+  );
+  return riderId;
 }
 
-export async function addRidersBulk(eventId: string, riders: RiderInput[]): Promise<number> {
+/** Assign existing riders to an event. */
+export async function addRidersToEvent(eventId: string, riderIds: string[]): Promise<number> {
   const client = await pool.connect();
   let count = 0;
   try {
     await client.query("begin");
-    for (const r of riders) {
-      if (!r.name?.trim()) continue;
+    for (const rid of riderIds) {
       await client.query(
-        `insert into event_riders (event_id, name, nf, competitor_no, horse, horse_no, image_url)
-              values ($1,$2,$3,$4,$5,$6,$7)`,
-        [eventId, r.name.trim(), r.nf || null, r.competitorNo || null, r.horse || null, r.horseNo || null, r.imageUrl || null]
+        `insert into event_riders (event_id, rider_id) values ($1, $2)
+          on conflict do nothing`,
+        [eventId, rid]
       );
       count++;
     }
@@ -351,8 +383,41 @@ export async function addRidersBulk(eventId: string, riders: RiderInput[]): Prom
   return count;
 }
 
-export async function deleteRider(riderId: string) {
-  await query(`delete from event_riders where id = $1`, [riderId]);
+/** Create multiple new riders in global pool and assign to event. */
+export async function addRidersBulk(eventId: string, riders: RiderInput[]): Promise<number> {
+  const client = await pool.connect();
+  let count = 0;
+  try {
+    await client.query("begin");
+    for (const r of riders) {
+      if (!r.name?.trim()) continue;
+      const res = await client.query<{ id: string }>(
+        `insert into riders (name, nf, competitor_no, horse, horse_no, image_url)
+              values ($1,$2,$3,$4,$5,$6)
+           returning id`,
+        [r.name.trim(), r.nf || null, r.competitorNo || null, r.horse || null, r.horseNo || null, r.imageUrl || null]
+      );
+      const riderId = res.rows[0].id;
+      await client.query(
+        `insert into event_riders (event_id, rider_id) values ($1, $2)
+          on conflict do nothing`,
+        [eventId, riderId]
+      );
+      count++;
+    }
+    await client.query("commit");
+  } catch (e) {
+    await client.query("rollback");
+    throw e;
+  } finally {
+    client.release();
+  }
+  return count;
+}
+
+/** Delete rider from event (soft delete from event_riders join table). */
+export async function deleteRider(eventId: string, riderId: string) {
+  await query(`delete from event_riders where event_id = $1 and rider_id = $2`, [eventId, riderId]);
 }
 
 // ---- Participants (judges/writers/etc.) ----
@@ -466,7 +531,7 @@ export async function listRidersForSheet(
   return query<EventRider>(
     `select r.*
        from sheet_riders sr
-       join event_riders r on r.id = sr.rider_id
+       join riders r on r.id = sr.rider_id
       where sr.event_id = $1 and sr.test_slug = $2
       order by nullif(regexp_replace(r.competitor_no, '\\D', '', 'g'), '')::int nulls last,
                r.competitor_no, r.name`,

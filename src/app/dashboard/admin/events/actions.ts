@@ -11,6 +11,7 @@ import {
   regenerateAccessCode,
   addRider,
   addRidersBulk,
+  addRidersToEvent,
   deleteRider,
   type RiderInput,
   addParticipant,
@@ -223,10 +224,25 @@ export async function importRidersAction(
 }
 
 export async function deleteRiderAction(formData: FormData) {
-  const id = String(formData.get("eventId") ?? "");
-  await requireEventManager(id);
-  await deleteRider(String(formData.get("riderId") ?? ""));
-  revalidatePath(`/dashboard/admin/events/${id}`);
+  const eventId = String(formData.get("eventId") ?? "");
+  await requireEventManager(eventId);
+  await deleteRider(eventId, String(formData.get("riderId") ?? ""));
+  revalidatePath(`/dashboard/admin/events/${eventId}`);
+}
+
+export async function addExistingRidersAction(
+  eventId: string,
+  riderIds: string[]
+): Promise<{ count?: number; error?: string }> {
+  try {
+    await requireEventManager(eventId);
+    if (!riderIds?.length) return { error: "No riders selected." };
+    const count = await addRidersToEvent(eventId, riderIds);
+    revalidatePath(`/dashboard/admin/events/${eventId}`);
+    return { count };
+  } catch {
+    return { error: "Failed to add riders." };
+  }
 }
 
 export async function addParticipantAction(formData: FormData) {

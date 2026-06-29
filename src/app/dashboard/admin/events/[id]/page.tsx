@@ -1,9 +1,10 @@
 import { redirect, notFound } from "next/navigation";
 import { auth } from "@/auth";
-import { getEventById, listSheetsByEvent, listSheetRiders, listGuidelineTemplates } from "@/lib/events";
+import { getEventById, listSheetsByEvent, listSheetRiders, listGuidelineTemplates, listAllRiders } from "@/lib/events";
 import { listUsers } from "@/lib/users";
 import { listCustomSheetCards } from "@/lib/customSheets";
 import { BulkRiderImport } from "../BulkRiderImport";
+import { AddPoolRidersForm } from "../AddPoolRidersForm";
 import { DetailsForm } from "../DetailsForm";
 import { PermissionsForm } from "../PermissionsForm";
 import { TimerConfigForm } from "../TimerConfigForm";
@@ -47,12 +48,13 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
   const isOwner = ev.secretary_id === user.id;
   if (!isAdmin && !isOwner) redirect("/dashboard");
 
-  const [allUsers, customCards, sheetsByEvent, sheetRiders, templates] = await Promise.all([
+  const [allUsers, customCards, sheetsByEvent, sheetRiders, templates, allRiders] = await Promise.all([
     listUsers(),
     listCustomSheetCards(),
     listSheetsByEvent(),
     listSheetRiders(id),
     listGuidelineTemplates(),
+    listAllRiders(),
   ]);
   const assignedSlugs = new Set(sheetsByEvent[id] ?? []);
   const bySlug = new Map(TEST_CARDS.map((c) => [c.slug, c]));
@@ -133,6 +135,11 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
 
       {/* Riders */}
       <Section title={`Riders (${ev.riders.length})`}>
+        <AddPoolRidersForm
+          eventId={id}
+          allRiders={allRiders}
+          eventRiderIds={new Set(ev.riders.map((r) => r.id))}
+        />
         <BulkRiderImport eventId={id} />
         <form action={addRiderAction} className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
           <input type="hidden" name="eventId" value={id} />

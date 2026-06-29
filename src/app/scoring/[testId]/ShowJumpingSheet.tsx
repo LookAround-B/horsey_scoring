@@ -293,6 +293,7 @@ export function ShowJumpingSheet({
   const [loaded,    setLoaded]    = useState(false);
   const [savedAt,   setSavedAt]   = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [manualTime, setManualTime] = useState("");
 
   // Start-list source for the rider picker: in event context, the riders selected
   // for this sheet; standalone, the bundled EPL start list.
@@ -727,6 +728,12 @@ export function ShowJumpingSheet({
                   faults={cur.fr.faults}
                   onCycle={obs => cycleFault("fr", obs)}
                   disabled={cur.approved}
+                  score={(() => {
+                    const jf = calcJF(cur.fr.faults);
+                    const tf = cur.fr.time ? calcTF(cur.fr.time, taSecs, frRate) : 0;
+                    const out = isRoundOut(cur.fr);
+                    return out ? (cur.fr.status || "E") : jf + tf;
+                  })()}
                 />
 
                 {/* ── Jump-off Obstacles ── */}
@@ -745,6 +752,12 @@ export function ShowJumpingSheet({
                           : "This rider is not in the jump-off."
                         : undefined
                     }
+                    score={(() => {
+                      const jf = calcJF(cur.jo.faults);
+                      const tf = cur.jo.time ? calcTF(cur.jo.time, joTaSecs, joRate) : 0;
+                      const out = isRoundOut(cur.jo);
+                      return out ? (cur.jo.status || "E") : jf + tf;
+                    })()}
                   />
                 )}
 
@@ -842,6 +855,53 @@ export function ShowJumpingSheet({
                 <div className="bg-card border border-border rounded-xl p-4">
                   <div className="grid grid-cols-1 lg:grid-cols-[1fr_180px] gap-4 items-start">
                     <div className="space-y-3">
+                      {/* Timer controls */}
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Timer</span>
+                          <button onClick={timer.start} disabled={timer.running}
+                            className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-primary text-primary-foreground disabled:opacity-50 hover:opacity-90 transition-opacity">
+                            <Play className="h-3 w-3" /> Start
+                          </button>
+                          <button onClick={stopAndFill} disabled={!timer.running && timer.tenths === 0}
+                            className="text-xs px-2.5 py-1.5 rounded-lg border border-border hover:bg-muted disabled:opacity-40 transition-colors">
+                            Stop
+                          </button>
+                          <button onClick={timer.running ? timer.stop : timer.start} disabled={timer.tenths === 0 && !timer.running}
+                            className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-border hover:bg-muted disabled:opacity-40 transition-colors">
+                            {timer.running ? <><Pause className="h-3 w-3" /> Pause</> : "Cont."}
+                          </button>
+                          <button onClick={timer.split} disabled={!timer.running}
+                            className="text-xs px-2.5 py-1.5 rounded-lg border border-border hover:bg-muted disabled:opacity-40 transition-colors">
+                            Split
+                          </button>
+                          <button onClick={timer.reset}
+                            className="p-1.5 rounded-lg border border-border hover:bg-muted transition-colors" title="Reset timer">
+                            <RotateCcw className="h-3 w-3" />
+                          </button>
+                          {hasJO && cur.advancesToJO && (
+                            <Select value={timerRound} onValueChange={v => setTimerRound(v as "fr" | "jo")}>
+                              <SelectTrigger className="h-8 text-xs rounded-lg px-2 bg-background w-auto gap-1">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="fr">→ FR time</SelectItem>
+                                <SelectItem value="jo">→ JO time</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
+                        </div>
+                        {timer.splits.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5">
+                            {timer.splits.map((s, i) => (
+                              <span key={i} className="text-[10px] font-mono text-muted-foreground border border-border rounded px-1.5 py-0.5">
+                                S{i + 1}: {fmtTenths(s)}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
                       {/* Entry note */}
                       <label className="block">
                         <span className="block text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Entry Note / Remarks</span>
@@ -901,60 +961,42 @@ export function ShowJumpingSheet({
                           </button>
                         )}
                       </div>
-
-                      {/* Timer controls */}
-                      <div className="space-y-2">
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <span className="text-[10px] uppercase tracking-wider text-muted-foreground">Timer</span>
-                          <button onClick={timer.start} disabled={timer.running}
-                            className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg bg-primary text-primary-foreground disabled:opacity-50 hover:opacity-90 transition-opacity">
-                            <Play className="h-3 w-3" /> Start
-                          </button>
-                          <button onClick={stopAndFill} disabled={!timer.running && timer.tenths === 0}
-                            className="text-xs px-2.5 py-1.5 rounded-lg border border-border hover:bg-muted disabled:opacity-40 transition-colors">
-                            Stop
-                          </button>
-                          <button onClick={timer.running ? timer.stop : timer.start} disabled={timer.tenths === 0 && !timer.running}
-                            className="inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg border border-border hover:bg-muted disabled:opacity-40 transition-colors">
-                            {timer.running ? <><Pause className="h-3 w-3" /> Pause</> : "Cont."}
-                          </button>
-                          <button onClick={timer.split} disabled={!timer.running}
-                            className="text-xs px-2.5 py-1.5 rounded-lg border border-border hover:bg-muted disabled:opacity-40 transition-colors">
-                            Split
-                          </button>
-                          <button onClick={timer.reset}
-                            className="p-1.5 rounded-lg border border-border hover:bg-muted transition-colors" title="Reset timer">
-                            <RotateCcw className="h-3 w-3" />
-                          </button>
-                          {hasJO && cur.advancesToJO && (
-                            <Select value={timerRound} onValueChange={v => setTimerRound(v as "fr" | "jo")}>
-                              <SelectTrigger className="h-8 text-xs rounded-lg px-2 bg-background w-auto gap-1">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="fr">→ FR time</SelectItem>
-                                <SelectItem value="jo">→ JO time</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          )}
-                        </div>
-                        {timer.splits.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5">
-                            {timer.splits.map((s, i) => (
-                              <span key={i} className="text-[10px] font-mono text-muted-foreground border border-border rounded px-1.5 py-0.5">
-                                S{i + 1}: {fmtTenths(s)}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
                     </div>
 
-                    {/* Large timer display */}
-                    <div className={`flex items-center justify-center border-2 rounded-2xl p-4 transition-colors ${timerColor}`}>
-                      <span className="font-display text-5xl tabular-nums leading-none select-none">
-                        {fmtTenths(timer.tenths)}
-                      </span>
+                    {/* Large timer display + manual time input */}
+                    <div className="flex flex-col gap-2">
+                      <div className={`flex items-center justify-center border-2 rounded-2xl p-4 transition-colors ${timerColor}`}>
+                        <span className="font-display text-5xl tabular-nums leading-none select-none">
+                          {fmtTenths(timer.tenths)}
+                        </span>
+                      </div>
+                      <div className="flex gap-1">
+                        <Input
+                          value={manualTime}
+                          onChange={e => setManualTime(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === "Enter" && manualTime.trim() && !cur.approved) {
+                              const round = timerRound === "jo" && cur?.advancesToJO ? "jo" : "fr";
+                              patchRound(round, { time: manualTime.trim() });
+                              setManualTime("");
+                            }
+                          }}
+                          disabled={cur.approved}
+                          placeholder="ss.x"
+                          className="flex-1 min-w-0 bg-transparent border border-border rounded-lg px-2 py-1.5 text-sm font-mono text-center outline-none focus:border-primary disabled:opacity-50"
+                        />
+                        <button
+                          onClick={() => {
+                            if (!manualTime.trim() || cur.approved) return;
+                            const round = timerRound === "jo" && cur?.advancesToJO ? "jo" : "fr";
+                            patchRound(round, { time: manualTime.trim() });
+                            setManualTime("");
+                          }}
+                          disabled={cur.approved || !manualTime.trim()}
+                          className="text-xs px-2.5 py-1.5 rounded-lg border border-border hover:bg-muted disabled:opacity-40 transition-colors shrink-0">
+                          Set
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1350,6 +1392,7 @@ function ObstacleGrid({
   disabled,
   variant = "fr",
   lockedHint,
+  score,
 }: {
   label?: string;
   obstacles: string[];
@@ -1358,14 +1401,22 @@ function ObstacleGrid({
   disabled: boolean;
   variant?: "fr" | "jo";
   lockedHint?: string;
+  score?: React.ReactNode;
 }) {
   const locked = !!lockedHint;
   return (
     <div className={`bg-card border rounded-xl p-3 transition-opacity ${variant === "jo" ? "border-primary/30" : "border-border"} ${locked ? "opacity-60" : ""}`}>
-      {label && (
-        <div className={`text-[10px] uppercase tracking-wider font-medium mb-2 flex items-center gap-1.5 ${variant === "jo" ? "text-primary" : "text-muted-foreground"}`}>
-          {label}
-          {locked && <Lock className="h-2.5 w-2.5 opacity-70" />}
+      {(label || score !== undefined) && (
+        <div className="flex items-start justify-between mb-2">
+          <div className={`text-[10px] uppercase tracking-wider font-medium flex items-center gap-1.5 ${variant === "jo" ? "text-primary" : "text-muted-foreground"}`}>
+            {label}
+            {locked && <Lock className="h-2.5 w-2.5 opacity-70" />}
+          </div>
+          {score !== undefined && (
+            <div className="border-2 border-border rounded-xl px-3 py-1 text-center min-w-[64px]">
+              <span className="font-display text-2xl font-bold tabular-nums leading-none">{score}</span>
+            </div>
+          )}
         </div>
       )}
       <div className="flex flex-wrap gap-1.5">
